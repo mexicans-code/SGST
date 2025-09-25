@@ -1,8 +1,12 @@
-import HeroSection from "./AirbndHome";
-
-import AirbnbCard from "./AirbnbCard";
-import Navbar from "./NavBar";
-import TourismSection from "./tourismSection";
+// App.jsx
+import { Routes, Route } from "react-router-dom";
+import Navbar from "./components/NavBar";
+import HeroSection from "./pages/AirbndHome";
+import AirbnbCard from "./components/AirbnbCard";
+import TourismSection from "./pages/TourismSection";
+import ExperiencesSection from "./pages/TourismSection"; // Nueva importación
+import ReservationInfo from "./pages/ReservationInfo";
+import PaymentSummary from "./pages/PaymentSummary";
 
 const properties = [
   {
@@ -65,96 +69,112 @@ const properties = [
     isGuest: true,
     isSuperhost: true
   },
-
-
-
+  {
+    name: "Casa acogedora en el centro",
+    price: 140,
+    rating: 4.9,
+    reviews: 156,
+    location: "Playa del Carmen, Quintana Roo",
+    imageSrc: "https://a0.muscache.com/im/pictures/01eceb36-328c-49e8-bfea-cf9a80b61f27.jpg?im_w=1200",
+    isGuest: true,
+    isSuperhost: true
+  },
 ];
+
+function PropertiesPage() {
+  return (
+    <div className="container py-5">
+      <div className="row justify-content-center g-5">
+        {properties.map((property, index) => (
+          <div key={index} className="col-xl-3 col-lg-4 col-md-6 col-12 mb-4">
+            <AirbnbCard {...property} />
+          </div>
+        ))}
+      </div>
+
+      <div className="d-flex justify-content-end mt-4">
+        <nav aria-label="Page navigation">
+          <ul className="pagination">
+            <li className="page-item disabled bg-secondary">
+              <a className="page-link" href="#" aria-label="Previous">
+                <span aria-hidden="true">«</span>
+              </a>
+            </li>
+            <li className="page-item active bg-secondary">
+              <a className="page-link" href="#">1</a>
+            </li>
+            <li className="page-item">
+              <a className="page-link" href="#">2</a>
+            </li>
+            <li className="page-item">
+              <a className="page-link" href="#">3</a>
+            </li>
+            <li className="page-item">
+              <a className="page-link" href="#" aria-label="Next">
+                <span aria-hidden="true">»</span>
+              </a>
+            </li>
+          </ul>
+        </nav>
+      </div>
+    </div>
+  );
+}
 
 export default function App() {
   return (
-    <div className="min-vh-100">
-      <style>{`
-        @keyframes bounce {
-          0%, 20%, 50%, 80%, 100% {
-            transform: translateY(0) translateX(-50%);
-          }
-          40% {
-            transform: translateY(-10px) translateX(-50%);
-          }
-          60% {
-            transform: translateY(-5px) translateX(-50%);
-          }
-        }
-        
-        @keyframes pulse {
-          0% {
-            opacity: 1;
-          }
-          50% {
-            opacity: 0.5;
-          }
-          100% {
-            opacity: 1;
-          }
-        }
-        
-        .text-shadow {
-          text-shadow: 0 2px 4px rgba(0,0,0,0.3);
-        }
-        
-        .tracking-wide {
-          letter-spacing: 0.025em;
-        }
-        
-        .cursor-pointer {
-          cursor: pointer;
-        }
-        
-        .form-control:focus,
-        .form-select:focus {
-          border-color: #dc2626 !important;
-          box-shadow: 0 0 0 0.2rem rgba(220, 38, 38, 0.25) !important;
-        }
-      `}</style>
-
+    <>
       <Navbar />
-      <HeroSection />
-      
-      <div id="propiedades" className="bg-light">
-        <div className="bg-white shadow-sm border-bottom">
-          <div className="container py-5">
-            <div className="text-center">
-              <h2 className="display-4 fw-bold text-dark mb-3">
-                Alojamientos Disponibles
-              </h2>
-              <p className="lead text-muted fs-5">
-                Descubre lugares únicos para quedarte 🏡
-              </p>
-            </div>
-          </div>
-        </div>
+      <Routes>
+        <Route
+          path="/"
+          element={
+            <>
+              <HeroSection />
 
-        <div className="container py-5">
-          <div className="row justify-content-center g-4">
-            {properties.map((property, index) => (
-              <div key={`${property.name}-${index}`} className="col-auto">
-                <AirbnbCard {...property} />
+              <div className="bg-white shadow-sm border-bottom">
+                <div className="container py-5">
+                  <div className="text-center">
+                    <h2 className="display-4 fw-bold text-dark mb-3">
+                      Alojamientos En Arroyo Seco
+                    </h2>
+                    <p className="lead text-muted fs-5">
+                      Vive aventuras inolvidables en la Sierra Gorda
+                    </p>
+                  </div>
+                </div>
               </div>
-            ))}
-          </div>
-        </div>
+              <PropertiesPage />
 
-        <TourismSection />
+              
+              <div className="bg-white shadow-sm border-bottom">
+                <div className="container py-5">
+                  <div className="text-center">
+                    <h2 className="display-4 fw-bold text-dark mb-3">
+                      Experiencias en Arroyo Seco
+                    </h2>
+                    <p className="lead text-muted fs-5">
+                      Vive aventuras inolvidables en la Sierra Gorda
+                    </p>
+                  </div>
+                </div>
+              </div>
 
-        <footer className="bg-white border-top mt-5">
-          <div className="container py-4">
-            <div className="text-center text-muted">
-              <p className="mb-1 fw-medium">Encuentra tu próximo destino perfecto</p>
-              <p className="small mb-0">© 2024 AirbnbClone - Arroyo Seco, Querétaro</p>
-            </div>
-          </div>
-        </footer>
-      </div>
-    </div>
+              <TourismSection />
+            </>
+          }
+        />
+
+        <Route path="/propiedades" element={<PropertiesPage />} />
+
+        <Route path="/turismo" element={<TourismSection />} />
+
+        <Route path="/experiencias" element={<ExperiencesSection />} />
+
+        <Route path="/reservation" element={<ReservationInfo />} />
+
+        <Route path="/payment" element={<PaymentSummary />} />
+      </Routes>
+    </>
   );
 }
