@@ -1,57 +1,64 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Heart, Star, MapPin, Users, Wifi, Car, Coffee, Tv, Wind, X, Calendar, CreditCard } from 'lucide-react';
 
-import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { useNavigate } from "react-router-dom";
-
-
-
-export default function AirbnbCard({
-  name = "Casa moderna en el centro",
-  price = 120,
-  rating = 4.8,
-  reviews = 127,
-  location = "Ciudad de México",
-  imageSrc = "https://a0.muscache.com/im/pictures/hosting/Hosting-U3RheVN1cHBseUxpc3Rpbmc6OTgzNjEwMjg4MDc1MTM0Mjg5/original/6530be09-e469-42eb-ad40-c24de66631e9.jpeg",
-  guests = 4,
-  bedrooms = 2,
-  bathrooms = 2,
-  isGuest = false,
-  isSuperhost = false,
-  description = "Hermosa casa moderna ubicada en el corazón de la ciudad. Perfecta para familias o grupos de amigos que buscan comodidad y estilo. Cuenta con todas las amenidades necesarias para una estancia inolvidable.",
-  amenities = ["WiFi gratuito", "Estacionamiento", "Cocina equipada", "TV con cable", "Aire acondicionado"],
-  images = [
-    "https://a0.muscache.com/im/pictures/hosting/Hosting-U3RheVN1cHBseUxpc3Rpbmc6OTgzNjEwMjg4MDc1MTM0Mjg5/original/6530be09-e469-42eb-ad40-c24de66631e9.jpeg",
-    "https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
-    "https://images.unsplash.com/photo-1554995207-c18c203602cb?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
-    "https://images.unsplash.com/photo-1556020685-ae41abfc9365?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
-    "https://images.unsplash.com/photo-1556020685-ae41abfc9365?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80"
-  ]
-}) {
+// Componente individual de card (mantiene tus estilos originales)
+function AirbnbCard({ hotel }) {
   const [imageLoaded, setImageLoaded] = useState(false);
-
-  const navigate = useNavigate();
 
   const handleReserve = () => {
     const reservationData = {
-      name,
-      price,
-      rating,
-      reviews,
-      location,
-      imageSrc,
-      guests,
-      bedrooms,
-      bathrooms,
-      isGuest,
-      isSuperhost,
-      description,
-      amenities,
-      images
+      id: hotel.id_hosteleria,
+      name: hotel.nombre,
+      price: hotel.precio_por_noche,
+      location: hotel.ubicacion,
+      imageSrc: hotel.image === "255" ? "https://images.unsplash.com/photo-1568605114967-8130f3a36994?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80" : hotel.image,
+      guests: hotel.capacidad,
+      description: hotel.descripcion,
+      hostId: hotel.id_anfitrion,
+      rating: rating,
+      reviews: reviews,
+      bedrooms: bedrooms,
+      bathrooms: bathrooms
     };
 
-    navigate('/reservation', { state: { reservationData } });
+    // Guarda los datos en localStorage para pasarlos a la página de reserva
+    localStorage.setItem('reservationData', JSON.stringify(reservationData));
+
+    console.log("Id de la propiedad: ", hotel.id_hosteleria);
+    
+    // Navega a la página de reserva
+    window.location.href = '/reservation';
   };
+
+  // Función para obtener una calificación aleatoria realista
+  const getRandomRating = () => {
+    const ratings = [4.2, 4.3, 4.5, 4.6, 4.7, 4.8, 4.9];
+    return ratings[Math.floor(Math.random() * ratings.length)];
+  };
+
+  // Función para obtener número de reseñas aleatorio
+  const getRandomReviews = () => {
+    return Math.floor(Math.random() * 200) + 20;
+  };
+
+  // Función para estimar habitaciones y baños basado en capacidad
+  const getRoomsFromCapacity = (capacity) => {
+    if (capacity <= 2) return { bedrooms: 1, bathrooms: 1 };
+    if (capacity <= 4) return { bedrooms: 2, bathrooms: 1 };
+    if (capacity <= 6) return { bedrooms: 3, bathrooms: 2 };
+    return { bedrooms: 4, bathrooms: 2 };
+  };
+
+  const rating = getRandomRating();
+  const reviews = getRandomReviews();
+  const { bedrooms, bathrooms } = getRoomsFromCapacity(hotel.capacidad);
+
+  const name = hotel.nombre;
+  const price = hotel.precio_por_noche;
+  const location = hotel.ubicacion;
+  const imageSrc = hotel.image === "255" ? "https://images.unsplash.com/photo-1568605114967-8130f3a36994?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80" : hotel.image;
+  const guests = hotel.capacidad;
+  const description = hotel.descripcion;
 
   return (
     <>
@@ -141,5 +148,84 @@ export default function AirbnbCard({
         </div>
       </div>
     </>
+  );
+}
+
+// Componente principal que obtiene datos de la API
+export default function HotelListings() {
+  const [hotels, setHotels] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    const fetchHotels = async () => {
+      try {
+        setLoading(true);
+        const response = await fetch('http://localhost:3001/getHotelData');
+        
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const result = await response.json();
+        console.log('Datos de hoteles recibidos:', result);
+        
+        if (result.success && result.data) {
+          setHotels(result.data);
+        } else {
+          throw new Error('Formato de respuesta inválido');
+        }
+        
+        setError(null);
+      } catch (err) {
+        console.error('Error fetching hotels:', err);
+        setError(err.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchHotels();
+  }, []);
+
+  if (loading) {
+    return (
+      <div style={{ padding: '2rem', textAlign: 'center' }}>
+        <div>Cargando hoteles...</div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div style={{ padding: '2rem', textAlign: 'center', color: 'red' }}>
+        <h5>⚠️ Error de conexión</h5>
+        <p>No se pudieron cargar las propiedades desde el servidor.</p>
+        <small>Error: {error}</small>
+      </div>
+    );
+  }
+
+  return (
+    <div style={{ padding: '1rem' }}>
+      <h2 style={{ marginBottom: '1rem' }}>Propiedades Disponibles</h2>
+      <p style={{ color: '#666', marginBottom: '2rem' }}>Encontramos {hotels.length} propiedades únicas para tu estadía</p>
+      
+      <div style={{ 
+        display: 'grid', 
+        gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', 
+        gap: '1rem' 
+      }}>
+        {hotels.map((hotel) => (
+          <AirbnbCard key={hotel.id_hosteleria} hotel={hotel} />
+        ))}
+      </div>
+      
+      {hotels.length === 0 && !loading && (
+        <div style={{ textAlign: 'center', padding: '2rem' }}>
+          <p>No se encontraron propiedades disponibles.</p>
+        </div>
+      )}
+    </div>
   );
 }

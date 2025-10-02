@@ -265,10 +265,6 @@ export default function ExperiencesSection() {
 
   return (
     <div className="bg-light">
-      {/* Hero Section */}
-  
-
-      {/* Experiences Grid */}
       <div className="container py-5">
         <div className="row mb-4">
           <div className="col-12">

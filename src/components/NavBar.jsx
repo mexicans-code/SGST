@@ -5,15 +5,44 @@ import { Heart, Star, MapPin, Package, Globe, User, Menu, Sun, Moon } from 'luci
 export default function Navbar({ darkMode, setDarkMode }) {
     const [isNavOpen, setIsNavOpen] = useState(false);
     const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
+    const [usuario, setUsuario] = useState(null);
     const navigate = useNavigate();
     const userMenuRef = useRef(null);
 
-    const navItems = [
-        { name: 'Alojamientos', icon: MapPin, link: '/' },
-        { name: 'Experiencias', icon: Star, link: '/experiencias' },
-        { name: 'Aventuras', icon: Heart, link: '/aventuras' },
-        { name: 'Paquetes', icon: Package, link: '/paquetes' },
-    ];
+    const navItems = [];
+
+    useEffect(() => {
+        const cargarUsuario = () => {
+            const usuarioData = localStorage.getItem("usuario");
+            if (usuarioData) {
+                try {
+                    setUsuario(JSON.parse(usuarioData));
+                } catch (error) {
+                    console.error("Error al parsear usuario:", error);
+                }
+            } else {
+                setUsuario(null);
+            }
+        };
+
+        cargarUsuario();
+
+        window.addEventListener('storage', cargarUsuario);
+        
+        window.addEventListener('usuarioActualizado', cargarUsuario);
+
+        return () => {
+            window.removeEventListener('storage', cargarUsuario);
+            window.removeEventListener('usuarioActualizado', cargarUsuario);
+        };
+    }, []);
+
+    const logout = () => {
+        localStorage.removeItem("token");
+        localStorage.removeItem("usuario");
+        setUsuario(null);
+        navigate("/login");
+    };
 
     useEffect(() => {
         if (darkMode) {
@@ -25,7 +54,6 @@ export default function Navbar({ darkMode, setDarkMode }) {
         }
     }, [darkMode]);
 
-    // Cierra el menú de usuario si se da clic afuera
     useEffect(() => {
         const handleClickOutside = (e) => {
             if (userMenuRef.current && !userMenuRef.current.contains(e.target)) {
@@ -50,25 +78,22 @@ export default function Navbar({ darkMode, setDarkMode }) {
             style={{
                 zIndex: 1000,
                 backdropFilter: 'blur(10px)',
-                background: darkMode ? 'rgba(33,33,33,0.95)' : 'rgba(255,255,255,0.95)',
+                background: darkMode ? 'rgba(33,33,33,0.95)' : 'rgb(255, 255, 255)',
             }}
         >
             <div className="container d-flex justify-content-between align-items-center">
-                {/* Logo */}
                 <a
                     className={`navbar-brand fw-bold d-flex align-items-center ${darkMode ? 'text-white' : 'text-danger'}`}
                     onClick={() => navigate("/")}
                     style={{ cursor: 'pointer' }}
                 >
                     <img
-                        className="rounded-circle"
                         src="https://blogger.googleusercontent.com/img/a/AVvXsEhjjv5anKGHGaRt5CNdVF8Hz9RdIHor9kmWhQwXqnJcHaOHhGEt4XyvIOymsgqvwJiJZCjkE15JavstMTSSnwD1meWD1ZW5dD6QTfDxkDiIJfS2MzP8E1XqzmmAqnSGwHjeab-B4tf5KI62qs8gLuYLOVzMam_veip1vVIvkPzZNccw1iuA1cNqeO6klNw"
                         alt="Logo"
-                        style={{ width: '200px', height: '70px', objectFit: 'cover' }}
+                        style={{ width: '200px', height: '60px', objectFit: 'cover' }}
                     />
                 </a>
 
-                {/* Botón mobile */}
                 <button
                     className="navbar-toggler border-0"
                     type="button"
@@ -78,7 +103,6 @@ export default function Navbar({ darkMode, setDarkMode }) {
                     <Menu size={24} color={darkMode ? '#fff' : '#000'} />
                 </button>
 
-                {/* Links principales */}
                 <div className={`collapse navbar-collapse ${isNavOpen ? 'show' : ''}`}>
                     <ul className="navbar-nav mx-auto d-flex flex-wrap justify-content-center gap-2 mb-2 mb-lg-0">
                         {navItems.map((item) => (
@@ -103,9 +127,19 @@ export default function Navbar({ darkMode, setDarkMode }) {
                         ))}
                     </ul>
 
-                    {/* Botones derecha */}
                     <div className="d-flex align-items-center gap-2 mt-2 mt-lg-0">
-                        {/* Botón darkmode */}
+                        {usuario && (
+                            <span 
+                                className="fw-semibold d-none d-md-inline me-2"
+                                style={{ 
+                                    color: darkMode ? '#E5E7EB' : '#374151',
+                                    fontSize: '0.95rem'
+                                }}
+                            >
+                                Hola, {usuario.nombre}
+                            </span>
+                        )}
+
                         <button
                             onClick={() => setDarkMode(!darkMode)}
                             className="btn d-flex justify-content-center align-items-center rounded-circle border shadow-sm"
@@ -120,19 +154,18 @@ export default function Navbar({ darkMode, setDarkMode }) {
                             {darkMode ? <Sun size={18} color="#fff" /> : <Moon size={18} color="#374151" />}
                         </button>
 
-                        {/* Dropdown usuario */}
                         <div className="dropdown" ref={userMenuRef}>
                             <button
                                 className="btn rounded-pill d-flex align-items-center px-3 py-2 shadow-sm gap-2"
                                 style={{
                                     backgroundColor: btnBg,
                                     border: `1px solid ${btnBorder}`,
-                                    color: '#000000ff',
+                                    color: darkMode ? '#E5E7EB' : '#000000',
                                 }}
                                 type="button"
                                 onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
                             >
-                                <Menu size={16} color="#000000ff" />
+                                <Menu size={16} color={darkMode ? '#E5E7EB' : '#000000'} />
                                 <div
                                     className="rounded-circle d-flex justify-content-center align-items-center"
                                     style={{ width: '28px', height: '28px', backgroundColor: '#6B7280' }}
@@ -144,30 +177,92 @@ export default function Navbar({ darkMode, setDarkMode }) {
                             {isUserMenuOpen && (
                                 <ul
                                     className="dropdown-menu dropdown-menu-end shadow border-0 rounded-3 mt-2 show"
-                                    style={{ backgroundColor: dropdownBg, color: dropdownColor, left: '50%', transform: 'translateX(-50%)   ' }}
+                                    style={{ 
+                                        backgroundColor: dropdownBg, 
+                                        color: dropdownColor,
+                                        minWidth: '220px'
+                                    }}
                                 >
+                                    {usuario ? (
+                                        <>
+                                            <li className="px-3 py-2">
+                                                <div className="fw-bold" style={{ color: dropdownColor }}>
+                                                    {usuario.nombre} {usuario.apellido_p}
+                                                </div>
+                                                <div className="small text-muted">
+                                                    {usuario.email}
+                                                </div>
+                                            </li>
+                                            <li><hr className="dropdown-divider" style={{ borderColor: darkMode ? '#374151' : '#dee2e6' }} /></li>
+                                            <li>
+                                                <button
+                                                    className="dropdown-item d-flex align-items-center gap-2 py-2"
+                                                    style={{ color: dropdownColor }}
+                                                    onClick={() => navigate("/perfil")}
+                                                >
+                                                    <User size={16} color={dropdownColor} /> Mi Perfil
+                                                </button>
+                                            </li>
+                                            <li>
+                                                <button
+                                                    className="dropdown-item d-flex align-items-center gap-2 py-2"
+                                                    style={{ color: dropdownColor }}
+                                                    onClick={logout}
+                                                >
+                                                    <User size={16} color={dropdownColor} /> Cerrar sesión
+                                                </button>
+                                            </li>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <li>
+                                                <button
+                                                    className="dropdown-item d-flex align-items-center gap-2 py-2"
+                                                    style={{ color: dropdownColor }}
+                                                    onClick={() => navigate("/register")}
+                                                >
+                                                    <User size={16} color={dropdownColor} /> Registrarse
+                                                </button>
+                                            </li>
+                                            <li>
+                                                <button
+                                                    className="dropdown-item d-flex align-items-center gap-2 py-2"
+                                                    style={{ color: dropdownColor }}
+                                                    onClick={() => navigate("/login")}
+                                                >
+                                                    <User size={16} color={dropdownColor} /> Iniciar sesión
+                                                </button>
+                                            </li>
+                                        </>
+                                    )}
+                                    <li><hr className="dropdown-divider" style={{ borderColor: darkMode ? '#374151' : '#dee2e6' }} /></li>
                                     <li>
-                                        <button
-                                            className="dropdown-item d-flex align-items-center gap-2 py-2"
+                                        <button 
+                                            className="dropdown-item d-flex align-items-center gap-2 py-2" 
+                                            onClick={() => navigate("/host/upload")}
                                             style={{ color: dropdownColor }}
-                                            onClick={() => navigate("/register")}
                                         >
-                                            <User size={16} color={dropdownColor} /> Registrarse
+                                            <Heart size={16} color={dropdownColor} /> Pon tu espacio
                                         </button>
                                     </li>
                                     <li>
-                                        <button
-                                            className="dropdown-item d-flex align-items-center gap-2 py-2"
+                                        {/* <button 
+                                            className="dropdown-item d-flex align-items-center gap-2 py-2" 
+                                            onClick={() => navigate("/host")}
                                             style={{ color: dropdownColor }}
-                                            onClick={() => navigate("/login")}
                                         >
-                                            <User size={16} color={dropdownColor} /> Iniciar sesión
+                                            <Star size={16} color={dropdownColor} /> Organiza una experiencia
+                                        </button> */}
+                                    </li>
+                                    <li>
+                                        <button 
+                                            className="dropdown-item d-flex align-items-center gap-2 py-2" 
+                                            onClick={() => navigate("/help")}
+                                            style={{ color: dropdownColor }}
+                                        >
+                                            <Globe size={16} color={dropdownColor} /> Centro de ayuda
                                         </button>
                                     </li>
-                                    <li><hr className="dropdown-divider " style={{ borderColor: darkMode ? '#374151' : '#dee2e6'  }} /></li>
-                                    <li><span className="dropdown-item d-flex align-items-center gap-2 py-2"><Heart size={16} color={dropdownColor} /> Pon tu espacio en Airbnb</span></li>
-                                    <li><span className="dropdown-item d-flex align-items-center gap-2 py-2"><Star size={16} color={dropdownColor} /> Organiza una experiencia</span></li>
-                                    <li><span className="dropdown-item d-flex align-items-center gap-2 py-2"><Globe size={16} color={dropdownColor} /> Centro de ayuda</span></li>
                                 </ul>
                             )}
                         </div>
