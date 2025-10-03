@@ -239,7 +239,7 @@ export default function Navbar({ darkMode, setDarkMode }) {
                                     <li>
                                         <button 
                                             className="dropdown-item d-flex align-items-center gap-2 py-2" 
-                                            onClick={() => navigate("/host/upload")}
+                                            onClick={() => navigate("/host/information")}
                                             style={{ color: dropdownColor }}
                                         >
                                             <Heart size={16} color={dropdownColor} /> Pon tu espacio

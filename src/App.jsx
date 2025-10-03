@@ -13,8 +13,12 @@ import ReportAdmin from "./pages/Admin/ReportAdmin";
 import ProfileAdmin from "./pages/Admin/ProfileAdmin";
 import LoginPage from "./pages/Auth/LoginPage";
 import RegisterPage from "./pages/Auth/RegisterPage";
-import HostUploadPage from "./pages/HostPage";
+import HostUploadPage from "./pages/Host/HostPage";
 import HostAdmin from "./pages/Host/HostAdmin";
+import Dashboard from "./pages/Admin/Dashboard";
+import HostInformation from "./pages/HostInformation";
+import ExperiencesSection from "./pages/TourismSection";
+import Profile from "./pages/ProfileHome";
 
 function PropertiesPage() {
   return (
@@ -77,6 +81,20 @@ export default function App() {
                     </div>
                     <PropertiesPage />
 
+                    <div className="bg-white shadow-sm border-bottom">
+                      <div className="container py-5">
+                        <div className="text-center">
+                          <h2 className="display-4 fw-bold text-dark mb-3">
+                            Experiencias en Arroyo Seco
+                          </h2>
+                          <p className="lead text-muted fs-5">
+                            Descubre actividades únicas para tu estadía
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                    <ExperiencesSection />
+
                   </>
                 } />
                 <Route path="/login" element={<LoginPage />} />
@@ -86,14 +104,16 @@ export default function App() {
                 <Route path="/payment" element={<PaymentSummary />} />
                 <Route path="/host/upload" element={<HostUploadPage />} />
                 <Route path="/host/admin" element={<HostAdmin />} />
+                <Route path="/host/information" element={<HostInformation />} />
+                <Route path="/perfil" element={<Profile />} />
               </Routes>
             </>
           }
         />
 
-        {/* Dashboard sin Navbar */}
         <Route path="/dashboard/*" element={<DashboardLayout />}>
           <Route path="users" element={<UserAdmin />} />
+          <Route index element={<Dashboard />} />
           <Route path="hospitality" element={<HospitalityAdmin />} />
           <Route path="bookings" element={<BookingAdmin />} />
           <Route path="reports" element={<ReportAdmin />} />

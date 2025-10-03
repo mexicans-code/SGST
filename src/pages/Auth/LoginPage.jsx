@@ -34,7 +34,13 @@ export default function LoginPage() {
                 showConfirmButton: false
             });
 
-            navigate("/");
+            // Redirección según el rol
+            if(response.data.usuario.rol === 'admin') {
+                navigate('/dashboard', { replace: true });
+            } else {
+                navigate('/', { replace: true });
+            }
+
         } catch (error) {
             console.log("=== ERROR EN LOGIN ===");
             console.log("Error completo:", error);
@@ -80,7 +86,12 @@ export default function LoginPage() {
                 showConfirmButton: false
             });
 
-            navigate("/");
+            // Redirección según el rol
+            if(response.data.usuario.rol === 'admin') {
+                navigate('/dashboard', { replace: true });
+            } else {
+                navigate('/', { replace: true });
+            }
         } catch (error) {
             console.error("Error en login con Google:", error);
             

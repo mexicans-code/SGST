@@ -1,13 +1,59 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Upload, MapPin, Home, DollarSign, Image, Plus, X } from "lucide-react";
 
 export default function HostUploadPage() {
     const [step, setStep] = useState(1);
     const [images, setImages] = useState([]);
+    const [loading, setLoading] = useState(false);
+    const [userId, setUserId] = useState(null);
+    const [formData, setFormData] = useState({
+        nombre: '',
+        tipo_propiedad: '',
+        huespedes: '',
+        habitaciones: '',
+        banos: '',
+        descripcion: '',
+        direccion: '',
+        ciudad: '',
+        estado: '',
+        codigo_postal: '',
+        pais: 'México',
+        precio_por_noche: '',
+        descuento_semanal: '',
+        descuento_mensual: ''
+    });
+
+    // Función para decodificar el JWT
+    function parseJwt(token) {
+        try {
+            const base64Url = token.split('.')[1];
+            const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+            const jsonPayload = decodeURIComponent(
+                atob(base64)
+                    .split('')
+                    .map(c => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
+                    .join('')
+            );
+            return JSON.parse(jsonPayload);
+        } catch (e) {
+            return null;
+        }
+    }
+
+    // Obtener el ID del usuario al cargar el componente
+    useEffect(() => {
+        const token = localStorage.getItem("token");
+        if (token) {
+            const decodedToken = parseJwt(token);
+            if (decodedToken?.id_usuario) {
+                setUserId(decodedToken.id_usuario);
+            }
+        }
+    }, []);
 
     const addImage = () => {
         if (images.length < 5) {
-            setImages([...images, `Imagen ${images.length + 1}`]);
+            setImages([...images, `https://via.placeholder.com/400x300?text=Imagen+${images.length + 1}`]);
         }
     };
 
@@ -15,9 +61,128 @@ export default function HostUploadPage() {
         setImages(images.filter((_, i) => i !== index));
     };
 
+    const handleInputChange = (e) => {
+        const { name, value } = e.target;
+        setFormData(prev => ({
+            ...prev,
+            [name]: value
+        }));
+    };
+
+    const calcularGanancias = () => {
+        const precio = parseFloat(formData.precio_por_noche) || 0;
+        const descSemanal = parseFloat(formData.descuento_semanal) || 0;
+        const descMensual = parseFloat(formData.descuento_mensual) || 0;
+
+        return {
+            noche: precio,
+            semana: (precio * 7 * (1 - descSemanal / 100)).toFixed(2),
+            mes: (precio * 30 * (1 - descMensual / 100)).toFixed(2)
+        };
+    };
+
+    const handleSubmit = async () => {
+        if (!formData.nombre || !formData.precio_por_noche || !formData.huespedes) {
+            alert('Por favor completa los campos obligatorios');
+            return;
+        }
+
+        if (!userId) {
+            alert('Error: No se pudo obtener la información del usuario');
+            return;
+        }
+
+        if (images.length < 5) {
+            alert('Debes agregar al menos 5 imágenes');
+            return;
+        }
+
+        setLoading(true);
+        
+        const payload = {
+            id_anfitrion: userId,
+            nombre: formData.nombre,
+            descripcion: formData.descripcion,
+            precio_por_noche: parseFloat(formData.precio_por_noche),
+            capacidad: parseInt(formData.huespedes),
+            habitaciones: parseInt(formData.habitaciones) || 1,
+            banos: parseInt(formData.banos) || 1,
+            tipo_propiedad: formData.tipo_propiedad,
+            image: images,
+            estado: 'activo',
+            descuento_semanal: parseFloat(formData.descuento_semanal) || null,
+            descuento_mensual: parseFloat(formData.descuento_mensual) || null,
+            direccion: {
+                calle: formData.direccion,
+                ciudad: formData.ciudad,
+                estado: formData.estado,
+                codigo_postal: formData.codigo_postal,
+                pais: formData.pais
+            }
+        };
+
+        try {
+            const response = await fetch('http://localhost:3000/api/hospitality/createHotel', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(payload)
+            });
+
+            const result = await response.json();
+
+            if (result.success) {
+                Swal.fire({
+                    title: '¡Éxito!',
+                    text: 'Anuncio publicado exitosamente',
+                    icon: 'success',
+                    confirmButtonColor: '#dc3545'
+                });
+                setFormData({
+                    nombre: '',
+                    tipo_propiedad: '',
+                    huespedes: '',
+                    habitaciones: '',
+                    banos: '',
+                    descripcion: '',
+                    direccion: '',
+                    ciudad: '',
+                    estado: '',
+                    codigo_postal: '',
+                    pais: 'México',
+                    precio_por_noche: '',
+                    descuento_semanal: '',
+                    descuento_mensual: ''
+                });
+                setImages([]);
+                setStep(1);
+                navigate('/host');
+            } else {
+                Swal.fire({
+                    title: 'Error',
+                    text: 'Error al publicar: ' + result.error,
+                    icon: 'error',
+                    confirmButtonColor: '#dc3545'
+                });
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            Swal.fire({
+                title: 'Error',
+                text: 'Error al conectar con el servidor',
+                icon: 'error',
+                confirmButtonColor: '#dc3545'
+            });
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const ganancias = calcularGanancias();
+
     return (
         <div style={{ backgroundColor: "#fff", minHeight: "100vh" }}>
-            {/* Header */}
             <header className="bg-white shadow-sm py-3 border">
                 <div className="container">
                     <div className="d-flex justify-content-between align-items-center">
@@ -26,17 +191,13 @@ export default function HostUploadPage() {
                             style={{ width: "120px" }}
                             alt="logo"
                         />
-                        <button
-                            className="btn text-muted"
-                            style={{ fontSize: "14px" }}
-                        >
+                        <button className="btn text-muted" style={{ fontSize: "14px" }}>
                             Guardar y salir
                         </button>
                     </div>
                 </div>
             </header>
 
-            {/* Progress Bar */}
             <div className="bg-white border-bottom">
                 <div className="container py-3">
                     <div className="d-flex justify-content-between align-items-center mb-2">
@@ -55,13 +216,11 @@ export default function HostUploadPage() {
                 </div>
             </div>
 
-            {/* Main Content */}
             <div className="container py-5">
                 <div className="row justify-content-center">
                     <div className="col-lg-8">
                         <div className="card border-0 shadow-sm rounded-4">
                             <div className="card-body p-4 p-md-5">
-                                {/* Step 1: Información Básica */}
                                 {step === 1 && (
                                     <div>
                                         <div className="text-center mb-5">
@@ -80,6 +239,9 @@ export default function HostUploadPage() {
                                             </label>
                                             <input
                                                 type="text"
+                                                name="nombre"
+                                                value={formData.nombre}
+                                                onChange={handleInputChange}
                                                 className="form-control form-control-lg py-3 px-4 rounded-3"
                                                 placeholder="Ej: Casa acogedora en el centro"
                                                 style={{ backgroundColor: "#F4EFEA", border: "2px solid #e9ecef" }}
@@ -91,15 +253,18 @@ export default function HostUploadPage() {
                                                 Tipo de propiedad
                                             </label>
                                             <select
+                                                name="tipo_propiedad"
+                                                value={formData.tipo_propiedad}
+                                                onChange={handleInputChange}
                                                 className="form-select form-select-lg py-3 px-4 rounded-3"
                                                 style={{ backgroundColor: "#F4EFEA", border: "2px solid #e9ecef" }}
                                             >
-                                                <option>Selecciona un tipo</option>
-                                                <option>Casa completa</option>
-                                                <option>Departamento</option>
-                                                <option>Habitación privada</option>
-                                                <option>Habitación compartida</option>
-                                                <option>Local comercial</option>
+                                                <option value="">Selecciona un tipo</option>
+                                                <option value="Casa completa">Casa completa</option>
+                                                <option value="Departamento">Departamento</option>
+                                                <option value="Habitación privada">Habitación privada</option>
+                                                <option value="Habitación compartida">Habitación compartida</option>
+                                                <option value="Local comercial">Local comercial</option>
                                             </select>
                                         </div>
 
@@ -110,6 +275,9 @@ export default function HostUploadPage() {
                                                 </label>
                                                 <input
                                                     type="number"
+                                                    name="huespedes"
+                                                    value={formData.huespedes}
+                                                    onChange={handleInputChange}
                                                     className="form-control form-control-lg py-3 px-4 rounded-3"
                                                     placeholder="2"
                                                     min="1"
@@ -122,6 +290,9 @@ export default function HostUploadPage() {
                                                 </label>
                                                 <input
                                                     type="number"
+                                                    name="habitaciones"
+                                                    value={formData.habitaciones}
+                                                    onChange={handleInputChange}
                                                     className="form-control form-control-lg py-3 px-4 rounded-3"
                                                     placeholder="1"
                                                     min="1"
@@ -134,6 +305,9 @@ export default function HostUploadPage() {
                                                 </label>
                                                 <input
                                                     type="number"
+                                                    name="banos"
+                                                    value={formData.banos}
+                                                    onChange={handleInputChange}
                                                     className="form-control form-control-lg py-3 px-4 rounded-3"
                                                     placeholder="1"
                                                     min="1"
@@ -147,6 +321,9 @@ export default function HostUploadPage() {
                                                 Descripción
                                             </label>
                                             <textarea
+                                                name="descripcion"
+                                                value={formData.descripcion}
+                                                onChange={handleInputChange}
                                                 className="form-control py-3 px-4 rounded-3"
                                                 rows="4"
                                                 placeholder="Describe tu espacio, lo que lo hace especial y lo que los huéspedes pueden esperar..."
@@ -156,7 +333,6 @@ export default function HostUploadPage() {
                                     </div>
                                 )}
 
-                                {/* Step 2: Ubicación */}
                                 {step === 2 && (
                                     <div>
                                         <div className="text-center mb-5">
@@ -175,6 +351,9 @@ export default function HostUploadPage() {
                                             </label>
                                             <input
                                                 type="text"
+                                                name="direccion"
+                                                value={formData.direccion}
+                                                onChange={handleInputChange}
                                                 className="form-control form-control-lg py-3 px-4 rounded-3"
                                                 placeholder="Calle y número"
                                                 style={{ backgroundColor: "#F4EFEA", border: "2px solid #e9ecef" }}
@@ -188,6 +367,9 @@ export default function HostUploadPage() {
                                                 </label>
                                                 <input
                                                     type="text"
+                                                    name="ciudad"
+                                                    value={formData.ciudad}
+                                                    onChange={handleInputChange}
                                                     className="form-control form-control-lg py-3 px-4 rounded-3"
                                                     placeholder="Ciudad"
                                                     style={{ backgroundColor: "#F4EFEA", border: "2px solid #e9ecef" }}
@@ -199,6 +381,9 @@ export default function HostUploadPage() {
                                                 </label>
                                                 <input
                                                     type="text"
+                                                    name="estado"
+                                                    value={formData.estado}
+                                                    onChange={handleInputChange}
                                                     className="form-control form-control-lg py-3 px-4 rounded-3"
                                                     placeholder="Estado"
                                                     style={{ backgroundColor: "#F4EFEA", border: "2px solid #e9ecef" }}
@@ -213,6 +398,9 @@ export default function HostUploadPage() {
                                                 </label>
                                                 <input
                                                     type="text"
+                                                    name="codigo_postal"
+                                                    value={formData.codigo_postal}
+                                                    onChange={handleInputChange}
                                                     className="form-control form-control-lg py-3 px-4 rounded-3"
                                                     placeholder="12345"
                                                     style={{ backgroundColor: "#F4EFEA", border: "2px solid #e9ecef" }}
@@ -224,6 +412,9 @@ export default function HostUploadPage() {
                                                 </label>
                                                 <input
                                                     type="text"
+                                                    name="pais"
+                                                    value={formData.pais}
+                                                    onChange={handleInputChange}
                                                     className="form-control form-control-lg py-3 px-4 rounded-3"
                                                     placeholder="México"
                                                     style={{ backgroundColor: "#F4EFEA", border: "2px solid #e9ecef" }}
@@ -242,7 +433,6 @@ export default function HostUploadPage() {
                                     </div>
                                 )}
 
-                                {/* Step 3: Fotos */}
                                 {step === 3 && (
                                     <div>
                                         <div className="text-center mb-5">
@@ -315,7 +505,6 @@ export default function HostUploadPage() {
                                     </div>
                                 )}
 
-                                {/* Step 4: Precio */}
                                 {step === 4 && (
                                     <div>
                                         <div className="text-center mb-5">
@@ -341,6 +530,9 @@ export default function HostUploadPage() {
                                                 </span>
                                                 <input
                                                     type="number"
+                                                    name="precio_por_noche"
+                                                    value={formData.precio_por_noche}
+                                                    onChange={handleInputChange}
                                                     className="form-control py-3 px-4 rounded-end-3"
                                                     placeholder="500"
                                                     style={{ backgroundColor: "#F4EFEA", border: "2px solid #e9ecef", borderLeft: "none" }}
@@ -355,6 +547,9 @@ export default function HostUploadPage() {
                                             <div className="input-group input-group-lg">
                                                 <input
                                                     type="number"
+                                                    name="descuento_semanal"
+                                                    value={formData.descuento_semanal}
+                                                    onChange={handleInputChange}
                                                     className="form-control py-3 px-4 rounded-start-3"
                                                     placeholder="10"
                                                     style={{ backgroundColor: "#F4EFEA", border: "2px solid #e9ecef" }}
@@ -375,6 +570,9 @@ export default function HostUploadPage() {
                                             <div className="input-group input-group-lg">
                                                 <input
                                                     type="number"
+                                                    name="descuento_mensual"
+                                                    value={formData.descuento_mensual}
+                                                    onChange={handleInputChange}
                                                     className="form-control py-3 px-4 rounded-start-3"
                                                     placeholder="20"
                                                     style={{ backgroundColor: "#F4EFEA", border: "2px solid #e9ecef" }}
@@ -395,22 +593,21 @@ export default function HostUploadPage() {
                                                 </h6>
                                                 <div className="d-flex justify-content-between mb-2">
                                                     <span className="text-muted">1 noche</span>
-                                                    <span className="fw-semibold">$500</span>
+                                                    <span className="fw-semibold">${ganancias.noche}</span>
                                                 </div>
                                                 <div className="d-flex justify-content-between mb-2">
-                                                    <span className="text-muted">1 semana (con 10% desc.)</span>
-                                                    <span className="fw-semibold">$3,150</span>
+                                                    <span className="text-muted">1 semana (con {formData.descuento_semanal || 0}% desc.)</span>
+                                                    <span className="fw-semibold">${ganancias.semana}</span>
                                                 </div>
                                                 <div className="d-flex justify-content-between">
-                                                    <span className="text-muted">1 mes (con 20% desc.)</span>
-                                                    <span className="fw-semibold">$12,000</span>
+                                                    <span className="text-muted">1 mes (con {formData.descuento_mensual || 0}% desc.)</span>
+                                                    <span className="fw-semibold">${ganancias.mes}</span>
                                                 </div>
                                             </div>
                                         </div>
                                     </div>
                                 )}
 
-                                {/* Navigation Buttons */}
                                 <div className="d-flex justify-content-between mt-5 pt-4 border-top">
                                     {step > 1 && (
                                         <button
@@ -421,6 +618,7 @@ export default function HostUploadPage() {
                                                 color: "#000000"
                                             }}
                                             onClick={() => setStep(step - 1)}
+                                            disabled={loading}
                                         >
                                             Anterior
                                         </button>
@@ -440,11 +638,13 @@ export default function HostUploadPage() {
                                         <button
                                             className="btn btn-lg px-5 py-3 fw-semibold rounded-3 text-white ms-auto"
                                             style={{
-                                                background: "linear-gradient(135deg, #CD5C5C 0%, #F4EFEA 100%)",
+                                                background: loading ? "#999" : "linear-gradient(135deg, #CD5C5C 0%, #F4EFEA 100%)",
                                                 border: "none"
                                             }}
+                                            onClick={handleSubmit}
+                                            disabled={loading}
                                         >
-                                            Publicar anuncio
+                                            {loading ? 'Publicando...' : 'Publicar anuncio'}
                                         </button>
                                     )}
                                 </div>

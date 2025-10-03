@@ -1,6 +1,8 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 
-export default function ProfileAdmin() {
+export default function Profile() {
+    const navigate = useNavigate();
     const [errors, setErrors] = useState({});
     const [loading, setLoading] = useState(false);
     const [showPassword, setShowPassword] = useState(false);
@@ -29,7 +31,7 @@ export default function ProfileAdmin() {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             const data = await response.json();
-            
+
             if (data.success) {
                 setFormData({
                     ...data.data,
@@ -70,7 +72,7 @@ export default function ProfileAdmin() {
     const handleSubmit = async (e) => {
         e.preventDefault();
         if (!validateForm()) return;
-        
+
         setLoading(true);
         try {
             const token = localStorage.getItem('token');
@@ -83,11 +85,11 @@ export default function ProfileAdmin() {
                 direccion: formData.direccion,
                 foto: formData.foto
             };
-            
+
             if (formData.password) {
                 updateData.password = formData.password;
             }
-            
+
             const response = await fetch('http://localhost:3000/api/adminProfile/updateProfile', {
                 method: 'PUT',
                 headers: {
@@ -96,9 +98,9 @@ export default function ProfileAdmin() {
                 },
                 body: JSON.stringify(updateData)
             });
-            
+
             const data = await response.json();
-            
+
             if (data.success) {
                 showNotification('Perfil actualizado correctamente', 'success');
                 setFormData({ ...formData, password: '' });
@@ -122,30 +124,50 @@ export default function ProfileAdmin() {
         setFormData({ ...formData, telefono: formatTelefono(e.target.value) });
     };
 
+    const handleVerPropiedades = () => {
+        if (formData.rol === 'anfitrion') {
+            navigate('/host/admin');
+        } else {
+            showNotification('Debes ser anfitrión para ver propiedades', 'error');
+        }
+    };
+
     return (
         <>
             <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet" />
             <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.10.0/font/bootstrap-icons.min.css" rel="stylesheet" />
-            
-            <div style={{ minHeight: '100vh', backgroundColor: '#ffffff', padding: '2rem 0' }}>
+
+            <div style={{ minHeight: '100vh', backgroundColor: '#fafafa', padding: '2rem 0', marginTop: '2rem' }}>
                 {notification.show && (
-                    <div 
+                    <div
                         className="position-fixed top-0 end-0 m-4"
                         style={{ zIndex: 9999, minWidth: '320px' }}
                     >
-                        <div className={`alert alert-${notification.type === 'success' ? 'success' : 'danger'} alert-dismissible fade show shadow-sm`}>
-                            <i className={`bi bi-${notification.type === 'success' ? 'check-circle' : 'exclamation-circle'} me-2`}></i>
+                        <div 
+                            className="alert alert-dismissible fade show shadow-sm border-0"
+                            style={{
+                                backgroundColor: notification.type === 'success' ? '#d4edda' : '#f8d7da',
+                                color: notification.type === 'success' ? '#155724' : '#721c24'
+                            }}
+                        >
+                            <i className={`bi bi-${notification.type === 'success' ? 'check-circle-fill' : 'exclamation-circle-fill'} me-2`}></i>
                             {notification.message}
-                            <button type="button" className="btn-close" onClick={() => setNotification({ show: false, message: '', type: '' })}></button>
+                            <button 
+                                type="button" 
+                                className="btn-close" 
+                                onClick={() => setNotification({ show: false, message: '', type: '' })}
+                            ></button>
                         </div>
                     </div>
                 )}
 
-                <div className="container">
+                <div className="container mt-5 mb-5">
                     <div className="row">
                         <div className="col-12">
                             <div className="mb-4">
-                                <h1 className="h3 fw-bold text-dark mb-1">Configuración del perfil</h1>
+                                <h1 className="h3 fw-bold mb-1" style={{ color: '#2c3e50' }}>
+                                    Configuración del perfil
+                                </h1>
                                 <p className="text-muted mb-0">Administra tu información personal y preferencias</p>
                             </div>
                         </div>
@@ -153,27 +175,41 @@ export default function ProfileAdmin() {
 
                     <form onSubmit={handleSubmit}>
                         <div className="row g-4">
-                            {/* Columna Izquierda - Foto */}
                             <div className="col-lg-4">
                                 <div className="card border-0 shadow-sm h-100">
                                     <div className="card-body p-4">
-                                        <h6 className="fw-semibold mb-4">Foto de perfil</h6>
+                                        <h6 className="fw-semibold mb-4" style={{ color: '#2c3e50' }}>
+                                            Foto de perfil
+                                        </h6>
                                         <div className="text-center">
                                             <div className="position-relative d-inline-block mb-3">
                                                 <img
-                                                    src={formData.foto || 'https://ui-avatars.com/api/?name=Usuario&size=200&background=f8f9fa&color=6c757d'}
+                                                    src={formData.foto || 'https://ui-avatars.com/api/?name=Usuario&size=200&background=CD5C5C&color=fff'}
                                                     alt="Foto de perfil"
-                                                    className="rounded-circle border"
-                                                    style={{ width: '160px', height: '160px', objectFit: 'cover' }}
+                                                    className="rounded-circle"
+                                                    style={{ 
+                                                        width: '160px', 
+                                                        height: '160px', 
+                                                        objectFit: 'cover',
+                                                        border: '4px solid #f8f9fa',
+                                                        boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
+                                                    }}
                                                 />
-                                                <div 
-                                                    className="position-absolute bottom-0 end-0 bg-primary text-white rounded-circle d-flex align-items-center justify-content-center"
-                                                    style={{ width: '40px', height: '40px', cursor: 'pointer' }}
+                                                <div
+                                                    className="position-absolute bottom-0 end-0 text-white rounded-circle d-flex align-items-center justify-content-center"
+                                                    style={{ 
+                                                        width: '40px', 
+                                                        height: '40px', 
+                                                        cursor: 'pointer', 
+                                                        backgroundColor: '#CD5C5C',
+                                                        boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
+                                                    }}
                                                 >
                                                     <i className="bi bi-camera"></i>
                                                 </div>
                                             </div>
-                                            <div>
+
+                                            <div className="mb-3">
                                                 <input
                                                     type="url"
                                                     className="form-control form-control-sm"
@@ -181,61 +217,120 @@ export default function ProfileAdmin() {
                                                     value={formData.foto}
                                                     onChange={handleChange}
                                                     placeholder="URL de la imagen"
+                                                    style={{ 
+                                                        borderColor: '#e0e0e0',
+                                                        transition: 'all 0.3s ease'
+                                                    }}
+                                                    onFocus={(e) => e.target.style.borderColor = '#CD5C5C'}
+                                                    onBlur={(e) => e.target.style.borderColor = '#e0e0e0'}
                                                 />
                                                 <small className="text-muted d-block mt-2">
                                                     Ingresa la URL de tu foto de perfil
                                                 </small>
                                             </div>
+
+                                            {formData.rol === 'anfitrion' && (
+                                                <button 
+                                                    type="button"
+                                                    className="btn w-100 text-white fw-semibold" 
+                                                    style={{ 
+                                                        backgroundColor: '#CD5C5C',
+                                                        border: 'none',
+                                                        padding: '12px',
+                                                        transition: 'all 0.3s ease',
+                                                        boxShadow: '0 2px 8px rgba(205, 92, 92, 0.3)'
+                                                    }}
+                                                    onMouseEnter={(e) => {
+                                                        e.target.style.backgroundColor = '#b54848';
+                                                        e.target.style.transform = 'translateY(-2px)';
+                                                        e.target.style.boxShadow = '0 4px 12px rgba(205, 92, 92, 0.4)';
+                                                    }}
+                                                    onMouseLeave={(e) => {
+                                                        e.target.style.backgroundColor = '#CD5C5C';
+                                                        e.target.style.transform = 'translateY(0)';
+                                                        e.target.style.boxShadow = '0 2px 8px rgba(205, 92, 92, 0.3)';
+                                                    }}
+                                                    onClick={handleVerPropiedades}
+                                                >
+                                                    <i className="bi bi-house-door me-2"></i>
+                                                    Ver mis propiedades
+                                                </button>
+                                            )}
                                         </div>
                                     </div>
                                 </div>
                             </div>
 
-                            {/* Columna Derecha - Formulario */}
                             <div className="col-lg-8">
                                 <div className="card border-0 shadow-sm">
                                     <div className="card-body p-4">
-                                        <h6 className="fw-semibold mb-4">Información personal</h6>
-                                        
+                                        <h6 className="fw-semibold mb-4" style={{ color: '#2c3e50' }}>
+                                            Información personal
+                                        </h6>
+
                                         <div className="row g-3 mb-4">
                                             <div className="col-md-4">
-                                                <label className="form-label fw-medium small">Nombre *</label>
+                                                <label className="form-label fw-medium small" style={{ color: '#495057' }}>
+                                                    Nombre *
+                                                </label>
                                                 <input
                                                     type="text"
                                                     className={`form-control ${errors.nombre ? 'is-invalid' : ''}`}
                                                     name="nombre"
                                                     value={formData.nombre}
                                                     onChange={handleChange}
+                                                    style={{ 
+                                                        borderColor: errors.nombre ? '#dc3545' : '#e0e0e0',
+                                                        transition: 'all 0.3s ease'
+                                                    }}
+                                                    onFocus={(e) => !errors.nombre && (e.target.style.borderColor = '#CD5C5C')}
+                                                    onBlur={(e) => !errors.nombre && (e.target.style.borderColor = '#e0e0e0')}
                                                 />
                                                 {errors.nombre && <div className="invalid-feedback">{errors.nombre}</div>}
                                             </div>
                                             <div className="col-md-4">
-                                                <label className="form-label fw-medium small">Apellido Paterno</label>
+                                                <label className="form-label fw-medium small" style={{ color: '#495057' }}>
+                                                    Apellido Paterno
+                                                </label>
                                                 <input
                                                     type="text"
                                                     className="form-control"
                                                     name="apellido_p"
                                                     value={formData.apellido_p}
                                                     onChange={handleChange}
+                                                    style={{ borderColor: '#e0e0e0', transition: 'all 0.3s ease' }}
+                                                    onFocus={(e) => e.target.style.borderColor = '#CD5C5C'}
+                                                    onBlur={(e) => e.target.style.borderColor = '#e0e0e0'}
                                                 />
                                             </div>
                                             <div className="col-md-4">
-                                                <label className="form-label fw-medium small">Apellido Materno</label>
+                                                <label className="form-label fw-medium small" style={{ color: '#495057' }}>
+                                                    Apellido Materno
+                                                </label>
                                                 <input
                                                     type="text"
                                                     className="form-control"
                                                     name="apellido_m"
                                                     value={formData.apellido_m}
                                                     onChange={handleChange}
+                                                    style={{ borderColor: '#e0e0e0', transition: 'all 0.3s ease' }}
+                                                    onFocus={(e) => e.target.style.borderColor = '#CD5C5C'}
+                                                    onBlur={(e) => e.target.style.borderColor = '#e0e0e0'}
                                                 />
                                             </div>
                                         </div>
 
                                         <div className="row g-3 mb-4">
                                             <div className="col-md-6">
-                                                <label className="form-label fw-medium small">Correo electrónico *</label>
+                                                <label className="form-label fw-medium small" style={{ color: '#495057' }}>
+                                                    Correo electrónico *
+                                                </label>
                                                 <div className="input-group">
-                                                    <span className="input-group-text bg-white">
+                                                    <span className="input-group-text" style={{ 
+                                                        backgroundColor: '#f8f9fa',
+                                                        borderColor: '#e0e0e0',
+                                                        color: '#6c757d'
+                                                    }}>
                                                         <i className="bi bi-envelope"></i>
                                                     </span>
                                                     <input
@@ -244,14 +339,26 @@ export default function ProfileAdmin() {
                                                         name="email"
                                                         value={formData.email}
                                                         onChange={handleChange}
+                                                        style={{ 
+                                                            borderColor: errors.email ? '#dc3545' : '#e0e0e0',
+                                                            transition: 'all 0.3s ease'
+                                                        }}
+                                                        onFocus={(e) => !errors.email && (e.target.style.borderColor = '#CD5C5C')}
+                                                        onBlur={(e) => !errors.email && (e.target.style.borderColor = '#e0e0e0')}
                                                     />
                                                     {errors.email && <div className="invalid-feedback">{errors.email}</div>}
                                                 </div>
                                             </div>
                                             <div className="col-md-6">
-                                                <label className="form-label fw-medium small">Teléfono</label>
+                                                <label className="form-label fw-medium small" style={{ color: '#495057' }}>
+                                                    Teléfono
+                                                </label>
                                                 <div className="input-group">
-                                                    <span className="input-group-text bg-white">
+                                                    <span className="input-group-text" style={{ 
+                                                        backgroundColor: '#f8f9fa',
+                                                        borderColor: '#e0e0e0',
+                                                        color: '#6c757d'
+                                                    }}>
                                                         <i className="bi bi-telephone"></i>
                                                     </span>
                                                     <input
@@ -262,6 +369,12 @@ export default function ProfileAdmin() {
                                                         onChange={handleTelefonoChange}
                                                         placeholder="442-123-4567"
                                                         maxLength="12"
+                                                        style={{ 
+                                                            borderColor: errors.telefono ? '#dc3545' : '#e0e0e0',
+                                                            transition: 'all 0.3s ease'
+                                                        }}
+                                                        onFocus={(e) => !errors.telefono && (e.target.style.borderColor = '#CD5C5C')}
+                                                        onBlur={(e) => !errors.telefono && (e.target.style.borderColor = '#e0e0e0')}
                                                     />
                                                     {errors.telefono && <div className="invalid-feedback">{errors.telefono}</div>}
                                                 </div>
@@ -269,9 +382,15 @@ export default function ProfileAdmin() {
                                         </div>
 
                                         <div className="mb-4">
-                                            <label className="form-label fw-medium small">Dirección</label>
+                                            <label className="form-label fw-medium small" style={{ color: '#495057' }}>
+                                                Dirección
+                                            </label>
                                             <div className="input-group">
-                                                <span className="input-group-text bg-white">
+                                                <span className="input-group-text" style={{ 
+                                                    backgroundColor: '#f8f9fa',
+                                                    borderColor: '#e0e0e0',
+                                                    color: '#6c757d'
+                                                }}>
                                                     <i className="bi bi-geo-alt"></i>
                                                 </span>
                                                 <input
@@ -281,19 +400,30 @@ export default function ProfileAdmin() {
                                                     value={formData.direccion}
                                                     onChange={handleChange}
                                                     placeholder="Calle, número, colonia, ciudad"
+                                                    style={{ borderColor: '#e0e0e0', transition: 'all 0.3s ease' }}
+                                                    onFocus={(e) => e.target.style.borderColor = '#CD5C5C'}
+                                                    onBlur={(e) => e.target.style.borderColor = '#e0e0e0'}
                                                 />
                                             </div>
                                         </div>
 
-                                        <hr className="my-4" />
+                                        <hr className="my-4" style={{ borderColor: '#e9ecef' }} />
 
-                                        <h6 className="fw-semibold mb-4">Seguridad</h6>
-                                        
+                                        <h6 className="fw-semibold mb-4" style={{ color: '#2c3e50' }}>
+                                            Seguridad
+                                        </h6>
+
                                         <div className="row g-3 mb-4">
                                             <div className="col-md-6">
-                                                <label className="form-label fw-medium small">Nueva contraseña</label>
+                                                <label className="form-label fw-medium small" style={{ color: '#495057' }}>
+                                                    Nueva contraseña
+                                                </label>
                                                 <div className="input-group">
-                                                    <span className="input-group-text bg-white">
+                                                    <span className="input-group-text" style={{ 
+                                                        backgroundColor: '#f8f9fa',
+                                                        borderColor: '#e0e0e0',
+                                                        color: '#6c757d'
+                                                    }}>
                                                         <i className="bi bi-lock"></i>
                                                     </span>
                                                     <input
@@ -303,10 +433,21 @@ export default function ProfileAdmin() {
                                                         value={formData.password}
                                                         onChange={handleChange}
                                                         placeholder="Dejar vacío para no cambiar"
+                                                        style={{ 
+                                                            borderColor: errors.password ? '#dc3545' : '#e0e0e0',
+                                                            transition: 'all 0.3s ease'
+                                                        }}
+                                                        onFocus={(e) => !errors.password && (e.target.style.borderColor = '#CD5C5C')}
+                                                        onBlur={(e) => !errors.password && (e.target.style.borderColor = '#e0e0e0')}
                                                     />
                                                     <button
                                                         type="button"
-                                                        className="btn btn-outline-secondary"
+                                                        className="btn"
+                                                        style={{ 
+                                                            borderColor: '#e0e0e0',
+                                                            color: '#6c757d',
+                                                            backgroundColor: '#f8f9fa'
+                                                        }}
                                                         onClick={() => setShowPassword(!showPassword)}
                                                     >
                                                         <i className={`bi bi-eye${showPassword ? '-slash' : ''}`}></i>
@@ -316,32 +457,70 @@ export default function ProfileAdmin() {
                                                 <small className="text-muted">Mínimo 6 caracteres</small>
                                             </div>
                                             <div className="col-md-6">
-                                                <label className="form-label fw-medium small">Rol</label>
+                                                <label className="form-label fw-medium small" style={{ color: '#495057' }}>
+                                                    Rol
+                                                </label>
                                                 <input
                                                     type="text"
                                                     className="form-control"
                                                     value={formData.rol}
                                                     disabled
-                                                    style={{ backgroundColor: '#f8f9fa' }}
+                                                    style={{ 
+                                                        backgroundColor: '#f8f9fa',
+                                                        borderColor: '#e0e0e0',
+                                                        color: '#6c757d'
+                                                    }}
                                                 />
                                                 <small className="text-muted">Este campo no se puede modificar</small>
                                             </div>
                                         </div>
 
-                                        <div className="d-flex gap-3 justify-content-end pt-3 border-top">
+                                        <div className="d-flex gap-3 justify-content-end pt-3 border-top" style={{ borderColor: '#e9ecef' }}>
                                             <button
                                                 type="button"
-                                                className="btn btn-outline-secondary"
+                                                className="btn fw-semibold"
                                                 disabled={loading}
                                                 onClick={() => cargarDatosUsuario()}
+                                                style={{
+                                                    borderColor: '#e0e0e0',
+                                                    color: '#6c757d',
+                                                    backgroundColor: 'white',
+                                                    transition: 'all 0.3s ease'
+                                                }}
+                                                onMouseEnter={(e) => {
+                                                    e.target.style.backgroundColor = '#f8f9fa';
+                                                    e.target.style.borderColor = '#CD5C5C';
+                                                    e.target.style.color = '#CD5C5C';
+                                                }}
+                                                onMouseLeave={(e) => {
+                                                    e.target.style.backgroundColor = 'white';
+                                                    e.target.style.borderColor = '#e0e0e0';
+                                                    e.target.style.color = '#6c757d';
+                                                }}
                                             >
                                                 <i className="bi bi-arrow-counterclockwise me-2"></i>
                                                 Restablecer
                                             </button>
                                             <button
                                                 type="submit"
-                                                className="btn btn-primary"
+                                                className="btn text-white fw-semibold"
                                                 disabled={loading}
+                                                style={{ 
+                                                    backgroundColor: '#CD5C5C',
+                                                    border: 'none',
+                                                    transition: 'all 0.3s ease',
+                                                    boxShadow: '0 2px 8px rgba(205, 92, 92, 0.3)'
+                                                }}
+                                                onMouseEnter={(e) => {
+                                                    e.target.style.backgroundColor = '#b54848';
+                                                    e.target.style.transform = 'translateY(-2px)';
+                                                    e.target.style.boxShadow = '0 4px 12px rgba(205, 92, 92, 0.4)';
+                                                }}
+                                                onMouseLeave={(e) => {
+                                                    e.target.style.backgroundColor = '#CD5C5C';
+                                                    e.target.style.transform = 'translateY(0)';
+                                                    e.target.style.boxShadow = '0 2px 8px rgba(205, 92, 92, 0.3)';
+                                                }}
                                             >
                                                 {loading ? (
                                                     <>
