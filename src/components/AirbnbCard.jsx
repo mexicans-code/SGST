@@ -25,7 +25,7 @@ function AirbnbCard({ hotel }) {
     localStorage.setItem('reservationData', JSON.stringify(reservationData));
 
     console.log("Id de la propiedad: ", hotel.id_hosteleria);
-    
+
     // Navega a la página de reserva
     window.location.href = '/reservation';
   };
@@ -151,7 +151,6 @@ function AirbnbCard({ hotel }) {
   );
 }
 
-// Componente principal que obtiene datos de la API
 export default function HotelListings() {
   const [hotels, setHotels] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -162,20 +161,20 @@ export default function HotelListings() {
       try {
         setLoading(true);
         const response = await fetch('http://localhost:3001/getHotelData');
-        
+
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
         }
-        
+
         const result = await response.json();
         console.log('Datos de hoteles recibidos:', result);
-        
+
         if (result.success && result.data) {
           setHotels(result.data);
         } else {
           throw new Error('Formato de respuesta inválido');
         }
-        
+
         setError(null);
       } catch (err) {
         console.error('Error fetching hotels:', err);
@@ -210,17 +209,17 @@ export default function HotelListings() {
     <div style={{ padding: '1rem' }}>
       <h2 style={{ marginBottom: '1rem' }}>Propiedades Disponibles</h2>
       <p style={{ color: '#666', marginBottom: '2rem' }}>Encontramos {hotels.length} propiedades únicas para tu estadía</p>
-      
-      <div style={{ 
-        display: 'grid', 
-        gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', 
-        gap: '1rem' 
+
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))',
+        gap: '1rem'
       }}>
         {hotels.map((hotel) => (
           <AirbnbCard key={hotel.id_hosteleria} hotel={hotel} />
         ))}
       </div>
-      
+
       {hotels.length === 0 && !loading && (
         <div style={{ textAlign: 'center', padding: '2rem' }}>
           <p>No se encontraron propiedades disponibles.</p>

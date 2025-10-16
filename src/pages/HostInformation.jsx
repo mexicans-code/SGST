@@ -40,8 +40,7 @@ const HostInformation = () => {
             console.log("Tipo de usuario:", decodedToken?.rol);
 
             setUser(decodedToken);
-            
-            // Si ya es anfitrión, redirigir inmediatamente
+
             if (decodedToken?.rol === 'anfitrion') {
                 navigate('/host/upload');
             } else {
@@ -72,6 +71,13 @@ const HostInformation = () => {
 
                 console.log("Respuesta del servidor:", response.data);
 
+                const updatedUser = {
+                    ...user,
+                    rol: 'anfitrion'
+                };
+
+                setUser(updatedUser);
+
                 await Swal.fire({
                     title: '¡Éxito!',
                     text: 'Ahora eres anfitrión',
@@ -79,7 +85,11 @@ const HostInformation = () => {
                     confirmButtonColor: '#dc3545'
                 });
 
-                navigate("/host/upload");
+                setTimeout(() => {
+                    navigate("/host/upload");
+                }, 2000);
+
+
             } catch (error) {
                 console.log("Error al convertirse en anfitrión:", error);
 

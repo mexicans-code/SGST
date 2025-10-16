@@ -1,8 +1,10 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Heart, Star, MapPin, Clock, Users, Compass } from 'lucide-react';
 
-// Componente AirbnbCard adaptado (copia del original con las props necesarias)
 function AirbnbCard({
+  id,
+  id_anfitrion,
   name = "Casa moderna en el centro",
   price = 120,
   rating = 4.8,
@@ -22,22 +24,64 @@ function AirbnbCard({
   groupSize = "",
   isPopular = false,
   isNew = false,
-  isExperience = false // Nueva prop para distinguir experiencias
+  isExperience = false,
+  difficulty = "",
+  language = "",
+  includes = [],
+  maxParticipants = 12,
+  minParticipants = 2,
+  meetingPoint = "",
+  darkMode = false,
+  onReserve
 }) {
   const [isFavorite, setIsFavorite] = useState(false);
   const [imageLoaded, setImageLoaded] = useState(false);
 
   const handleReserve = () => {
-    console.log(isExperience ? "Reservando experiencia:" : "Reservando alojamiento:", name);
+    if (onReserve) {
+      const reservationData = {
+        id,
+        id_anfitrion,
+        name,
+        price: isExperience ? price : price,
+        rating,
+        reviews,
+        location,
+        imageSrc,
+        description,
+        duration,
+        category,
+        groupSize,
+        difficulty,
+        language,
+        includes,
+        maxParticipants,
+        minParticipants,
+        meetingPoint,
+        images: images.length > 0 ? images : [imageSrc],
+        isExperience
+      };
+
+      if (!isExperience) {
+        reservationData.guests = guests;
+        reservationData.bedrooms = bedrooms;
+        reservationData.bathrooms = bathrooms;
+        reservationData.amenities = amenities;
+      }
+
+      onReserve(reservationData);
+    } else {
+      console.log(isExperience ? "Reservando experiencia:" : "Reservando alojamiento:", name);
+    }
   };
 
   return (
     <div
-      className="card shadow border-0 rounded-4 overflow-hidden position-relative mb-4 h-100"
+      className={`card shadow border-0 rounded-4 overflow-hidden position-relative mb-4 h-100 ${darkMode ? 'bg-dark text-light' : 'bg-white'}`}
       style={{
         width: '19rem',
         maxWidth: '19rem',
-        background: 'rgba(255,255,255,0.95)',
+        background: darkMode ? 'rgba(33,33,33,0.95)' : 'rgba(255,255,255,0.95)',
         backdropFilter: 'blur(10px)'
       }}
     >
@@ -62,24 +106,23 @@ function AirbnbCard({
             }}
           />
         )}
-
       </div>
 
       <div className="card-body p-3">
         <div className="d-flex justify-content-between align-items-start mb-2">
-          <div className="text-muted d-flex align-items-center" style={{ flex: '1', minWidth: 0 }}>
-            <MapPin size={14} className="me-2 text-dark flex-shrink-0" />
+          <div className={`d-flex align-items-center ${darkMode ? 'text-light' : 'text-muted'}`} style={{ flex: '1', minWidth: 0 }}>
+            <MapPin size={14} className={`me-2 flex-shrink-0 ${darkMode ? 'text-light' : 'text-dark'}`} />
             <span className="text-truncate fw-medium" style={{ fontSize: '0.8rem' }}>{location}</span>
           </div>
           <div className="d-flex align-items-center ms-2 flex-shrink-0">
             <Star size={14} className="text-warning me-1" fill="currentColor" />
-            <span className="text-dark fw-bold" style={{ fontSize: '0.8rem' }}>{rating}</span>
+            <span className={`fw-bold ${darkMode ? 'text-light' : 'text-dark'}`} style={{ fontSize: '0.8rem' }}>{rating}</span>
             <span className="text-muted ms-1" style={{ fontSize: '0.75rem' }}>({reviews})</span>
           </div>
         </div>
 
         <h5
-          className="card-title fw-bold mb-2 text-dark lh-sm"
+          className={`card-title fw-bold mb-2 lh-sm ${darkMode ? 'text-light' : 'text-dark'}`}
           style={{
             WebkitLineClamp: 2,
             display: '-webkit-box',
@@ -92,8 +135,7 @@ function AirbnbCard({
           {name}
         </h5>
 
-        {/* Info específica según el tipo */}
-        <div className="d-flex align-items-center mb-3 text-muted" style={{ fontSize: '0.8rem' }}>
+        <div className={`d-flex align-items-center mb-3 ${darkMode ? 'text-light' : 'text-muted'}`} style={{ fontSize: '0.8rem' }}>
           {isExperience ? (
             <>
               <Clock size={14} className="me-2" />
@@ -113,7 +155,7 @@ function AirbnbCard({
 
         <div className="d-flex justify-content-between align-items-center">
           <div>
-            <span className="fw-bold text-dark" style={{ fontSize: '1.1rem' }}>${price}</span>
+            <span className={`fw-bold ${darkMode ? 'text-light' : 'text-dark'}`} style={{ fontSize: '1.1rem' }}>${price}</span>
             <span className="text-muted ms-1" style={{ fontSize: '0.8rem' }}>
               {isExperience ? '/ persona' : '/ noche'}
             </span>
@@ -136,6 +178,8 @@ function AirbnbCard({
 }
 
 function ExperienceCard({
+  id,
+  id_anfitrion,
   name = "",
   price = 0,
   rating = 0,
@@ -147,9 +191,21 @@ function ExperienceCard({
   groupSize = "",
   isPopular = false,
   isNew = false,
+  description = "",
+  difficulty = "",
+  language = "",
+  includes = [],
+  maxParticipants = 12,
+  minParticipants = 2,
+  meetingPoint = "",
+  images = [],
+  darkMode = false,
+  onReserve
 }) {
   return (
     <AirbnbCard
+      id={id}
+      id_anfitrion={id_anfitrion}
       name={name}
       price={price}
       rating={rating}
@@ -161,124 +217,171 @@ function ExperienceCard({
       groupSize={groupSize}
       isPopular={isPopular}
       isNew={isNew}
-      isExperience={true} // Marcamos que es una experiencia
+      description={description}
+      difficulty={difficulty}
+      language={language}
+      includes={includes}
+      maxParticipants={maxParticipants}
+      minParticipants={minParticipants}
+      meetingPoint={meetingPoint}
+      images={images}
+      isExperience={true}
+      darkMode={darkMode}
+      onReserve={onReserve}
     />
   );
 }
 
-export default function ExperiencesSection() {
-  // Datos de ejemplo para las experiencias
-  const experiences = [
-    {
-      name: "Senderismo en la Sierra Gorda",
-      price: 350,
-      rating: 4.9,
-      reviews: 89,
-      location: "Jalpan, Querétaro",
-      imageSrc: "https://images.unsplash.com/photo-1551632811-561732d1e306?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
-      duration: "6 horas",
-      category: "Aventura",
-      groupSize: "Hasta 12 personas",
-      isPopular: true,
-      isNew: false
-    },
-    {
-      name: "Tour de Cascadas y Grutas",
-      price: 280,
-      rating: 4.8,
-      reviews: 156,
-      location: "Ranas, Querétaro",
-      imageSrc: "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
-      duration: "8 horas",
-      category: "Naturaleza",
-      groupSize: "Hasta 8 personas",
-      isPopular: false,
-      isNew: true
-    },
-    {
-      name: "Experiencia Gastronómica Local",
-      price: 420,
-      rating: 4.7,
-      reviews: 73,
-      location: "Arroyo Seco, Querétaro",
-      imageSrc: "https://images.unsplash.com/photo-1504674900247-0877df9cc836?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
-      duration: "4 horas",
-      category: "Gastronomía",
-      groupSize: "Hasta 10 personas",
-      isPopular: false,
-      isNew: false
-    },
-    {
-      name: "Observación de Aves",
-      price: 200,
-      rating: 4.6,
-      reviews: 45,
-      location: "Landa de Matamoros, Querétaro",
-      imageSrc: "https://images.unsplash.com/photo-1444464666168-49d633b86797?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
-      duration: "5 horas",
-      category: "Naturaleza",
-      groupSize: "Hasta 6 personas",
-      isPopular: false,
-      isNew: true
-    },
-    {
-      name: "Observación de Peces",
-      price: 200,
-      rating: 4.6,
-      reviews: 45,
-      location: "Landa de Matamoros, Querétaro",
-      imageSrc: "https://picsum.photos/200",
-      duration: "5 horas",
-      category: "Naturaleza",
-      groupSize: "Hasta 6 personas",
-      isPopular: false,
-      isNew: true
-    },
-    {
-      name: "Observación de jaguares",
-      price: 200,
-      rating: 4.6,
-      reviews: 45,
-      location: "Landa de Matamoros, Querétaro",
-      imageSrc: "https://picsum.photos/100",
-      duration: "5 horas",
-      category: "Naturaleza",
-      groupSize: "Hasta 6 personas",
-      isPopular: false,
-      isNew: true
-    },
-    {
-      name: "Observación de Osos",
-      price: 200,
-      rating: 4.6,
-      reviews: 45,
-      location: "Landa de Matamoros, Querétaro",
-      imageSrc: "https://picsum.photos/90",
-      duration: "5 horas",
-      category: "Naturaleza",
-      groupSize: "Hasta 6 personas",
-      isPopular: false,
-      isNew: true
+export default function ExperiencesSection({ darkMode = false }) {
+  const navigate = useNavigate();
+  const [experiences, setExperiences] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    const fetchExperiences = async () => {
+      try {
+        setLoading(true);
+        const response = await fetch('http://localhost:3000/api/adminTouristExperiences/getTouristExperiences');
+
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const result = await response.json();
+        console.log('Datos de experiencias recibidos:', result);
+
+        if (result.success && result.data) {
+
+          const mappedExperiences = result.data.map(exp => ({
+            id: exp.id || exp.id_experiencia,
+            id_anfitrion: exp.id_anfitrion,
+            name: exp.titulo,
+            price: exp.precio || 850,
+            rating: exp.calificacion || 4.5,
+            reviews: exp.numero_reviews || 0,
+            location: exp.direcciones
+              ? `${exp.direcciones.ciudad}, ${exp.direcciones.estado}`
+              : 'Ubicación no disponible',
+            imageSrc: exp.image || 'https://images.unsplash.com/photo-1501594907352-04cda38ebc29?w=800',
+            duration: exp.duracion || '8 horas',
+            category: exp.categoria || 'Aventura y Naturaleza',
+            groupSize: exp.tamano_grupo || '',
+            description: exp.descripcion || 'Experiencia única en la naturaleza',
+            difficulty: exp.dificultad || 'Moderada',
+            language: exp.idiomas || 'Español e Inglés',
+            includes: exp.incluye || [
+              'Guía certificado',
+              'Transporte ida y vuelta',
+              'Comida y bebidas',
+              'Equipo de seguridad',
+              'Seguro de accidentes'
+            ],
+            maxParticipants: exp.max_participantes || 12,
+            minParticipants: exp.min_participantes || 2,
+            meetingPoint: exp.punto_encuentro || 'Se informará después de la reserva',
+            images: exp.imagenes || [],
+            isPopular: exp.calificacion >= 4.5,
+            isNew: false
+          }));
+
+
+
+          setExperiences(mappedExperiences);
+        } else {
+          throw new Error('Formato de respuesta inválido');
+        }
+
+        setError(null);
+      } catch (err) {
+        console.error('Error fetching experiences:', err);
+        setError(err.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchExperiences();
+  }, []);
+
+  const handleReserveExperience = (experienceData) => {
+    console.log('Datos de la experiencia para reservar:', experienceData);
+
+    if (!experienceData.id_anfitrion) {
+      alert("⚠️ No se encontró el ID del anfitrión. No se puede continuar con la reserva.");
+      return;
     }
 
-  ];
+    const reservationData = {
+      ...experienceData,
+      pricePerPerson: experienceData.price,
+      availableTimes: ["08:00", "10:00", "14:00", "16:00"]
+    };
+
+    localStorage.setItem('tourismReservationData', JSON.stringify(reservationData));
+    localStorage.setItem('idAnfitrion', experienceData.id_anfitrion);
+
+    navigate('/reservation/tourism');
+  };
+
+  if (loading) {
+    return (
+      <div className={darkMode ? 'bg-dark' : 'bg-light'}>
+        <div className="container py-5">
+          <div className="text-center">
+            <div className="spinner-border text-success" role="status">
+              <span className="visually-hidden">Cargando...</span>
+            </div>
+            <p className={`mt-3 ${darkMode ? 'text-light' : 'text-muted'}`}>Cargando experiencias...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className={darkMode ? 'bg-dark' : 'bg-light'}>
+        <div className="container py-5">
+          <div className="alert alert-danger" role="alert">
+            <h4 className="alert-heading">Error al cargar experiencias</h4>
+            <p>{error}</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="bg-light">
+    <div className={darkMode ? 'bg-dark' : 'bg-light'}>
       <div className="container py-5">
         <div className="row mb-4">
           <div className="col-12">
-            <h2 className="fw-bold text-dark mb-3">Experiencias Destacadas</h2>
+            <h2 className={`fw-bold mb-3 ${darkMode ? 'text-light' : 'text-dark'}`}>Experiencias Destacadas</h2>
+            <p className={darkMode ? 'text-light' : 'text-muted'}>
+              {experiences.length} {experiences.length === 1 ? 'experiencia disponible' : 'experiencias disponibles'}
+            </p>
           </div>
         </div>
-        
-        <div className="row g-4 justify-content-center">
-          {experiences.map((experience, index) => (
-            <div key={index} className="col-auto">
-              <ExperienceCard {...experience} />
-            </div>
-          ))}
-        </div>
+
+        {experiences.length === 0 ? (
+          <div className="text-center py-5">
+            <Compass size={48} className="text-muted mb-3" />
+            <p className="text-muted">No hay experiencias disponibles en este momento</p>
+          </div>
+        ) : (
+          <div className="row g-4 justify-content-center">
+            {experiences.map((experience, index) => (
+              <div key={experience.id || index} className="col-auto">
+                <ExperienceCard
+                  {...experience}
+                  darkMode={darkMode}
+                  onReserve={handleReserveExperience}
+                />
+              </div>
+            ))}
+          </div>
+        )}
 
         <div className="row mt-5">
           <div className="col-12 text-center">

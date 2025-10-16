@@ -1,14 +1,75 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Heart, MapPin, Calendar, Users, Search, ChevronDown } from 'lucide-react';
 
-export default function HeroSection({ darkMode = false }) {
+export default function HeroSection({ darkMode = false, onSearchResults }) {
   const [checkIn, setCheckIn] = useState('');
   const [checkOut, setCheckOut] = useState('');
   const [guests, setGuests] = useState(2);
   const [destination, setDestination] = useState('');
+  const [allProperties, setAllProperties] = useState([]);
+  const [loading, setLoading] = useState(false);
+
+  // Cargar todas las propiedades al montar
+  useEffect(() => {
+    fetchAllProperties();
+  }, []);
+
+  const fetchAllProperties = async () => {
+    try {
+      const response = await fetch('http://localhost:3001/getHotelData');
+      const data = await response.json();
+      setAllProperties(data);
+    } catch (error) {
+      console.error('Error al cargar propiedades:', error);
+    }
+  };
 
   const handleSearch = () => {
-    document.getElementById('propiedades')?.scrollIntoView({ behavior: 'smooth' });
+    setLoading(true);
+
+    // Filtrar propiedades según los criterios
+    let filtered = [...allProperties];
+
+    // Filtro por destino/nombre
+    if (destination.trim()) {
+      const searchTerm = destination.toLowerCase();
+      filtered = filtered.filter(property => 
+        property.nombre?.toLowerCase().includes(searchTerm) ||
+        property.descripcion?.toLowerCase().includes(searchTerm) ||
+        property.direccion?.ciudad?.toLowerCase().includes(searchTerm) ||
+        property.direccion?.estado?.toLowerCase().includes(searchTerm)
+      );
+    }
+
+    // Filtro por capacidad de huéspedes
+    filtered = filtered.filter(property => 
+      (property.capacidad_personas || 10) >= guests
+    );
+
+    // Filtro por fechas (verificar disponibilidad)
+    if (checkIn && checkOut) {
+      // Aquí puedes agregar lógica de verificación de disponibilidad
+      // Por ahora solo validamos que checkout sea después de checkin
+      const start = new Date(checkIn);
+      const end = new Date(checkOut);
+      
+      if (end <= start) {
+        alert('La fecha de salida debe ser después de la fecha de llegada');
+        setLoading(false);
+        return;
+      }
+    }
+
+    // Pasar resultados al componente padre
+    if (onSearchResults) {
+      onSearchResults(filtered, { checkIn, checkOut, guests, destination });
+    }
+
+    // Scroll a resultados
+    setTimeout(() => {
+      document.getElementById('propiedades')?.scrollIntoView({ behavior: 'smooth' });
+      setLoading(false);
+    }, 300);
   };
 
   return (
@@ -51,12 +112,16 @@ export default function HeroSection({ darkMode = false }) {
         .btn-search {
           background:rgb(85, 107, 47);
           transition: all 0.3s ease;
-          color: #000000;
+          color: #ffffff;
         }
         .btn-search:hover {
           transform: translateY(-2px);
-          box-shadow: 0 10px 25px rgba(239,68,68,0.3);
-          background:rgb(233, 233, 233);
+          box-shadow: 0 10px 25px rgba(85,107,47,0.3);
+          background:rgb(70, 92, 37);
+        }
+        .btn-search:disabled {
+          opacity: 0.6;
+          cursor: not-allowed;
         }
         .title-gradient {
           background: linear-gradient(135deg, #ffffff 0%, #f3f4f6 100%);
@@ -124,6 +189,7 @@ export default function HeroSection({ darkMode = false }) {
                         className="search-input form-control border-0 p-2 bg-light rounded-2 fw-medium"
                         value={checkIn}
                         onChange={(e) => setCheckIn(e.target.value)}
+                        min={new Date().toISOString().split('T')[0]}
                         style={{ fontSize: '0.9rem' }}
                       />
                     </div>
@@ -141,6 +207,7 @@ export default function HeroSection({ darkMode = false }) {
                         className="search-input form-control border-0 p-2 bg-light rounded-2 fw-medium"
                         value={checkOut}
                         onChange={(e) => setCheckOut(e.target.value)}
+                        min={checkIn || new Date().toISOString().split('T')[0]}
                         style={{ fontSize: '0.9rem' }}
                       />
                     </div>
@@ -180,11 +247,18 @@ export default function HeroSection({ darkMode = false }) {
                     <div className="text-center">
                       <button
                         onClick={handleSearch}
+                        disabled={loading}
                         className="btn btn-search text-white rounded-3 px-4 py-3 fw-semibold border-0 w-100"
                         style={{ minHeight: '56px' }}
                       >
-                        <Search size={20} className="me-1" />
-                        <span className="d-none d-md-inline">Buscar</span>
+                        {loading ? (
+                          <span className="spinner-border spinner-border-sm me-2" />
+                        ) : (
+                          <Search size={20} className="me-1" />
+                        )}
+                        <span className="d-none d-md-inline">
+                          {loading ? 'Buscando...' : 'Buscar'}
+                        </span>
                       </button>
                     </div>
                   </div>

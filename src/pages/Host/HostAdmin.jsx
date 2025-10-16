@@ -1,570 +1,715 @@
-import { useState } from 'react';
-import { Home, Edit, Trash2, Eye, Plus, Search, Calendar, DollarSign, Users, MapPin, X } from 'lucide-react';
+import React, { useState, useEffect } from "react";
+import { Calendar, MapPin, Clock, User, DollarSign, Home, Phone, Mail, MessageCircle, CheckCircle, XCircle, ArrowRight, Sparkles } from "lucide-react";
+import ChatModal from "../../components/Chat";
+import { useNavigate } from "react-router-dom";
 
-export default function HostAdmin() {
-    const [properties, setProperties] = useState([
-        {
-            id: 1,
-            name: "Casa acogedora en el centro",
-            type: "Casa completa",
-            location: "Arroyo Seco, Querétaro",
-            price: 500,
-            guests: 4,
-            rooms: 2,
-            baths: 1,
-            status: "Activo",
-            image: "https://images.unsplash.com/photo-1568605114967-8130f3a36994?w=400&h=300&fit=crop"
-        },
-        {
-            id: 2,
-            name: "Cabaña con vista a la montaña",
-            type: "Cabaña",
-            location: "Sierra Gorda, Querétaro",
-            price: 800,
-            guests: 6,
-            rooms: 3,
-            baths: 2,
-            status: "Activo",
-            image: "https://images.unsplash.com/photo-1587381420270-3e1a5b9e6904?w=400&h=300&fit=crop"
-        },
-        {
-            id: 3,
-            name: "Departamento moderno centro histórico",
-            type: "Departamento",
-            location: "Centro, Querétaro",
-            price: 650,
-            guests: 3,
-            rooms: 1,
-            baths: 1,
-            status: "Pausado",
-            image: "https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=400&h=300&fit=crop"
+export default function HostReservations() {
+    const [reservations, setReservations] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [activeTab, setActiveTab] = useState('todas');
+    const [userId, setUserId] = useState(null);
+    const [chatOpen, setChatOpen] = useState(false);
+    const [selectedAnfitrion, setSelectedAnfitrion] = useState(null);
+    const [selectedEstablecimiento, setSelectedEstablecimiento] = useState(null);
+    const [detailsModalOpen, setDetailsModalOpen] = useState(false);
+    const [selectedReservation, setSelectedReservation] = useState(null);
+    const navigate = useNavigate();
+
+    function parseJwt(token) {
+        try {
+            const base64Url = token.split('.')[1];
+            const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+            const jsonPayload = decodeURIComponent(
+                atob(base64)
+                    .split('')
+                    .map(c => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
+                    .join('')
+            );
+            return JSON.parse(jsonPayload);
+        } catch (e) {
+            return null;
         }
-    ]);
+    }
 
-    const [searchTerm, setSearchTerm] = useState('');
-    const [filterStatus, setFilterStatus] = useState('all');
-    const [showModal, setShowModal] = useState(false);
-    const [modalMode, setModalMode] = useState('view');
-    const [selectedProperty, setSelectedProperty] = useState(null);
-    const [formData, setFormData] = useState({
-        name: '',
-        type: '',
-        location: '',
-        price: '',
-        guests: '',
-        rooms: '',
-        baths: '',
-        status: 'Activo'
-    });
+    useEffect(() => {
+        const token = localStorage.getItem("token");
+        let currentUserId = null;
 
-    const filteredProperties = properties.filter(prop => {
-        const matchesSearch = prop.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                            prop.location.toLowerCase().includes(searchTerm.toLowerCase());
-        const matchesFilter = filterStatus === 'all' || prop.status === filterStatus;
-        return matchesSearch && matchesFilter;
-    });
-
-    const openModal = (mode, property = null) => {
-        setModalMode(mode);
-        setSelectedProperty(property);
-        if (property && mode === 'edit') {
-            setFormData({
-                name: property.name,
-                type: property.type,
-                location: property.location,
-                price: property.price,
-                guests: property.guests,
-                rooms: property.rooms,
-                baths: property.baths,
-                status: property.status
-            });
-        } else if (mode === 'create') {
-            setFormData({
-                name: '',
-                type: '',
-                location: '',
-                price: '',
-                guests: '',
-                rooms: '',
-                baths: '',
-                status: 'Activo'
-            });
+        if (token) {
+            const decodedToken = parseJwt(token);
+            if (decodedToken?.id_usuario) {
+                currentUserId = decodedToken.id_usuario;
+                setUserId(currentUserId);
+            }
         }
-        setShowModal(true);
-    };
 
-    const closeModal = () => {
-        setShowModal(false);
-        setSelectedProperty(null);
-    };
+        const fetchReservations = async () => {
+            try {
+                const token = localStorage.getItem("token");
+                const response = await fetch('http://localhost:3000/api/booking/getBookings', {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
 
-    const handleDelete = (id) => {
-        if (window.confirm('¿Estás seguro de que deseas eliminar esta propiedad?')) {
-            setProperties(properties.filter(p => p.id !== id));
-        }
-    };
+                const result = await response.json();
 
-    const handleSubmit = () => {
-        if (modalMode === 'create') {
-            const newProperty = {
-                ...formData,
-                id: Math.max(...properties.map(p => p.id)) + 1,
-                image: "https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=400&h=300&fit=crop"
-            };
-            setProperties([...properties, newProperty]);
-        } else if (modalMode === 'edit') {
-            setProperties(properties.map(p => 
-                p.id === selectedProperty.id ? { ...p, ...formData } : p
-            ));
-        }
-        closeModal();
-    };
-
-    const getStatusBadge = (status) => {
-        const colors = {
-            'Activo': 'success',
-            'Pausado': 'warning',
-            'Inactivo': 'secondary'
+                if (result.success && result.data) {
+                    // Filtrar reservaciones donde el usuario actual es el anfitrión
+                    const hostReservations = result.data.filter(reserva => {
+                        // Para hostelería
+                        if (reserva.tipo_reserva === 'hosteleria' || reserva.reserva?.tipo_reserva === 'hosteleria') {
+                            return reserva.anfitrion?.id_usuario === currentUserId;
+                        }
+                        // Para experiencias
+                        if (reserva.tipo_reserva === 'experiencia' || reserva.reserva?.tipo_reserva === 'experiencia') {
+                            return reserva.experiencia?.anfitrion?.id_usuario === currentUserId;
+                        }
+                        return false;
+                    });
+                    setReservations(hostReservations);
+                }
+            } catch (error) {
+                console.error('Error al obtener reservaciones:', error);
+            } finally {
+                setLoading(false);
+            }
         };
-        return colors[status] || 'secondary';
+
+        fetchReservations();
+    }, []);
+
+    const filterReservations = () => {
+        if (activeTab === 'todas') {
+            return reservations;
+        } else if (activeTab === 'pendientes') {
+            return reservations.filter(r => r.reserva?.estado === 'pendiente');
+        } else if (activeTab === 'confirmadas') {
+            return reservations.filter(r => r.reserva?.estado === 'confirmada');
+        } else if (activeTab === 'completadas') {
+            return reservations.filter(r => r.reserva?.estado === 'completada');
+        } else {
+            return reservations.filter(r => r.reserva?.estado === 'cancelada');
+        }
+    };
+
+    const getStatusBadge = (estado) => {
+        const badges = {
+            confirmada: { bg: 'success', text: 'Confirmada' },
+            pendiente: { bg: 'warning', text: 'Pendiente' },
+            completada: { bg: 'secondary', text: 'Completada' },
+            cancelada: { bg: 'danger', text: 'Cancelada' }
+        };
+        const badge = badges[estado] || badges.pendiente;
+        return <span className={`badge bg-${badge.bg}`}>{badge.text}</span>;
+    };
+
+    const calcularNoches = (inicio, fin) => {
+        if (!fin) return 1; // Para experiencias que no tienen fecha fin
+        const start = new Date(inicio);
+        const end = new Date(fin);
+        const diff = Math.ceil((end - start) / (1000 * 60 * 60 * 24));
+        return diff;
+    };
+
+    const calcularPrecioTotal = (data) => {
+        const tipo = data.reserva?.tipo_reserva;
+
+        if (tipo === 'experiencia') {
+            return data.experiencia?.precio || 0;
+        } else {
+            const precioNoche = data.establecimiento?.precio_por_noche || 0;
+            const noches = calcularNoches(data.reserva?.fecha_inicio, data.reserva?.fecha_fin);
+            return precioNoche * noches;
+        }
+    };
+
+    const formatearFecha = (fecha) => {
+        return new Date(fecha).toLocaleDateString('es-MX', {
+            day: 'numeric',
+            month: 'short',
+            year: 'numeric'
+        });
+    };
+
+    const formatearDireccion = (direccion) => {
+        if (!direccion) return 'Sin ubicación';
+        return `${direccion.ciudad || ''}, ${direccion.estado || ''}`.trim();
+    };
+
+    const handleAcceptReservation = async (reservaId) => {
+        if (window.confirm('¿Confirmar esta reservación?')) {
+            alert('Reservación confirmada');
+        }
+    };
+
+    const handleRejectReservation = async (reservaId) => {
+        if (window.confirm('¿Rechazar esta reservación?')) {
+            alert('Reservación rechazada');
+        }
+    };
+
+    const handleCancelReservation = async (reservaId) => {
+        if (window.confirm('¿Estás seguro de que deseas cancelar esta reservación? Esta acción no se puede deshacer.')) {
+            try {
+                alert('Reservación cancelada exitosamente');
+                setDetailsModalOpen(false);
+            } catch (error) {
+                console.error('Error al cancelar reservación:', error);
+                alert('Error al cancelar la reservación');
+            }
+        }
+    };
+
+    const handleOpenDetails = (data) => {
+        setSelectedReservation(data);
+        setDetailsModalOpen(true);
+    };
+
+    const handleCloseDetails = () => {
+        setSelectedReservation(null);
+        setDetailsModalOpen(false);
+    };
+
+    if (loading) {
+        return (
+            <div className="d-flex justify-content-center align-items-center" style={{ minHeight: '60vh' }}>
+                <div className="spinner-border" style={{ color: '#CD5C5C' }} role="status">
+                    <span className="visually-hidden">Cargando...</span>
+                </div>
+            </div>
+        );
+    }
+
+    const handleOpenChat = (anfitrion, establecimiento) => {
+        setSelectedAnfitrion(anfitrion);
+        setSelectedEstablecimiento(establecimiento);
+        setChatOpen(true);
+    };
+
+    const handleCloseChat = () => {
+        setSelectedAnfitrion(null);
+        setSelectedEstablecimiento(null);
+        setChatOpen(false);
+    };
+
+    const filteredReservations = filterReservations();
+
+    const stats = {
+        todas: reservations.length,
+        pendientes: reservations.filter(r => r.reserva?.estado === 'pendiente').length,
+        confirmadas: reservations.filter(r => r.reserva?.estado === 'confirmada').length,
+        completadas: reservations.filter(r => r.reserva?.estado === 'completada').length
     };
 
     return (
-        <>
-            <style>{`
-                .page-bg {
-                    min-height: 100vh;
-                    padding-top: 2rem;
-                    padding-bottom: 3rem;
-                }
-                .stats-card {
-                    background: white;
-                    border-radius: 16px;
-                    padding: 1.5rem;
-                    box-shadow: 0 4px 12px rgba(0,0,0,0.06);
-                    transition: all 0.3s ease;
-                }
-                .stats-card:hover {
-                    transform: translateY(-4px);
-                    box-shadow: 0 8px 20px rgba(0,0,0,0.1);
-                }
-                .property-card {
-                    background: white;
-                    border-radius: 16px;
-                    overflow: hidden;
-                    box-shadow: 0 4px 12px rgba(0,0,0,0.06);
-                    transition: all 0.3s ease;
-                }
-                .property-card:hover {
-                    box-shadow: 0 8px 24px rgba(0,0,0,0.12);
-                }
-                .property-image {
-                    width: 100%;
-                    height: 200px;
-                    object-fit: cover;
-                }
-                .btn-action {
-                    width: 36px;
-                    height: 36px;
-                    border-radius: 8px;
-                    border: none;
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    transition: all 0.2s ease;
-                    cursor: pointer;
-                }
-                .btn-action:hover {
-                    transform: scale(1.1);
-                }
-                .btn-view { background: #E0F2FE; color: #0369A1; }
-                .btn-view:hover { background: #BAE6FD; }
-                .btn-edit { background: #FEF3C7; color: #A16207; }
-                .btn-edit:hover { background: #FDE68A; }
-                .btn-delete { background: #FEE2E2; color: #B91C1C; }
-                .btn-delete:hover { background: #FECACA; }
-                .search-input {
-                    border: 2px solid #E8E4E0;
-                    border-radius: 12px;
-                    padding: 0.75rem 1rem;
-                    transition: all 0.3s ease;
-                }
-                .search-input:focus {
-                    outline: none;
-                    border-color: #CD5C5C;
-                    box-shadow: 0 0 0 4px rgba(205,92,92,0.1);
-                }
-                .modal-overlay {
-                    position: fixed;
-                    top: 0;
-                    left: 0;
-                    right: 0;
-                    bottom: 0;
-                    background: rgba(0,0,0,0.5);
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    z-index: 1050;
-                    animation: fadeIn 0.2s ease;
-                }
-                .modal-content-custom {
-                    background: white;
-                    border-radius: 20px;
-                    max-width: 600px;
-                    width: 90%;
-                    max-height: 90vh;
-                    overflow-y: auto;
-                    animation: slideUp 0.3s ease;
-                }
-                @keyframes fadeIn {
-                    from { opacity: 0; }
-                    to { opacity: 1; }
-                }
-                @keyframes slideUp {
-                    from { transform: translateY(30px); opacity: 0; }
-                    to { transform: translateY(0); opacity: 1; }
-                }
-                .form-control-custom {
-                    border: 2px solid #E8E4E0;
-                    border-radius: 10px;
-                    padding: 0.75rem 1rem;
-                    transition: all 0.3s ease;
-                }
-                .form-control-custom:focus {
-                    outline: none;
-                    border-color: #CD5C5C;
-                    box-shadow: 0 0 0 4px rgba(205,92,92,0.1);
-                }
-            `}</style>
+        <div style={{ backgroundColor: '#fff', minHeight: '100vh', paddingTop: '7rem', paddingBottom: '3rem' }}>
+            <div className="container">
+                <div className="mb-4">
+                    <h1 className="fw-bold mb-2" style={{ color: '#CD5C5C' }}>Reservas de mis Propiedades y Experiencias</h1>
+                    <p className="text-muted">Gestiona las reservaciones de tus huéspedes</p>
+                    <button className="btn btn-outline-secondary btn-sm rounded-pill" onClick={() => navigate('/host/publications')}>
+                        Mis propiedades <ArrowRight size={16} />
+                    </button>
+                </div>
 
-            <div className="page-bg" style={{marginTop: '100px'}}>
-                <div className="container">
-                    <div className="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
-                        <div>
-                            <h1 className="fw-bold mb-2" style={{ color: '#1F2937' }}>Mis Propiedades</h1>
-                            <p className="text-muted mb-0">Gestiona tus alojamientos y reservaciones</p>
+                <ChatModal
+                    isOpen={chatOpen}
+                    onClose={handleCloseChat}
+                    anfitrion={selectedAnfitrion}
+                    establecimiento={selectedEstablecimiento}
+                />
+
+                {/* Modal de Detalles */}
+                {detailsModalOpen && selectedReservation && (
+                    <div className="modal show d-block" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }} onClick={handleCloseDetails}>
+                        <div className="modal-dialog modal-dialog-centered modal-lg" onClick={(e) => e.stopPropagation()}>
+                            <div className="modal-content rounded-4 border-0 shadow-lg">
+                                <div className="modal-header border-0 pb-0" style={{ backgroundColor: '#F4EFEA' }}>
+                                    <div>
+                                        <h4 className="modal-title fw-bold mb-1" style={{ color: '#CD5C5C' }}>
+                                            Detalles de la Reservación
+                                        </h4>
+                                        <p className="text-muted small mb-0">
+                                            ID: #{selectedReservation.reserva?.id_reserva}
+                                        </p>
+                                    </div>
+                                    <button type="button" className="btn-close" onClick={handleCloseDetails}></button>
+                                </div>
+
+                                <div className="modal-body p-4">
+                                    {/* Estado */}
+                                    <div className="mb-4 text-center">
+                                        {getStatusBadge(selectedReservation.reserva?.estado)}
+                                    </div>
+
+                                    {/* Propiedad o Experiencia */}
+                                    <div className="mb-4">
+                                        <h6 className="fw-bold mb-3" style={{ color: '#CD5C5C' }}>
+                                            {selectedReservation.reserva?.tipo_reserva === 'experiencia' ? (
+                                                <><Sparkles size={18} className="me-2" />Experiencia</>
+                                            ) : (
+                                                <><Home size={18} className="me-2" />Propiedad</>
+                                            )}
+                                        </h6>
+                                        <div className="d-flex gap-3 align-items-center p-3 rounded-3" style={{ backgroundColor: '#F8F9FA' }}>
+                                            <img
+                                                src={
+                                                    selectedReservation.reserva?.tipo_reserva === 'experiencia'
+                                                        ? selectedReservation.experiencia?.image || 'https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?w=500'
+                                                        : selectedReservation.establecimiento?.image || 'https://images.unsplash.com/photo-1566073771259-6a8506099945?w=500'
+                                                }
+                                                alt={
+                                                    selectedReservation.reserva?.tipo_reserva === 'experiencia'
+                                                        ? selectedReservation.experiencia?.titulo
+                                                        : selectedReservation.establecimiento?.nombre
+                                                }
+                                                style={{ width: '80px', height: '80px', objectFit: 'cover', borderRadius: '8px' }}
+                                            />
+                                            <div>
+                                                <h6 className="fw-bold mb-1">
+                                                    {selectedReservation.reserva?.tipo_reserva === 'experiencia'
+                                                        ? selectedReservation.experiencia?.titulo
+                                                        : selectedReservation.establecimiento?.nombre}
+                                                </h6>
+                                                {selectedReservation.reserva?.tipo_reserva === 'experiencia' ? (
+                                                    <p className="text-muted mb-0 small">
+                                                        <Calendar size={14} className="me-1" />
+                                                        {formatearFecha(selectedReservation.experiencia?.fecha_experiencia)}
+                                                    </p>
+                                                ) : (
+                                                    <p className="text-muted mb-0 small">
+                                                        <MapPin size={14} className="me-1" />
+                                                        {formatearDireccion(selectedReservation.establecimiento?.direccion)}
+                                                    </p>
+                                                )}
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Fechas */}
+                                    <div className="mb-4">
+                                        <h6 className="fw-bold mb-3" style={{ color: '#CD5C5C' }}>
+                                            <Calendar size={18} className="me-2" />
+                                            Fechas {selectedReservation.reserva?.tipo_reserva === 'experiencia' ? 'de la experiencia' : 'de estancia'}
+                                        </h6>
+                                        {selectedReservation.reserva?.tipo_reserva === 'experiencia' ? (
+                                            <div className="p-3 rounded-3" style={{ backgroundColor: '#F8F9FA' }}>
+                                                <small className="text-muted d-block mb-1">Fecha de la experiencia</small>
+                                                <strong>{formatearFecha(selectedReservation.reserva?.fecha_inicio)}</strong>
+                                            </div>
+                                        ) : (
+                                            <>
+                                                <div className="row g-3">
+                                                    <div className="col-md-6">
+                                                        <div className="p-3 rounded-3" style={{ backgroundColor: '#F8F9FA' }}>
+                                                            <small className="text-muted d-block mb-1">Check-in</small>
+                                                            <strong>{formatearFecha(selectedReservation.reserva?.fecha_inicio)}</strong>
+                                                        </div>
+                                                    </div>
+                                                    <div className="col-md-6">
+                                                        <div className="p-3 rounded-3" style={{ backgroundColor: '#F8F9FA' }}>
+                                                            <small className="text-muted d-block mb-1">Check-out</small>
+                                                            <strong>{formatearFecha(selectedReservation.reserva?.fecha_fin)}</strong>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div className="mt-2 text-muted small">
+                                                    <Clock size={14} className="me-1" />
+                                                    {calcularNoches(selectedReservation.reserva?.fecha_inicio, selectedReservation.reserva?.fecha_fin)} noches
+                                                </div>
+                                            </>
+                                        )}
+                                    </div>
+
+                                    {/* Huésped */}
+                                    <div className="mb-4">
+                                        <h6 className="fw-bold mb-3" style={{ color: '#CD5C5C' }}>
+                                            <User size={18} className="me-2" />
+                                            Información del Huésped
+                                        </h6>
+                                        <div className="p-3 rounded-3" style={{ backgroundColor: '#F8F9FA' }}>
+                                            <div className="mb-2">
+                                                <strong>{selectedReservation.usuario?.nombre}</strong>
+                                            </div>
+                                            <div className="d-flex flex-column gap-2">
+                                                <span className="text-muted small">
+                                                    <Mail size={14} className="me-2" />
+                                                    {selectedReservation.usuario?.email}
+                                                </span>
+                                                {selectedReservation.usuario?.telefono && (
+                                                    <span className="text-muted small">
+                                                        <Phone size={14} className="me-2" />
+                                                        {selectedReservation.usuario.telefono}
+                                                    </span>
+                                                )}
+                                                <span className="text-muted small">
+                                                    <User size={14} className="me-2" />
+                                                    {selectedReservation.reserva?.personas} persona(s)
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Precio */}
+                                    <div className="mb-4">
+                                        <h6 className="fw-bold mb-3" style={{ color: '#CD5C5C' }}>
+                                            <DollarSign size={18} className="me-2" />
+                                            Resumen de pago
+                                        </h6>
+                                        <div className="p-3 rounded-3" style={{ backgroundColor: '#F8F9FA' }}>
+                                            {selectedReservation.reserva?.tipo_reserva === 'experiencia' ? (
+                                                <>
+                                                    <div className="d-flex justify-content-between mb-2">
+                                                        <span className="text-muted">Precio de la experiencia</span>
+                                                        <span>${selectedReservation.experiencia?.precio?.toLocaleString('es-MX')}</span>
+                                                    </div>
+                                                    <div className="d-flex justify-content-between mb-2">
+                                                        <span className="text-muted">Personas</span>
+                                                        <span>× {selectedReservation.reserva?.personas}</span>
+                                                    </div>
+                                                </>
+                                            ) : (
+                                                <div className="d-flex justify-content-between mb-2">
+                                                    <span className="text-muted">
+                                                        ${selectedReservation.establecimiento?.precio_por_noche?.toLocaleString('es-MX')} × {calcularNoches(selectedReservation.reserva?.fecha_inicio, selectedReservation.reserva?.fecha_fin)} noches
+                                                    </span>
+                                                    <span>
+                                                        ${calcularPrecioTotal(selectedReservation).toLocaleString('es-MX')}
+                                                    </span>
+                                                </div>
+                                            )}
+                                            <hr />
+                                            <div className="d-flex justify-content-between">
+                                                <strong>Total</strong>
+                                                <strong style={{ color: '#CD5C5C' }}>
+                                                    ${calcularPrecioTotal(selectedReservation).toLocaleString('es-MX')}
+                                                </strong>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Acciones */}
+                                    {(selectedReservation.reserva?.estado === 'confirmada' || selectedReservation.reserva?.estado === 'pendiente') && (
+                                        <div className="border-top pt-3">
+                                            <h6 className="fw-bold mb-3 text-danger">Zona de peligro</h6>
+                                            <button
+                                                className="btn btn-danger w-100 rounded-pill"
+                                                onClick={() => handleCancelReservation(selectedReservation.reserva?.id_reserva)}
+                                            >
+                                                <XCircle size={16} className="me-2" />
+                                                Cancelar Reservación
+                                            </button>
+                                            <small className="text-muted d-block mt-2 text-center">
+                                                Esta acción no se puede deshacer
+                                            </small>
+                                        </div>
+                                    )}
+                                </div>
+
+                                <div className="modal-footer border-0" style={{ backgroundColor: '#F8F9FA' }}>
+                                    <button
+                                        className="btn btn-outline-secondary rounded-pill px-4"
+                                        onClick={() => handleOpenChat(
+                                            selectedReservation.reserva?.tipo_reserva === 'experiencia'
+                                                ? selectedReservation.experiencia?.anfitrion
+                                                : selectedReservation.anfitrion,
+                                            selectedReservation.reserva?.tipo_reserva === 'experiencia'
+                                                ? selectedReservation.experiencia
+                                                : selectedReservation.establecimiento
+                                        )}
+                                    >
+                                        <MessageCircle size={16} className="me-2" />
+                                        Contactar Huésped
+                                    </button>
+                                    <button className="btn rounded-pill px-4" style={{ backgroundColor: '#CD5C5C', color: 'white' }} onClick={handleCloseDetails}>
+                                        Cerrar
+                                    </button>
+                                </div>
+                            </div>
                         </div>
+                    </div>
+                )}
+
+                <div className="row g-3 mb-4">
+                    <div className="col-md-3 col-sm-6">
+                        <div className="card border-0 shadow-sm rounded-3 p-3">
+                            <div className="d-flex align-items-center">
+                                <div className="p-2 rounded-circle me-3" style={{ backgroundColor: '#E0F2FE' }}>
+                                    <Home size={20} style={{ color: '#0369A1' }} />
+                                </div>
+                                <div>
+                                    <small className="text-muted">Total</small>
+                                    <h4 className="fw-bold mb-0">{stats.todas}</h4>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div className="col-md-3 col-sm-6">
+                        <div className="card border-0 shadow-sm rounded-3 p-3">
+                            <div className="d-flex align-items-center">
+                                <div className="p-2 rounded-circle me-3" style={{ backgroundColor: '#FEF3C7' }}>
+                                    <Clock size={20} style={{ color: '#A16207' }} />
+                                </div>
+                                <div>
+                                    <small className="text-muted">Pendientes</small>
+                                    <h4 className="fw-bold mb-0">{stats.pendientes}</h4>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div className="col-md-3 col-sm-6">
+                        <div className="card border-0 shadow-sm rounded-3 p-3">
+                            <div className="d-flex align-items-center">
+                                <div className="p-2 rounded-circle me-3" style={{ backgroundColor: '#D1FAE5' }}>
+                                    <CheckCircle size={20} style={{ color: '#059669' }} />
+                                </div>
+                                <div>
+                                    <small className="text-muted">Confirmadas</small>
+                                    <h4 className="fw-bold mb-0">{stats.confirmadas}</h4>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div className="col-md-3 col-sm-6">
+                        <div className="card border-0 shadow-sm rounded-3 p-3">
+                            <div className="d-flex align-items-center">
+                                <div className="p-2 rounded-circle me-3" style={{ backgroundColor: '#E5E7EB' }}>
+                                    <Calendar size={20} style={{ color: '#6B7280' }} />
+                                </div>
+                                <div>
+                                    <small className="text-muted">Completadas</small>
+                                    <h4 className="fw-bold mb-0">{stats.completadas}</h4>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <ul className="nav nav-pills mb-4">
+                    <li className="nav-item">
                         <button
-                            className="btn text-white fw-semibold px-4 py-3 rounded-3"
-                            style={{ background: 'linear-gradient(135deg, #CD5C5C 0%, #B85252 100%)' }}
-                            onClick={() => openModal('create')}
+                            className={`nav-link ${activeTab === 'todas' ? 'active' : ''}`}
+                            style={{
+                                backgroundColor: activeTab === 'todas' ? '#CD5C5C' : 'transparent',
+                                color: activeTab === 'todas' ? 'white' : '#6c757d',
+                                border: 'none'
+                            }}
+                            onClick={() => setActiveTab('todas')}
                         >
-                            <Plus size={20} className="me-2" />
-                            Nueva Propiedad
+                            Todas ({stats.todas})
                         </button>
-                    </div>
+                    </li>
+                    <li className="nav-item">
+                        <button
+                            className={`nav-link ${activeTab === 'pendientes' ? 'active' : ''}`}
+                            style={{
+                                backgroundColor: activeTab === 'pendientes' ? '#CD5C5C' : 'transparent',
+                                color: activeTab === 'pendientes' ? 'white' : '#6c757d',
+                                border: 'none'
+                            }}
+                            onClick={() => setActiveTab('pendientes')}
+                        >
+                            Pendientes ({stats.pendientes})
+                        </button>
+                    </li>
+                    <li className="nav-item">
+                        <button
+                            className={`nav-link ${activeTab === 'confirmadas' ? 'active' : ''}`}
+                            style={{
+                                backgroundColor: activeTab === 'confirmadas' ? '#CD5C5C' : 'transparent',
+                                color: activeTab === 'confirmadas' ? 'white' : '#6c757d',
+                                border: 'none'
+                            }}
+                            onClick={() => setActiveTab('confirmadas')}
+                        >
+                            Confirmadas ({stats.confirmadas})
+                        </button>
+                    </li>
+                    <li className="nav-item">
+                        <button
+                            className={`nav-link ${activeTab === 'completadas' ? 'active' : ''}`}
+                            style={{
+                                backgroundColor: activeTab === 'completadas' ? '#CD5C5C' : 'transparent',
+                                color: activeTab === 'completadas' ? 'white' : '#6c757d',
+                                border: 'none'
+                            }}
+                            onClick={() => setActiveTab('completadas')}
+                        >
+                            Completadas ({stats.completadas})
+                        </button>
+                    </li>
+                </ul>
 
-                    <div className="row g-3 mb-4">
-                        <div className="col-md-3 col-sm-6">
-                            <div className="stats-card">
-                                <div className="d-flex align-items-center mb-2">
-                                    <div className="p-2 rounded-circle me-3" style={{ background: '#E0F2FE' }}>
-                                        <Home size={20} color="#0369A1" />
-                                    </div>
-                                    <div>
-                                        <h6 className="text-muted small mb-0">Propiedades</h6>
-                                        <h3 className="fw-bold mb-0">{properties.length}</h3>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <div className="col-md-3 col-sm-6">
-                            <div className="stats-card">
-                                <div className="d-flex align-items-center mb-2">
-                                    <div className="p-2 rounded-circle me-3" style={{ background: '#D1FAE5' }}>
-                                        <Calendar size={20} color="#059669" />
-                                    </div>
-                                    <div>
-                                        <h6 className="text-muted small mb-0">Reservas</h6>
-                                        <h3 className="fw-bold mb-0">12</h3>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <div className="col-md-3 col-sm-6">
-                            <div className="stats-card">
-                                <div className="d-flex align-items-center mb-2">
-                                    <div className="p-2 rounded-circle me-3" style={{ background: '#FEF3C7' }}>
-                                        <DollarSign size={20} color="#A16207" />
-                                    </div>
-                                    <div>
-                                        <h6 className="text-muted small mb-0">Ingresos</h6>
-                                        <h3 className="fw-bold mb-0">$8,400</h3>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <div className="col-md-3 col-sm-6">
-                            <div className="stats-card">
-                                <div className="d-flex align-items-center mb-2">
-                                    <div className="p-2 rounded-circle me-3" style={{ background: '#E9D5FF' }}>
-                                        <Users size={20} color="#7C3AED" />
-                                    </div>
-                                    <div>
-                                        <h6 className="text-muted small mb-0">Huéspedes</h6>
-                                        <h3 className="fw-bold mb-0">34</h3>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
+                {filteredReservations.length === 0 ? (
+                    <div className="text-center py-5">
+                        <Home size={64} color="#CD5C5C" className="mb-3" />
+                        <h4 className="text-muted">No tienes reservaciones {activeTab}</h4>
+                        <p className="text-muted">Las nuevas reservas aparecerán aquí</p>
                     </div>
-
-                    <div className="row g-3 mb-4">
-                        <div className="col-md-8">
-                            <div className="position-relative">
-                                <Search className="position-absolute" style={{ left: '1rem', top: '50%', transform: 'translateY(-50%)', color: '#9CA3AF' }} size={20} />
-                                <input
-                                    type="text"
-                                    className="form-control search-input ps-5"
-                                    placeholder="Buscar por nombre o ubicación..."
-                                    value={searchTerm}
-                                    onChange={(e) => setSearchTerm(e.target.value)}
-                                />
-                            </div>
-                        </div>
-                        <div className="col-md-4">
-                            <select
-                                className="form-select search-input"
-                                value={filterStatus}
-                                onChange={(e) => setFilterStatus(e.target.value)}
-                            >
-                                <option value="all">Todos los estados</option>
-                                <option value="Activo">Activo</option>
-                                <option value="Pausado">Pausado</option>
-                                <option value="Inactivo">Inactivo</option>
-                            </select>
-                        </div>
-                    </div>
-
+                ) : (
                     <div className="row g-4">
-                        {filteredProperties.map((property) => (
-                            <div key={property.id} className="col-md-6 col-lg-4">
-                                <div className="property-card">
-                                    <img src={property.image} alt={property.name} className="property-image" />
-                                    <div className="p-3">
-                                        <div className="d-flex justify-content-between align-items-start mb-2">
-                                            <h5 className="fw-bold mb-0" style={{ fontSize: '1.1rem' }}>{property.name}</h5>
-                                            <span className={`badge bg-${getStatusBadge(property.status)} rounded-pill`}>
-                                                {property.status}
-                                            </span>
-                                        </div>
-                                        <div className="d-flex align-items-center text-muted mb-3">
-                                            <MapPin size={14} className="me-1" />
-                                            <small>{property.location}</small>
-                                        </div>
-                                        <div className="row g-2 mb-3">
-                                            <div className="col-4">
-                                                <small className="text-muted d-block">Tipo</small>
-                                                <small className="fw-semibold">{property.type}</small>
+                        {filteredReservations.map((data) => {
+                            const precioTotal = calcularPrecioTotal(data);
+                            const isExperiencia = data.reserva?.tipo_reserva === 'experiencia';
+
+                            return (
+                                <div key={data.reserva?.id_reserva} className="col-12">
+                                    <div className="card border-0 shadow-sm rounded-4 overflow-hidden">
+                                        <div className="row g-0">
+                                            <div className="col-md-4">
+                                                <img
+                                                    src={
+                                                        isExperiencia
+                                                            ? data.experiencia?.image || 'https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?w=500'
+                                                            : data.establecimiento?.image || 'https://images.unsplash.com/photo-1566073771259-6a8506099945?w=500'
+                                                    }
+                                                    alt={isExperiencia ? data.experiencia?.titulo : data.establecimiento?.nombre}
+                                                    style={{ width: '100%', height: '100%', objectFit: 'cover', minHeight: '250px' }}
+                                                />
+                                                {isExperiencia && (
+                                                    <div className="position-absolute top-0 start-0 m-3">
+                                                        <span className="badge" style={{ backgroundColor: '#8B5CF6', color: 'white' }}>
+                                                            <Sparkles size={14} className="me-1" />
+                                                            Experiencia
+                                                        </span>
+                                                    </div>
+                                                )}
                                             </div>
-                                            <div className="col-4">
-                                                <small className="text-muted d-block">Precio</small>
-                                                <small className="fw-semibold">${property.price}/noche</small>
+
+                                            <div className="col-md-8">
+                                                <div className="card-body p-4">
+                                                    <div className="d-flex justify-content-between align-items-start mb-3">
+                                                        <div>
+                                                            <h5 className="fw-bold mb-1" style={{ color: '#CD5C5C' }}>
+                                                                {isExperiencia ? data.experiencia?.titulo : data.establecimiento?.nombre}
+                                                            </h5>
+                                                            <p className="text-muted mb-0 d-flex align-items-center gap-1">
+                                                                {isExperiencia ? (
+                                                                    <>
+                                                                        <Calendar size={16} />
+                                                                        {formatearFecha(data.experiencia?.fecha_experiencia)}
+                                                                    </>
+                                                                ) : (
+                                                                    <>
+                                                                        <MapPin size={16} />
+                                                                        {formatearDireccion(data.establecimiento?.direccion)}
+                                                                    </>
+                                                                )}
+                                                            </p>
+                                                        </div>
+                                                        {getStatusBadge(data.reserva?.estado)}
+                                                    </div>
+
+                                                    <div className="row g-3 mb-3">
+                                                        <div className="col-md-6">
+                                                            <div className="d-flex align-items-center gap-2 p-3 rounded-3" style={{ backgroundColor: '#F4EFEA' }}>
+                                                                <Calendar size={20} color="#CD5C5C" />
+                                                                <div>
+                                                                    <small className="text-muted d-block">
+                                                                        {isExperiencia ? 'Fecha' : 'Check-in'}
+                                                                    </small>
+                                                                    <strong>{formatearFecha(data.reserva?.fecha_inicio)}</strong>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                        {!isExperiencia && (
+                                                            <div className="col-md-6">
+                                                                <div className="d-flex align-items-center gap-2 p-3 rounded-3" style={{ backgroundColor: '#F4EFEA' }}>
+                                                                    <Calendar size={20} color="#CD5C5C" />
+                                                                    <div>
+                                                                        <small className="text-muted d-block">Check-out</small>
+                                                                        <strong>{formatearFecha(data.reserva?.fecha_fin)}</strong>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        )}
+                                                    </div>
+
+                                                    <div className="d-flex gap-4 mb-3">
+                                                        {!isExperiencia && (
+                                                            <span className="text-muted">
+                                                                <Clock size={16} className="me-1" />
+                                                                {calcularNoches(data.reserva?.fecha_inicio, data.reserva?.fecha_fin)} noches
+                                                            </span>
+                                                        )}
+                                                        <span className="text-muted">
+                                                            <User size={16} className="me-1" />
+                                                            {data.reserva?.personas} {isExperiencia ? 'persona(s)' : 'huéspedes'}
+                                                        </span>
+                                                        <span className="fw-bold" style={{ color: '#CD5C5C' }}>
+                                                            <DollarSign size={16} className="me-1" />
+                                                            ${precioTotal.toLocaleString('es-MX')}
+                                                        </span>
+                                                    </div>
+
+                                                    <div className="border-top pt-3 mb-3">
+                                                        <small className="text-muted d-block mb-2">Huésped</small>
+                                                        <div className="d-flex gap-3 flex-wrap">
+                                                            <span className="text-muted small">
+                                                                <User size={14} className="me-1" />
+                                                                {data.usuario?.nombre}
+                                                            </span>
+                                                            <span className="text-muted small">
+                                                                <Mail size={14} className="me-1" />
+                                                                {data.usuario?.email}
+                                                            </span>
+                                                            {data.usuario?.telefono && (
+                                                                <span className="text-muted small">
+                                                                    <Phone size={14} className="me-1" />
+                                                                    {data.usuario.telefono}
+                                                                </span>
+                                                            )}
+                                                        </div>
+                                                    </div>
+
+                                                    <div className="d-flex gap-2 flex-wrap">
+                                                        {data.reserva?.estado === 'pendiente' && (
+                                                            <>
+                                                                <button
+                                                                    className="btn btn-success btn-sm rounded-pill"
+                                                                    onClick={() => handleAcceptReservation(data.reserva.id_reserva)}
+                                                                >
+                                                                    <CheckCircle size={14} className="me-1" />
+                                                                    Aceptar
+                                                                </button>
+                                                                <button
+                                                                    className="btn btn-danger btn-sm rounded-pill"
+                                                                    onClick={() => handleRejectReservation(data.reserva.id_reserva)}
+                                                                >
+                                                                    <XCircle size={14} className="me-1" />
+                                                                    Rechazar
+                                                                </button>
+                                                            </>
+                                                        )}
+                                                        {data.reserva?.estado === 'confirmada' && (
+                                                            <button
+                                                                className="btn btn-outline-secondary btn-sm rounded-pill"
+                                                                onClick={() => handleOpenChat(
+                                                                    isExperiencia ? data.experiencia?.anfitrion : data.anfitrion,
+                                                                    isExperiencia ? data.experiencia : data.establecimiento
+                                                                )}
+                                                            >
+                                                                Contactar huésped
+                                                            </button>
+                                                        )}
+                                                        <button
+                                                            className="btn btn-outline-secondary btn-sm rounded-pill"
+                                                            onClick={() => handleOpenDetails(data)}
+                                                        >
+                                                            Ver detalles
+                                                        </button>
+                                                    </div>
+                                                </div>
                                             </div>
-                                            <div className="col-4">
-                                                <small className="text-muted d-block">Capacidad</small>
-                                                <small className="fw-semibold">{property.guests} personas</small>
-                                            </div>
-                                        </div>
-                                        <div className="d-flex gap-2">
-                                            <button
-                                                className="btn-action btn-view"
-                                                onClick={() => openModal('view', property)}
-                                                title="Ver detalles"
-                                            >
-                                                <Eye size={16} />
-                                            </button>
-                                            <button
-                                                className="btn-action btn-edit"
-                                                onClick={() => openModal('edit', property)}
-                                                title="Editar"
-                                            >
-                                                <Edit size={16} />
-                                            </button>
-                                            <button
-                                                className="btn-action btn-delete"
-                                                onClick={() => handleDelete(property.id)}
-                                                title="Eliminar"
-                                            >
-                                                <Trash2 size={16} />
-                                            </button>
                                         </div>
                                     </div>
                                 </div>
-                            </div>
-                        ))}
+                            );
+                        })}
                     </div>
-
-                    {filteredProperties.length === 0 && (
-                        <div className="text-center py-5">
-                            <Home size={64} color="#9CA3AF" className="mb-3" />
-                            <h5 className="text-muted">No se encontraron propiedades</h5>
-                            <p className="text-muted">Intenta ajustar tus filtros de búsqueda</p>
-                        </div>
-                    )}
-                </div>
+                )}
             </div>
-
-            {showModal && (
-                <div className="modal-overlay" onClick={closeModal}>
-                    <div className="modal-content-custom" onClick={(e) => e.stopPropagation()}>
-                        <div className="p-4">
-                            <div className="d-flex justify-content-between align-items-center mb-4">
-                                <h4 className="fw-bold mb-0">
-                                    {modalMode === 'view' && 'Detalles de la Propiedad'}
-                                    {modalMode === 'edit' && 'Editar Propiedad'}
-                                    {modalMode === 'create' && 'Nueva Propiedad'}
-                                </h4>
-                                <button
-                                    className="btn btn-sm btn-light rounded-circle"
-                                    style={{ width: '36px', height: '36px' }}
-                                    onClick={closeModal}
-                                >
-                                    <X size={18} />
-                                </button>
-                            </div>
-
-                            {modalMode === 'view' && selectedProperty && (
-                                <div>
-                                    <img src={selectedProperty.image} alt={selectedProperty.name} className="w-100 rounded-3 mb-3" style={{ height: '250px', objectFit: 'cover' }} />
-                                    <h5 className="fw-bold mb-3">{selectedProperty.name}</h5>
-                                    <div className="row g-3">
-                                        <div className="col-6">
-                                            <small className="text-muted d-block mb-1">Tipo</small>
-                                            <p className="mb-0 fw-semibold">{selectedProperty.type}</p>
-                                        </div>
-                                        <div className="col-6">
-                                            <small className="text-muted d-block mb-1">Ubicación</small>
-                                            <p className="mb-0 fw-semibold">{selectedProperty.location}</p>
-                                        </div>
-                                        <div className="col-6">
-                                            <small className="text-muted d-block mb-1">Precio por noche</small>
-                                            <p className="mb-0 fw-semibold">${selectedProperty.price}</p>
-                                        </div>
-                                        <div className="col-6">
-                                            <small className="text-muted d-block mb-1">Capacidad</small>
-                                            <p className="mb-0 fw-semibold">{selectedProperty.guests} huéspedes</p>
-                                        </div>
-                                        <div className="col-4">
-                                            <small className="text-muted d-block mb-1">Habitaciones</small>
-                                            <p className="mb-0 fw-semibold">{selectedProperty.rooms}</p>
-                                        </div>
-                                        <div className="col-4">
-                                            <small className="text-muted d-block mb-1">Baños</small>
-                                            <p className="mb-0 fw-semibold">{selectedProperty.baths}</p>
-                                        </div>
-                                        <div className="col-4">
-                                            <small className="text-muted d-block mb-1">Estado</small>
-                                            <span className={`badge bg-${getStatusBadge(selectedProperty.status)}`}>
-                                                {selectedProperty.status}
-                                            </span>
-                                        </div>
-                                    </div>
-                                </div>
-                            )}
-
-                            {(modalMode === 'edit' || modalMode === 'create') && (
-                                <div>
-                                    <div className="mb-3">
-                                        <label className="form-label fw-semibold">Nombre</label>
-                                        <input
-                                            type="text"
-                                            className="form-control form-control-custom"
-                                            value={formData.name}
-                                            onChange={(e) => setFormData({...formData, name: e.target.value})}
-                                        />
-                                    </div>
-                                    <div className="row g-3 mb-3">
-                                        <div className="col-6">
-                                            <label className="form-label fw-semibold">Tipo</label>
-                                            <select
-                                                className="form-select form-control-custom"
-                                                value={formData.type}
-                                                onChange={(e) => setFormData({...formData, type: e.target.value})}
-                                            >
-                                                <option value="">Seleccionar</option>
-                                                <option>Casa completa</option>
-                                                <option>Departamento</option>
-                                                <option>Cabaña</option>
-                                                <option>Habitación privada</option>
-                                            </select>
-                                        </div>
-                                        <div className="col-6">
-                                            <label className="form-label fw-semibold">Estado</label>
-                                            <select
-                                                className="form-select form-control-custom"
-                                                value={formData.status}
-                                                onChange={(e) => setFormData({...formData, status: e.target.value})}
-                                            >
-                                                <option>Activo</option>
-                                                <option>Pausado</option>
-                                                <option>Inactivo</option>
-                                            </select>
-                                        </div>
-                                    </div>
-                                    <div className="mb-3">
-                                        <label className="form-label fw-semibold">Ubicación</label>
-                                        <input
-                                            type="text"
-                                            className="form-control form-control-custom"
-                                            value={formData.location}
-                                            onChange={(e) => setFormData({...formData, location: e.target.value})}
-                                        />
-                                    </div>
-                                    <div className="row g-3 mb-3">
-                                        <div className="col-6">
-                                            <label className="form-label fw-semibold">Precio/noche</label>
-                                            <input
-                                                type="number"
-                                                className="form-control form-control-custom"
-                                                value={formData.price}
-                                                onChange={(e) => setFormData({...formData, price: e.target.value})}
-                                            />
-                                        </div>
-                                        <div className="col-6">
-                                            <label className="form-label fw-semibold">Huéspedes</label>
-                                            <input
-                                                type="number"
-                                                className="form-control form-control-custom"
-                                                value={formData.guests}
-                                                onChange={(e) => setFormData({...formData, guests: e.target.value})}
-                                            />
-                                        </div>
-                                    </div>
-                                    <div className="row g-3 mb-4">
-                                        <div className="col-6">
-                                            <label className="form-label fw-semibold">Habitaciones</label>
-                                            <input
-                                                type="number"
-                                                className="form-control form-control-custom"
-                                                value={formData.rooms}
-                                                onChange={(e) => setFormData({...formData, rooms: e.target.value})}
-                                            />
-                                        </div>
-                                        <div className="col-6">
-                                            <label className="form-label fw-semibold">Baños</label>
-                                            <input
-                                                type="number"
-                                                className="form-control form-control-custom"
-                                                value={formData.baths}
-                                                onChange={(e) => setFormData({...formData, baths: e.target.value})}
-                                            />
-                                        </div>
-                                    </div>
-                                    <div className="d-flex gap-2">
-                                        <button className="btn btn-light flex-fill rounded-3 py-2" onClick={closeModal}>
-                                            Cancelar
-                                        </button>
-                                        <button className="btn text-white flex-fill rounded-3 py-2" style={{ background: 'linear-gradient(135deg, #CD5C5C 0%, #B85252 100%)' }} onClick={handleSubmit}>
-                                            {modalMode === 'create' ? 'Crear' : 'Guardar'}
-                                        </button>
-                                    </div>
-                                </div>
-                            )}
-                        </div>
-                    </div>
-                </div>
-            )}
-        </>
+        </div>
     );
 }

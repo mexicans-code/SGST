@@ -23,6 +23,7 @@ export default function LoginPage() {
             
             localStorage.setItem("token", response.data.token);
             localStorage.setItem("usuario", JSON.stringify(response.data.usuario));
+            localStorage.setItem("rol", response.data.usuario.rol);
             
             window.dispatchEvent(new Event('usuarioActualizado'));
             

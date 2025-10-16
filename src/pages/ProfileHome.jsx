@@ -131,6 +131,9 @@ export default function Profile() {
             showNotification('Debes ser anfitrión para ver propiedades', 'error');
         }
     };
+    const handleVerReservas = () => {
+        navigate('/user/reservations');
+    };
 
     return (
         <>
@@ -143,7 +146,7 @@ export default function Profile() {
                         className="position-fixed top-0 end-0 m-4"
                         style={{ zIndex: 9999, minWidth: '320px' }}
                     >
-                        <div 
+                        <div
                             className="alert alert-dismissible fade show shadow-sm border-0"
                             style={{
                                 backgroundColor: notification.type === 'success' ? '#d4edda' : '#f8d7da',
@@ -152,9 +155,9 @@ export default function Profile() {
                         >
                             <i className={`bi bi-${notification.type === 'success' ? 'check-circle-fill' : 'exclamation-circle-fill'} me-2`}></i>
                             {notification.message}
-                            <button 
-                                type="button" 
-                                className="btn-close" 
+                            <button
+                                type="button"
+                                className="btn-close"
                                 onClick={() => setNotification({ show: false, message: '', type: '' })}
                             ></button>
                         </div>
@@ -187,9 +190,9 @@ export default function Profile() {
                                                     src={formData.foto || 'https://ui-avatars.com/api/?name=Usuario&size=200&background=CD5C5C&color=fff'}
                                                     alt="Foto de perfil"
                                                     className="rounded-circle"
-                                                    style={{ 
-                                                        width: '160px', 
-                                                        height: '160px', 
+                                                    style={{
+                                                        width: '160px',
+                                                        height: '160px',
                                                         objectFit: 'cover',
                                                         border: '4px solid #f8f9fa',
                                                         boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
@@ -197,10 +200,10 @@ export default function Profile() {
                                                 />
                                                 <div
                                                     className="position-absolute bottom-0 end-0 text-white rounded-circle d-flex align-items-center justify-content-center"
-                                                    style={{ 
-                                                        width: '40px', 
-                                                        height: '40px', 
-                                                        cursor: 'pointer', 
+                                                    style={{
+                                                        width: '40px',
+                                                        height: '40px',
+                                                        cursor: 'pointer',
                                                         backgroundColor: '#CD5C5C',
                                                         boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
                                                     }}
@@ -217,7 +220,7 @@ export default function Profile() {
                                                     value={formData.foto}
                                                     onChange={handleChange}
                                                     placeholder="URL de la imagen"
-                                                    style={{ 
+                                                    style={{
                                                         borderColor: '#e0e0e0',
                                                         transition: 'all 0.3s ease'
                                                     }}
@@ -230,10 +233,10 @@ export default function Profile() {
                                             </div>
 
                                             {formData.rol === 'anfitrion' && (
-                                                <button 
+                                                <button
                                                     type="button"
-                                                    className="btn w-100 text-white fw-semibold" 
-                                                    style={{ 
+                                                    className="btn w-100 text-white fw-semibold"
+                                                    style={{
                                                         backgroundColor: '#CD5C5C',
                                                         border: 'none',
                                                         padding: '12px',
@@ -256,6 +259,35 @@ export default function Profile() {
                                                     Ver mis propiedades
                                                 </button>
                                             )}
+
+                                            {formData.rol === 'usuario' && (
+                                                <button
+                                                    type="button"
+                                                    className="btn w-100 text-white fw-semibold"
+                                                    style={{
+                                                        backgroundColor: '#4682B4',
+                                                        border: 'none',
+                                                        padding: '12px',
+                                                        transition: 'all 0.3s ease',
+                                                        boxShadow: '0 2px 8px rgba(70, 130, 180, 0.3)'
+                                                    }}
+                                                    onMouseEnter={(e) => {
+                                                        e.target.style.backgroundColor = '#35648f';
+                                                        e.target.style.transform = 'translateY(-2px)';
+                                                        e.target.style.boxShadow = '0 4px 12px rgba(70, 130, 180, 0.4)';
+                                                    }}
+                                                    onMouseLeave={(e) => {
+                                                        e.target.style.backgroundColor = '#4682B4';
+                                                        e.target.style.transform = 'translateY(0)';
+                                                        e.target.style.boxShadow = '0 2px 8px rgba(70, 130, 180, 0.3)';
+                                                    }}
+                                                    onClick={handleVerReservas}
+                                                >
+                                                    <i className="bi bi-calendar-check me-2"></i>
+                                                    Ver mis reservas
+                                                </button>
+                                            )}
+
                                         </div>
                                     </div>
                                 </div>
@@ -279,7 +311,7 @@ export default function Profile() {
                                                     name="nombre"
                                                     value={formData.nombre}
                                                     onChange={handleChange}
-                                                    style={{ 
+                                                    style={{
                                                         borderColor: errors.nombre ? '#dc3545' : '#e0e0e0',
                                                         transition: 'all 0.3s ease'
                                                     }}
@@ -326,7 +358,7 @@ export default function Profile() {
                                                     Correo electrónico *
                                                 </label>
                                                 <div className="input-group">
-                                                    <span className="input-group-text" style={{ 
+                                                    <span className="input-group-text" style={{
                                                         backgroundColor: '#f8f9fa',
                                                         borderColor: '#e0e0e0',
                                                         color: '#6c757d'
@@ -339,7 +371,7 @@ export default function Profile() {
                                                         name="email"
                                                         value={formData.email}
                                                         onChange={handleChange}
-                                                        style={{ 
+                                                        style={{
                                                             borderColor: errors.email ? '#dc3545' : '#e0e0e0',
                                                             transition: 'all 0.3s ease'
                                                         }}
@@ -354,7 +386,7 @@ export default function Profile() {
                                                     Teléfono
                                                 </label>
                                                 <div className="input-group">
-                                                    <span className="input-group-text" style={{ 
+                                                    <span className="input-group-text" style={{
                                                         backgroundColor: '#f8f9fa',
                                                         borderColor: '#e0e0e0',
                                                         color: '#6c757d'
@@ -369,7 +401,7 @@ export default function Profile() {
                                                         onChange={handleTelefonoChange}
                                                         placeholder="442-123-4567"
                                                         maxLength="12"
-                                                        style={{ 
+                                                        style={{
                                                             borderColor: errors.telefono ? '#dc3545' : '#e0e0e0',
                                                             transition: 'all 0.3s ease'
                                                         }}
@@ -386,7 +418,7 @@ export default function Profile() {
                                                 Dirección
                                             </label>
                                             <div className="input-group">
-                                                <span className="input-group-text" style={{ 
+                                                <span className="input-group-text" style={{
                                                     backgroundColor: '#f8f9fa',
                                                     borderColor: '#e0e0e0',
                                                     color: '#6c757d'
@@ -419,7 +451,7 @@ export default function Profile() {
                                                     Nueva contraseña
                                                 </label>
                                                 <div className="input-group">
-                                                    <span className="input-group-text" style={{ 
+                                                    <span className="input-group-text" style={{
                                                         backgroundColor: '#f8f9fa',
                                                         borderColor: '#e0e0e0',
                                                         color: '#6c757d'
@@ -433,7 +465,7 @@ export default function Profile() {
                                                         value={formData.password}
                                                         onChange={handleChange}
                                                         placeholder="Dejar vacío para no cambiar"
-                                                        style={{ 
+                                                        style={{
                                                             borderColor: errors.password ? '#dc3545' : '#e0e0e0',
                                                             transition: 'all 0.3s ease'
                                                         }}
@@ -443,7 +475,7 @@ export default function Profile() {
                                                     <button
                                                         type="button"
                                                         className="btn"
-                                                        style={{ 
+                                                        style={{
                                                             borderColor: '#e0e0e0',
                                                             color: '#6c757d',
                                                             backgroundColor: '#f8f9fa'
@@ -465,7 +497,7 @@ export default function Profile() {
                                                     className="form-control"
                                                     value={formData.rol}
                                                     disabled
-                                                    style={{ 
+                                                    style={{
                                                         backgroundColor: '#f8f9fa',
                                                         borderColor: '#e0e0e0',
                                                         color: '#6c757d'
@@ -505,7 +537,7 @@ export default function Profile() {
                                                 type="submit"
                                                 className="btn text-white fw-semibold"
                                                 disabled={loading}
-                                                style={{ 
+                                                style={{
                                                     backgroundColor: '#CD5C5C',
                                                     border: 'none',
                                                     transition: 'all 0.3s ease',

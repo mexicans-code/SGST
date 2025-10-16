@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Heart, Star, MapPin, Package, Globe, User, Menu, Sun, Moon } from 'lucide-react';
+import { Heart, Globe, User, Menu, Sun, Moon } from 'lucide-react';
 
 export default function Navbar({ darkMode, setDarkMode }) {
     const [isNavOpen, setIsNavOpen] = useState(false);
@@ -11,6 +11,7 @@ export default function Navbar({ darkMode, setDarkMode }) {
 
     const navItems = [];
 
+    // useEffect para cargar usuario
     useEffect(() => {
         const cargarUsuario = () => {
             const usuarioData = localStorage.getItem("usuario");
@@ -28,7 +29,6 @@ export default function Navbar({ darkMode, setDarkMode }) {
         cargarUsuario();
 
         window.addEventListener('storage', cargarUsuario);
-        
         window.addEventListener('usuarioActualizado', cargarUsuario);
 
         return () => {
@@ -37,23 +37,7 @@ export default function Navbar({ darkMode, setDarkMode }) {
         };
     }, []);
 
-    const logout = () => {
-        localStorage.removeItem("token");
-        localStorage.removeItem("usuario");
-        setUsuario(null);
-        navigate("/login");
-    };
-
-    useEffect(() => {
-        if (darkMode) {
-            document.body.classList.add('bg-dark', 'text-light');
-            document.body.classList.remove('bg-light', 'text-dark');
-        } else {
-            document.body.classList.add('bg-light', 'text-dark');
-            document.body.classList.remove('bg-dark', 'text-light');
-        }
-    }, [darkMode]);
-
+    // useEffect para cerrar menú al hacer clic fuera
     useEffect(() => {
         const handleClickOutside = (e) => {
             if (userMenuRef.current && !userMenuRef.current.contains(e.target)) {
@@ -63,6 +47,13 @@ export default function Navbar({ darkMode, setDarkMode }) {
         document.addEventListener('mousedown', handleClickOutside);
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, []);
+
+    const logout = () => {
+        localStorage.removeItem("token");
+        localStorage.removeItem("usuario");
+        setUsuario(null);
+        navigate("/login");
+    };
 
     const linkColor = darkMode ? '#E5E7EB' : '#374151';
     const hoverBg = darkMode ? '#374151' : '#FEE2E2';
@@ -244,15 +235,6 @@ export default function Navbar({ darkMode, setDarkMode }) {
                                         >
                                             <Heart size={16} color={dropdownColor} /> Pon tu espacio
                                         </button>
-                                    </li>
-                                    <li>
-                                        {/* <button 
-                                            className="dropdown-item d-flex align-items-center gap-2 py-2" 
-                                            onClick={() => navigate("/host")}
-                                            style={{ color: dropdownColor }}
-                                        >
-                                            <Star size={16} color={dropdownColor} /> Organiza una experiencia
-                                        </button> */}
                                     </li>
                                     <li>
                                         <button 

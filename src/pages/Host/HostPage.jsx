@@ -1,11 +1,19 @@
 import React, { useState, useEffect } from "react";
 import { Upload, MapPin, Home, DollarSign, Image, Plus, X } from "lucide-react";
 
+import Swal from "sweetalert2";
+import { useNavigate } from "react-router-dom";
+
 export default function HostUploadPage() {
+    const navigate = useNavigate();
     const [step, setStep] = useState(1);
     const [images, setImages] = useState([]);
     const [loading, setLoading] = useState(false);
     const [userId, setUserId] = useState(null);
+    const [uploadingImage, setUploadingImage] = useState(false);
+
+    const [id_anfitrion, setIdAnfitrion] = useState(null);
+
     const [formData, setFormData] = useState({
         nombre: '',
         tipo_propiedad: '',
@@ -22,8 +30,8 @@ export default function HostUploadPage() {
         descuento_semanal: '',
         descuento_mensual: ''
     });
+    
 
-    // Función para decodificar el JWT
     function parseJwt(token) {
         try {
             const base64Url = token.split('.')[1];
@@ -40,7 +48,6 @@ export default function HostUploadPage() {
         }
     }
 
-    // Obtener el ID del usuario al cargar el componente
     useEffect(() => {
         const token = localStorage.getItem("token");
         if (token) {
@@ -51,14 +58,62 @@ export default function HostUploadPage() {
         }
     }, []);
 
-    const addImage = () => {
-        if (images.length < 5) {
-            setImages([...images, `https://via.placeholder.com/400x300?text=Imagen+${images.length + 1}`]);
+    const handleImageUpload = async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        if (file.size > 10 * 1024 * 1024) {
+            alert('La imagen no debe superar 10MB');
+            return;
+        }
+
+        if (!file.type.startsWith('image/')) {
+            alert('Solo se permiten imágenes');
+            return;
+        }
+
+        setUploadingImage(true);
+
+        try {
+            const formData = new FormData();
+            formData.append('image', file);
+
+            const response = await fetch('http://localhost:3001/uploadImage', {
+                method: 'POST',
+                body: formData
+            });
+
+            const result = await response.json();
+
+            if (result.success) {
+                setImages(prev => [...prev, {
+                    url: result.imageUrl,
+                    publicId: result.publicId
+                }]);
+            } else {
+                alert('Error al subir imagen: ' + result.error);
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            alert('Error al subir la imagen');
+        } finally {
+            setUploadingImage(false);
         }
     };
 
-    const removeImage = (index) => {
-        setImages(images.filter((_, i) => i !== index));
+    const removeImage = async (index) => {
+        const imageToRemove = images[index];
+
+        try {
+            const publicId = encodeURIComponent(imageToRemove.publicId);
+            await fetch(`http://localhost:3001/deleteImage/${publicId}`, {
+                method: 'DELETE'
+            });
+
+            setImages(images.filter((_, i) => i !== index));
+        } catch (error) {
+            console.error('Error al eliminar imagen:', error);
+        }
     };
 
     const handleInputChange = (e) => {
@@ -70,6 +125,7 @@ export default function HostUploadPage() {
     };
 
     const calcularGanancias = () => {
+        console.log(formData);
         const precio = parseFloat(formData.precio_por_noche) || 0;
         const descSemanal = parseFloat(formData.descuento_semanal) || 0;
         const descMensual = parseFloat(formData.descuento_mensual) || 0;
@@ -86,59 +142,56 @@ export default function HostUploadPage() {
             alert('Por favor completa los campos obligatorios');
             return;
         }
-
+    
         if (!userId) {
             alert('Error: No se pudo obtener la información del usuario');
             return;
         }
-
-        if (images.length < 5) {
-            alert('Debes agregar al menos 5 imágenes');
+    
+        if (images.length === 0) {
+            alert('Por favor sube al menos una imagen');
             return;
         }
-
+    
         setLoading(true);
-        
+    
         const payload = {
-            id_anfitrion: userId,
+            id_anfitrion: userId, 
             nombre: formData.nombre,
             descripcion: formData.descripcion,
-            precio_por_noche: parseFloat(formData.precio_por_noche),
-            capacidad: parseInt(formData.huespedes),
-            habitaciones: parseInt(formData.habitaciones) || 1,
-            banos: parseInt(formData.banos) || 1,
+            precio_por_noche: formData.precio_por_noche,
+            capacidad: formData.huespedes,
+            habitaciones: formData.habitaciones || '1',
+            banos: formData.banos || '1',
             tipo_propiedad: formData.tipo_propiedad,
-            image: images,
             estado: 'activo',
-            descuento_semanal: parseFloat(formData.descuento_semanal) || null,
-            descuento_mensual: parseFloat(formData.descuento_mensual) || null,
-            direccion: {
+            descuento_semanal: formData.descuento_semanal || null,
+            descuento_mensual: formData.descuento_mensual || null,
+            direccion: JSON.stringify({
                 calle: formData.direccion,
                 ciudad: formData.ciudad,
                 estado: formData.estado,
                 codigo_postal: formData.codigo_postal,
                 pais: formData.pais
-            }
+            }),
+            image: images[0].url // URL de Cloudinary
         };
-
+    
+        console.log('📤 Enviando payload:', payload);
+    
         try {
-            const response = await fetch('http://localhost:3000/api/hospitality/createHotel', {
+            const response = await fetch('http://localhost:3001/createHotel', {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/json',
+                    'Content-Type': 'application/json' 
                 },
                 body: JSON.stringify(payload)
             });
-
+    
             const result = await response.json();
-
+    
             if (result.success) {
-                Swal.fire({
-                    title: '¡Éxito!',
-                    text: 'Anuncio publicado exitosamente',
-                    icon: 'success',
-                    confirmButtonColor: '#dc3545'
-                });
+                
                 setFormData({
                     nombre: '',
                     tipo_propiedad: '',
@@ -156,29 +209,18 @@ export default function HostUploadPage() {
                     descuento_mensual: ''
                 });
                 setImages([]);
+                navigate('/host/publications');
                 setStep(1);
-                navigate('/host');
             } else {
-                Swal.fire({
-                    title: 'Error',
-                    text: 'Error al publicar: ' + result.error,
-                    icon: 'error',
-                    confirmButtonColor: '#dc3545'
-                });
+                alert('Error al publicar: ' + result.error);
             }
         } catch (error) {
             console.error('Error:', error);
-            Swal.fire({
-                title: 'Error',
-                text: 'Error al conectar con el servidor',
-                icon: 'error',
-                confirmButtonColor: '#dc3545'
-            });
+            alert('Error al conectar con el servidor');
         } finally {
             setLoading(false);
         }
     };
-
     const ganancias = calcularGanancias();
 
     return (
@@ -452,9 +494,11 @@ export default function HostUploadPage() {
                                                         className="position-relative rounded-3 overflow-hidden"
                                                         style={{ backgroundColor: "#F4EFEA", height: "150px", border: "2px solid #e9ecef" }}
                                                     >
-                                                        <div className="d-flex align-items-center justify-content-center h-100">
-                                                            <Image size={32} color="#999" />
-                                                        </div>
+                                                        <img
+                                                            src={img.url}
+                                                            alt={`Upload ${index + 1}`}
+                                                            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                                                        />
                                                         <button
                                                             className="btn btn-sm position-absolute top-0 end-0 m-2"
                                                             style={{ backgroundColor: "#FFFFFF", border: "none" }}
@@ -473,20 +517,39 @@ export default function HostUploadPage() {
 
                                             {images.length < 5 && (
                                                 <div className="col-md-4">
-                                                    <button
+                                                    <label
                                                         className="w-100 h-100 border-0 rounded-3 d-flex flex-column align-items-center justify-content-center"
                                                         style={{
                                                             backgroundColor: "#F4EFEA",
                                                             minHeight: "150px",
-                                                            border: "2px dashed #e9ecef"
+                                                            border: "2px dashed #e9ecef",
+                                                            cursor: uploadingImage ? 'not-allowed' : 'pointer',
+                                                            opacity: uploadingImage ? 0.6 : 1
                                                         }}
-                                                        onClick={addImage}
                                                     >
-                                                        <Plus size={32} color="#CD5C5C" className="mb-2" />
-                                                        <span style={{ color: "#CD5C5C" }} className="fw-semibold">
-                                                            Agregar foto
-                                                        </span>
-                                                    </button>
+                                                        <input
+                                                            type="file"
+                                                            accept="image/*"
+                                                            onChange={handleImageUpload}
+                                                            disabled={uploadingImage}
+                                                            style={{ display: 'none' }}
+                                                        />
+                                                        {uploadingImage ? (
+                                                            <>
+                                                                <Upload size={32} color="#CD5C5C" className="mb-2" />
+                                                                <span style={{ color: "#CD5C5C" }} className="fw-semibold">
+                                                                    Subiendo...
+                                                                </span>
+                                                            </>
+                                                        ) : (
+                                                            <>
+                                                                <Plus size={32} color="#CD5C5C" className="mb-2" />
+                                                                <span style={{ color: "#CD5C5C" }} className="fw-semibold">
+                                                                    Agregar foto
+                                                                </span>
+                                                            </>
+                                                        )}
+                                                    </label>
                                                 </div>
                                             )}
                                         </div>
