@@ -28,6 +28,7 @@ import {
 } from 'lucide-react';
 
 import { useNavigate } from "react-router-dom";
+import Reviews from '../components/Reviews';
 
 export default function ReservationInfo() {
     const navigate = useNavigate();
@@ -76,6 +77,10 @@ export default function ReservationInfo() {
                 };
 
                 console.log("Id de la propiedad: ", completeData.id);
+                console.log("Data de la propiedad: ", completeData);
+
+                            localStorage.setItem('reservationData', JSON.stringify(completeData));
+
                 
                 setReservationData(completeData);
             } else {
@@ -400,7 +405,7 @@ export default function ReservationInfo() {
                             </div>
                         </div>
 
-                        <div className="card border-0 shadow-sm rounded-4 mb-4">
+                        <div className="card border-0 shadow-sm rounded-4">
                             <div className="card-body p-4">
                                 <h3 className="h4 fw-bold mb-3" style={{ color: '#2C3E50' }}>
                                     <MapPin size={24} style={{ color: '#87CEEB' }} className="me-2" />
@@ -429,7 +434,7 @@ export default function ReservationInfo() {
                             </div>
                         </div>
 
-                        <div className="card border-0 shadow-sm rounded-4 mb-4">
+                        {/* <div className="card border-0 shadow-sm rounded-4 mb-4">
                             <div className="card-body p-4">
                                 <div
                                     className="d-flex align-items-center justify-content-between cursor-pointer"
@@ -492,8 +497,9 @@ export default function ReservationInfo() {
                                     </div>
                                 )}
                             </div>
-                        </div>
+                        </div> */}
                     </div>
+
 
                     <div className="col-lg-4">
                         <div className="card border-0 shadow-sm rounded-4 sticky-top" style={{ top: '20px' }}>
@@ -602,6 +608,10 @@ export default function ReservationInfo() {
                                 </button>
                             </div>
                         </div>
+                    </div>
+
+                    <div className="col-8 card border-0 shadow-sm rounded-4">
+                        <Reviews />
                     </div>
                 </div>
             </div>

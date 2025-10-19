@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Calendar, MapPin, Clock, User, DollarSign, Home, Phone, Mail, MessageCircle, XCircle, ArrowRight, Compass } from "lucide-react";
 import ChatModal from "../../components/Chat";
 import { useNavigate } from "react-router-dom";
+import ReviewUsers from "../../components/ReviewUsers";
 
 export default function UserReservations() {
     const [reservations, setReservations] = useState([]);
@@ -15,6 +16,9 @@ export default function UserReservations() {
     const [selectedReservation, setSelectedReservation] = useState(null);
     const navigate = useNavigate();
 
+
+    const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
+    const [selectedProperty, setSelectedProperty] = useState(null);
     function parseJwt(token) {
         try {
             const base64Url = token.split('.')[1];
@@ -188,20 +192,30 @@ export default function UserReservations() {
         setDetailsModalOpen(false);
     };
 
-const handleOpenChat = (anfitrion, item, tipo) => {
-    setSelectedAnfitrion(anfitrion);
-    setSelectedEstablecimiento({
-        ...item,
-        tipo: tipo,
-        nombre: tipo === 'experiencia' ? item?.titulo : item?.nombre
-    });
-    setChatOpen(true);
-};
+    const handleOpenChat = (anfitrion, item, tipo) => {
+        setSelectedAnfitrion(anfitrion);
+        setSelectedEstablecimiento({
+            ...item,
+            tipo: tipo,
+            nombre: tipo === 'experiencia' ? item?.titulo : item?.nombre
+        });
+        setChatOpen(true);
+    };
 
     const handleCloseChat = () => {
         setSelectedAnfitrion(null);
         setSelectedEstablecimiento(null);
         setChatOpen(false);
+    };
+
+    const handleOpenReview = (data) => {
+        setSelectedProperty(data);
+        setIsReviewModalOpen(true);
+    };
+
+    const handleCloseReview = () => {
+        setSelectedProperty(null);
+        setIsReviewModalOpen(false);
     };
 
     if (loading) {
@@ -663,6 +677,11 @@ const handleOpenChat = (anfitrion, item, tipo) => {
                                                             >
                                                                 Ver detalles
                                                             </button>
+
+                                                            <button
+                                                                className="btn btn-outline-primary rounded-pill btn-sm"
+                                                                onClick={() => handleOpenReview(data)}
+                                                            >Agregar reseña</button>
                                                         </div>
                                                     </div>
                                                 </div>
@@ -675,6 +694,14 @@ const handleOpenChat = (anfitrion, item, tipo) => {
                     </div>
                 )}
             </div>
+           {selectedProperty && (
+                <ReviewUsers
+                    isOpen={isReviewModalOpen}
+                    onClose={handleCloseReview}
+                    data={selectedProperty}
+                    propertyId={selectedProperty.reserva?.id_reserva}  
+                />
+            )}
         </div>
     );
 }

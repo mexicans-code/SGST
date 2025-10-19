@@ -25,6 +25,8 @@ import ProtectedRoute from "./components/ProtectedRoute";
 import HeroSection from "./pages/HeroSection";
 import TourismReservationInfo from "./pages/TourismReservationInfo";
 import UserReservations from "./pages/user/UserReservations";
+import ReviewUsers from "./components/ReviewUsers";
+import Reviews from "./components/Reviews";
 
 function PropertiesPage() {
   return (

@@ -1,15 +1,14 @@
 import React, { useState, useEffect } from "react";
-import { Home, MapPin, DollarSign, Users, Bed, Bath, Star, Edit, Trash2, Eye, EyeOff, Plus, Calendar, MessageCircle, ArrowRight } from "lucide-react";
+import { Home, MapPin, DollarSign, Users, Bed, Bath, Edit, Trash2, Eye, EyeOff, Plus, ChevronDown, Search } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import Swal from "sweetalert2";
 
 export default function HostProperties() {
     const [properties, setProperties] = useState([]);
     const [loading, setLoading] = useState(true);
     const [activeTab, setActiveTab] = useState('todas');
     const [userId, setUserId] = useState(null);
-    const [detailsModalOpen, setDetailsModalOpen] = useState(false);
-    const [selectedProperty, setSelectedProperty] = useState(null);
+    const [searchTerm, setSearchTerm] = useState('');
+    const [sortConfig, setSortConfig] = useState({ key: 'nombre', direction: 'asc' });
     const navigate = useNavigate();
 
     function parseJwt(token) {
@@ -28,7 +27,7 @@ export default function HostProperties() {
         }
     }
 
-    useEffect(() => {
+        useEffect(() => {
         const token = localStorage.getItem("token");
         let currentUserId = null;
 
@@ -42,17 +41,47 @@ export default function HostProperties() {
 
         const fetchProperties = async () => {
             try {
-                const response = await fetch('http://localhost:3001/getHotelData');
+                const [experiencesRes, hotelsRes, bookingsRes] = await Promise.all([
+                    fetch('http://localhost:3000/api/booking/getExperiences'),
+                    fetch('http://localhost:3000/api/hospitality/getHotelData'),
+                    fetch('http://localhost:3000/api/booking/getBookings')
+                ]);
 
-                const result = await response.json();
+                const [experiencesResult, hotelsResult, bookingsResult] = await Promise.all([
+                    experiencesRes.json(),
+                    hotelsRes.json(),
+                    bookingsRes.json()
+                ]);
 
-                if (result.success && result.data) {
-                    // Filtrar solo las propiedades del usuario actual
-                    const userProperties = result.data.filter(
+                let combined = [];
+
+                if (experiencesResult.success && experiencesResult.data) {
+                    const userExperiences = experiencesResult.data.filter(
                         prop => prop.id_anfitrion === currentUserId
                     );
-                    setProperties(userProperties);
+                    combined = [...combined, ...userExperiences.map(e => ({ ...e, tipo: 'experiencia' }))];
                 }
+
+                if (hotelsResult.success && hotelsResult.data) {
+                    const userHotels = hotelsResult.data.filter(
+                        prop => prop.id_anfitrion === currentUserId
+                    );
+                    combined = [...combined, ...userHotels.map(h => ({ ...h, tipo: 'hotel' }))];
+                }
+
+                if (bookingsResult.success && bookingsResult.data) {
+                    const reservas = bookingsResult.data;
+                    combined = combined.map(prop => {
+                        const tieneReservaActiva = reservas.some(r => {
+                            const est = r.establecimiento;
+                            return est && est.id_hosteleria === prop.id_hosteleria &&
+                                new Date(r.reserva.fecha_fin) >= new Date();
+                        });
+                        return { ...prop, tieneReservaActiva };
+                    });
+                }
+
+                setProperties(combined);
             } catch (error) {
                 console.error('Error al obtener propiedades:', error);
             } finally {
@@ -64,98 +93,90 @@ export default function HostProperties() {
     }, []);
 
     const filterProperties = () => {
-        if (activeTab === 'todas') {
-            return properties;
-        } else if (activeTab === 'activas') {
-            return properties.filter(p => p.estado === 'activo');
-        } else {
-            return properties.filter(p => p.estado === 'inactivo');
+        let filtered = properties;
+
+        if (activeTab === 'activas') {
+            filtered = filtered.filter(p => p.estado === 'activo');
+        } else if (activeTab === 'inactivas') {
+            filtered = filtered.filter(p => p.estado === 'inactivo');
         }
+
+        if (searchTerm) {
+            filtered = filtered.filter(p =>
+                p.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                (p.direccion?.ciudad || '').toLowerCase().includes(searchTerm.toLowerCase())
+            );
+        }
+
+        return filtered;
+    };
+
+    const sortProperties = (properties) => {
+        return [...properties].sort((a, b) => {
+            const aValue = a[sortConfig.key];
+            const bValue = b[sortConfig.key];
+
+            if (aValue < bValue) return sortConfig.direction === 'asc' ? -1 : 1;
+            if (aValue > bValue) return sortConfig.direction === 'asc' ? 1 : -1;
+            return 0;
+        });
+    };
+
+    const handleSort = (key) => {
+        setSortConfig({
+            key,
+            direction: sortConfig.key === key && sortConfig.direction === 'asc' ? 'desc' : 'asc'
+        });
     };
 
     const formatearDireccion = (direccion) => {
         if (!direccion) return 'Sin ubicación';
-        const { calle, ciudad, estado } = direccion;
-        return `${calle || ''}, ${ciudad || ''}, ${estado || ''}`.replace(/^,\s*|,\s*$/g, '').replace(/,\s*,/g, ',').trim();
+        const { ciudad, estado } = direccion;
+        return `${ciudad || ''}, ${estado || ''}`.replace(/^,\s*|,\s*$/g, '').trim();
     };
 
     const handleToggleActive = async (propertyId, currentStatus) => {
-        const action = currentStatus ? 'desactivar' : 'activar';
         const newStatus = currentStatus ? 'inactivo' : 'activo';
-        
-        if (window.confirm(`¿Estás seguro de que deseas ${action} esta propiedad?`)) {
-            try {
-                const response = await fetch(`http://localhost:3001/updateHotel/${propertyId}`, {
-                    method: 'PUT',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        estado: newStatus
-                    })
-                });
 
-                const result = await response.json();
+        try {
+            // const response = await fetch(`http://localhost:3001/updateHotel/${propertyId}`, {
+            //     method: 'PUT',
+            //     headers: { 'Content-Type': 'application/json' },
+            //     body: JSON.stringify({ estado: newStatus })
+            // });
 
-                if (result.success) {
-                    alert(`Propiedad ${action}da exitosamente`);
-                    // Actualizar el estado local
-                    setProperties(properties.map(p => 
-                        p.id_hosteleria === propertyId 
-                            ? { ...p, estado: newStatus }
-                            : p
-                    ));
-                } else {
-                    alert('Error al actualizar la propiedad');
-                }
-            } catch (error) {
-                console.error('Error al actualizar propiedad:', error);
-                alert('Error al actualizar la propiedad');
-            }
+            // const result = await response.json();
+            // if (result.success) {
+                setProperties(properties.map(p =>
+                    p.id_hosteleria === propertyId ? { ...p, estado: newStatus } : p
+                ));
+            // }
+        } catch (error) {
+            console.error('Error al actualizar propiedad:', error);
         }
     };
 
     const handleDeleteProperty = async (propertyId) => {
-        if (window.confirm('¿Estás seguro de que deseas eliminar esta propiedad? Esta acción no se puede deshacer.')) {
+        if (window.confirm('¿Estás seguro de que deseas eliminar esta propiedad?')) {
             try {
-                const response = await fetch(`http://localhost:3001/deleteHotel/${propertyId}`, {
-                    method: 'DELETE'
-                });
+                // const response = await fetch(`http://localhost:3001/deleteHotel/${propertyId}`, {
+                //     method: 'DELETE'
+                // });
 
-                const result = await response.json();
-
-                if (result.success) {
-                    alert('Propiedad eliminada exitosamente');
+                // const result = await response.json();
+                // if (result.success) {
                     setProperties(properties.filter(p => p.id_hosteleria !== propertyId));
-                    setDetailsModalOpen(false);
-                } else {
-                    alert('Error al eliminar la propiedad');
-                }
+                // }
             } catch (error) {
                 console.error('Error al eliminar propiedad:', error);
-                alert('Error al eliminar la propiedad');
             }
         }
-    };
-
-    const handleEditProperty = (propertyId) => {
-        alert(`Redirigir a editar propiedad ID: ${propertyId}`);
-    };
-
-    const handleOpenDetails = (property) => {
-        setSelectedProperty(property);
-        setDetailsModalOpen(true);
-    };
-
-    const handleCloseDetails = () => {
-        setSelectedProperty(null);
-        setDetailsModalOpen(false);
     };
 
     if (loading) {
         return (
             <div className="d-flex justify-content-center align-items-center" style={{ minHeight: '60vh' }}>
-                <div className="spinner-border" style={{ color: '#CD5C5C' }} role="status">
+                <div className="spinner-border text-primary" role="status">
                     <span className="visually-hidden">Cargando...</span>
                 </div>
             </div>
@@ -163,6 +184,7 @@ export default function HostProperties() {
     }
 
     const filteredProperties = filterProperties();
+    const sortedProperties = sortProperties(filteredProperties);
 
     const stats = {
         todas: properties.length,
@@ -171,314 +193,203 @@ export default function HostProperties() {
     };
 
     return (
-        <div style={{ backgroundColor: '#fff', minHeight: '100vh', paddingTop: '7rem', paddingBottom: '3rem' }}>
-            <div className="container">
-                <div className="mb-4 d-flex justify-content-between align-items-center">
-                    <div>
-                        <h1 className="fw-bold mb-2" style={{ color: '#CD5C5C' }}>Mis Propiedades</h1>
-                        <p className="text-muted">Gestiona tus publicaciones y propiedades</p>
-                        <button className="btn btn-outline-secondary btn-sm rounded-pill" onClick={() => navigate('/host/admin')}>Mis reservaciones <ArrowRight /></button>
+        <div style={{ backgroundColor: '#f8f9fa', minHeight: '100vh', paddingTop: '10rem', paddingBottom: '3rem' }}>
+            <div className="container-fluid px-4">
+                {/* Header */}
+                <div className="mb-5">
+                    <div className="d-flex justify-content-between align-items-center mb-4">
+                        <div>
+                            <h1 className="fw-bold mb-1" style={{ fontSize: '2rem', color: '#1a1a1a' }}>
+                                Mis Propiedades
+                            </h1>
+                            <p className="text-muted mb-0">Gestiona y monitorea todas tus propiedades</p>
+                        </div>
+                        <button
+                            className="btn rounded-2"
+                            onClick={() => navigate('/host/upload')}
+                            style={{ backgroundColor: '#CD5C5C', color: 'white', padding: '0.75rem 1.5rem' }}
+                        >
+                            <Plus size={18} className="me-2" />
+                            Nueva Propiedad
+                        </button>
                     </div>
-                    <button className="btn rounded-pill px-4 py-2" style={{ backgroundColor: '#CD5C5C', color: 'white' }}>
-                        <Plus size={20} className="me-2" />
-                        Nueva Propiedad
-                    </button>
                 </div>
 
-                {/* Modal de Detalles */}
-                {detailsModalOpen && selectedProperty && (
-                    <div className="modal show d-block" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }} onClick={handleCloseDetails}>
-                        <div className="modal-dialog modal-dialog-centered modal-xl" onClick={(e) => e.stopPropagation()}>
-                            <div className="modal-content rounded-4 border-0 shadow-lg">
-                                <div className="modal-header border-0" style={{ backgroundColor: '#F4EFEA' }}>
-                                    <div>
-                                        <h4 className="modal-title fw-bold mb-1" style={{ color: '#CD5C5C' }}>
-                                            {selectedProperty.nombre}
-                                        </h4>
-                                        <p className="text-muted small mb-0">
-                                            <MapPin size={14} className="me-1" />
-                                            {formatearDireccion(selectedProperty.direccion)}
-                                        </p>
-                                    </div>
-                                    <button type="button" className="btn-close" onClick={handleCloseDetails}></button>
-                                </div>
-
-                                <div className="modal-body p-4">
-                                    {/* Imágenes */}
-                                    <div className="mb-4">
-                                        <img
-                                            src={selectedProperty.image || 'https://images.unsplash.com/photo-1566073771259-6a8506099945?w=800'}
-                                            alt={selectedProperty.nombre}
-                                            style={{ width: '100%', height: '400px', objectFit: 'cover', borderRadius: '12px' }}
-                                        />
-                                    </div>
-
-                                    {/* Estado */}
-                                    <div className="mb-4 text-center">
-                                        <span className={`badge ${selectedProperty.estado === 'activo' ? 'bg-success' : 'bg-secondary'} px-3 py-2`}>
-                                            {selectedProperty.estado === 'activo' ? 'Activa' : 'Inactiva'}
-                                        </span>
-                                    </div>
-
-                                    {/* Información básica */}
-                                    <div className="row g-4 mb-4">
-                                        <div className="col-md-3">
-                                            <div className="text-center p-3 rounded-3" style={{ backgroundColor: '#F8F9FA' }}>
-                                                <DollarSign size={24} style={{ color: '#CD5C5C' }} className="mb-2" />
-                                                <div className="fw-bold">${selectedProperty.precio_por_noche?.toLocaleString('es-MX')}</div>
-                                                <small className="text-muted">por noche</small>
-                                            </div>
-                                        </div>
-                                        <div className="col-md-3">
-                                            <div className="text-center p-3 rounded-3" style={{ backgroundColor: '#F8F9FA' }}>
-                                                <Users size={24} style={{ color: '#CD5C5C' }} className="mb-2" />
-                                                <div className="fw-bold">{selectedProperty.capacidad}</div>
-                                                <small className="text-muted">huéspedes</small>
-                                            </div>
-                                        </div>
-                                        <div className="col-md-3">
-                                            <div className="text-center p-3 rounded-3" style={{ backgroundColor: '#F8F9FA' }}>
-                                                <Bed size={24} style={{ color: '#CD5C5C' }} className="mb-2" />
-                                                <div className="fw-bold">{selectedProperty.habitaciones || 'N/A'}</div>
-                                                <small className="text-muted">habitaciones</small>
-                                            </div>
-                                        </div>
-                                        <div className="col-md-3">
-                                            <div className="text-center p-3 rounded-3" style={{ backgroundColor: '#F8F9FA' }}>
-                                                <Bath size={24} style={{ color: '#CD5C5C' }} className="mb-2" />
-                                                <div className="fw-bold">{selectedProperty.banos || 'N/A'}</div>
-                                                <small className="text-muted">baños</small>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    {/* Descripción */}
-                                    <div className="mb-4">
-                                        <h6 className="fw-bold mb-3" style={{ color: '#CD5C5C' }}>Descripción</h6>
-                                        <p className="text-muted">{selectedProperty.descripcion || 'Sin descripción'}</p>
-                                    </div>
-
-                                    {/* Servicios */}
-                                    {selectedProperty.servicios && selectedProperty.servicios.length > 0 && (
-                                        <div className="mb-4">
-                                            <h6 className="fw-bold mb-3" style={{ color: '#CD5C5C' }}>Servicios</h6>
-                                            <div className="d-flex flex-wrap gap-2">
-                                                {selectedProperty.servicios.map((servicio, idx) => (
-                                                    <span key={idx} className="badge bg-light text-dark border px-3 py-2">
-                                                        {servicio}
-                                                    </span>
-                                                ))}
-                                            </div>
-                                        </div>
-                                    )}
-
-                                    {/* Acciones */}
-                                    <div className="border-top pt-4 mt-4">
-                                        <div className="d-flex gap-2 flex-wrap justify-content-between">
-                                            <div className="d-flex gap-2">
-                                                <button
-                                                    className="btn btn-outline-primary rounded-pill"
-                                                    onClick={() => handleEditProperty(selectedProperty.id_hosteleria)}
-                                                >
-                                                    <Edit size={16} className="me-2" />
-                                                    Editar
-                                                </button>
-                                                <button
-                                                    className={`btn ${selectedProperty.estado === 'activo' ? 'btn-outline-warning' : 'btn-outline-success'} rounded-pill`}
-                                                    onClick={() => handleToggleActive(selectedProperty.id_hosteleria, selectedProperty.estado === 'activo')}
-                                                >
-                                                    {selectedProperty.estado === 'activo' ? <EyeOff size={16} className="me-2" /> : <Eye size={16} className="me-2" />}
-                                                    {selectedProperty.estado === 'activo' ? 'Desactivar' : 'Activar'}
-                                                </button>
-                                            </div>
-                                            <button
-                                                className="btn btn-danger rounded-pill"
-                                                onClick={() => handleDeleteProperty(selectedProperty.id_hosteleria)}
-                                            >
-                                                <Trash2 size={16} className="me-2" />
-                                                Eliminar
-                                            </button>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div className="modal-footer border-0" style={{ backgroundColor: '#F8F9FA' }}>
-                                    <button className="btn rounded-pill px-4" style={{ backgroundColor: '#CD5C5C', color: 'white' }} onClick={handleCloseDetails}>
-                                        Cerrar
+                {/* Filtros y búsqueda */}
+                <div className="card border-0 rounded-3 p-4 mb-4" style={{ backgroundColor: 'white', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
+                    <div className="row g-3 align-items-center">
+                        <div className="col-md-6">
+                            <div className="input-group">
+                                <span className="input-group-text border-0" style={{ backgroundColor: '#f8f9fa' }}>
+                                    <Search size={18} className="text-muted" />
+                                </span>
+                                <input
+                                    type="text"
+                                    className="form-control border-0"
+                                    placeholder="Buscar por nombre o ubicación..."
+                                    value={searchTerm}
+                                    onChange={(e) => setSearchTerm(e.target.value)}
+                                    style={{ backgroundColor: '#f8f9fa' }}
+                                />
+                            </div>
+                        </div>
+                        <div className="col-md-6">
+                            <div className="d-flex gap-2 justify-content-end">
+                                {['todas', 'activas', 'inactivas'].map(tab => (
+                                    <button
+                                        key={tab}
+                                        className={`btn btn-sm rounded-2 px-3 ${
+                                            activeTab === tab
+                                                ? 'text-white'
+                                                : 'btn-outline-secondary'
+                                        }`}
+                                        style={
+                                            activeTab === tab
+                                                ? { backgroundColor: '#CD5C5C', border: 'none' }
+                                                : {}
+                                        }
+                                        onClick={() => setActiveTab(tab)}
+                                    >
+                                        {tab.charAt(0).toUpperCase() + tab.slice(1)} ({
+                                            tab === 'todas' ? stats.todas : 
+                                            tab === 'activas' ? stats.activas : 
+                                            stats.inactivas
+                                        })
                                     </button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                )}
-
-                {/* Estadísticas */}
-                <div className="row g-3 mb-4">
-                    <div className="col-md-4">
-                        <div className="card border-0 shadow-sm rounded-3 p-3">
-                            <div className="d-flex align-items-center">
-                                <div className="p-2 rounded-circle me-3" style={{ backgroundColor: '#E0F2FE' }}>
-                                    <Home size={20} style={{ color: '#0369A1' }} />
-                                </div>
-                                <div>
-                                    <small className="text-muted">Total Propiedades</small>
-                                    <h4 className="fw-bold mb-0">{stats.todas}</h4>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div className="col-md-4">
-                        <div className="card border-0 shadow-sm rounded-3 p-3">
-                            <div className="d-flex align-items-center">
-                                <div className="p-2 rounded-circle me-3" style={{ backgroundColor: '#D1FAE5' }}>
-                                    <Eye size={20} style={{ color: '#059669' }} />
-                                </div>
-                                <div>
-                                    <small className="text-muted">Activas</small>
-                                    <h4 className="fw-bold mb-0">{stats.activas}</h4>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div className="col-md-4">
-                        <div className="card border-0 shadow-sm rounded-3 p-3">
-                            <div className="d-flex align-items-center">
-                                <div className="p-2 rounded-circle me-3" style={{ backgroundColor: '#FEE2E2' }}>
-                                    <EyeOff size={20} style={{ color: '#DC2626' }} />
-                                </div>
-                                <div>
-                                    <small className="text-muted">Inactivas</small>
-                                    <h4 className="fw-bold mb-0">{stats.inactivas}</h4>
-                                </div>
+                                ))}
                             </div>
                         </div>
                     </div>
                 </div>
 
-                {/* Tabs */}
-                <ul className="nav nav-pills mb-4">
-                    <li className="nav-item">
-                        <button
-                            className={`nav-link ${activeTab === 'todas' ? 'active' : ''}`}
-                            style={{
-                                backgroundColor: activeTab === 'todas' ? '#CD5C5C' : 'transparent',
-                                color: activeTab === 'todas' ? 'white' : '#6c757d',
-                                border: 'none'
-                            }}
-                            onClick={() => setActiveTab('todas')}
-                        >
-                            Todas ({stats.todas})
-                        </button>
-                    </li>
-                    <li className="nav-item">
-                        <button
-                            className={`nav-link ${activeTab === 'activas' ? 'active' : ''}`}
-                            style={{
-                                backgroundColor: activeTab === 'activas' ? '#CD5C5C' : 'transparent',
-                                color: activeTab === 'activas' ? 'white' : '#6c757d',
-                                border: 'none'
-                            }}
-                            onClick={() => setActiveTab('activas')}
-                        >
-                            Activas ({stats.activas})
-                        </button>
-                    </li>
-                    <li className="nav-item">
-                        <button
-                            className={`nav-link ${activeTab === 'inactivas' ? 'active' : ''}`}
-                            style={{
-                                backgroundColor: activeTab === 'inactivas' ? '#CD5C5C' : 'transparent',
-                                color: activeTab === 'inactivas' ? 'white' : '#6c757d',
-                                border: 'none'
-                            }}
-                            onClick={() => setActiveTab('inactivas')}
-                        >
-                            Inactivas ({stats.inactivas})
-                        </button>
-                    </li>
-                </ul>
-
-                {/* Lista de propiedades */}
-                {filteredProperties.length === 0 ? (
-                    <div className="text-center py-5">
-                        <Home size={64} color="#CD5C5C" className="mb-3" />
-                        <h4 className="text-muted">No tienes propiedades {activeTab}</h4>
-                        <p className="text-muted">Comienza publicando tu primera propiedad</p>
-                        <button className="btn rounded-pill px-4 mt-3" style={{ backgroundColor: '#CD5C5C', color: 'white' }}>
-                            <Plus size={20} className="me-2" />
-                            Agregar Propiedad
-                        </button>
-                    </div>
-                ) : (
-                    <div className="row g-4">
-                        {filteredProperties.map((property) => (
-                            <div key={property.id_establecimiento} className="col-md-6 col-lg-4">
-                                <div className="card border-0 shadow-sm rounded-4 overflow-hidden h-100">
-                                    <div className="position-relative">
-                                        <img
-                                            src={property.image || 'https://images.unsplash.com/photo-1566073771259-6a8506099945?w=500'}
-                                            alt={property.nombre}
-                                            style={{ width: '100%', height: '220px', objectFit: 'cover' }}
-                                        />
-                                        <span className={`badge position-absolute top-0 end-0 m-3 ${property.estado === 'activo' ? 'bg-success' : 'bg-secondary'}`}>
-                                            {property.estado === 'activo' ? 'Activa' : 'Inactiva'}
-                                        </span>
-                                    </div>
-
-                                    <div className="card-body p-3">
-                                        <h5 className="fw-bold mb-2" style={{ color: '#CD5C5C' }}>
-                                            {property.nombre}
-                                        </h5>
-                                        <p className="text-muted small mb-2 d-flex align-items-start gap-1">
-                                            <MapPin size={14} className="mt-1 flex-shrink-0" />
-                                            <span className="text-truncate">
-                                                {formatearDireccion(property.direccion)}
-                                            </span>
-                                        </p>
-
-                                        <div className="d-flex gap-3 mb-3 text-muted small">
-                                            <span>
-                                                <Users size={14} className="me-1" />
-                                                {property.capacidad}
-                                            </span>
-                                            <span>
-                                                <Bed size={14} className="me-1" />
-                                                {property.habitaciones || 'N/A'}
-                                            </span>
-                                            <span>
-                                                <Bath size={14} className="me-1" />
-                                                {property.banos || 'N/A'}
-                                            </span>
-                                        </div>
-
-                                        <div className="d-flex justify-content-between align-items-center mb-3">
-                                            <span className="fw-bold" style={{ color: '#CD5C5C', fontSize: '1.25rem' }}>
-                                                ${property.precio_por_noche?.toLocaleString('es-MX')}
-                                                <small className="text-muted" style={{ fontSize: '0.75rem' }}> /noche</small>
-                                            </span>
-                                        </div>
-
-                                        <div className="d-flex gap-2">
-                                            <button
-                                                className="btn btn-sm btn-outline-secondary rounded-pill flex-grow-1"
-                                                onClick={() => handleOpenDetails(property)}
-                                            >
-                                                Ver detalles
-                                            </button>
-                                            <button
-                                                className="btn btn-sm rounded-pill"
-                                                style={{ backgroundColor: '#CD5C5C', color: 'white' }}
-                                                onClick={() => handleEditProperty(property.id_hosteleria)}
-                                            >
-                                                <Edit size={14} />
-                                            </button>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-                )}
+                {/* Tabla de propiedades */}
+                <div className="card border-0 rounded-3" style={{ backgroundColor: 'white', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
+                    {filteredProperties.length === 0 ? (
+                        <div className="p-5 text-center">
+                            <Home size={48} className="text-muted mb-3" />
+                            <h5 className="text-muted">No hay propiedades para mostrar</h5>
+                            <p className="text-muted small">Intenta ajustar los filtros o crea una nueva propiedad</p>
+                        </div>
+                    ) : (
+                        <div className="table-responsive">
+                            <table className="table table-hover mb-0">
+                                <thead style={{ backgroundColor: '#f8f9fa', borderBottom: '2px solid #e9ecef' }}>
+                                    <tr>
+                                        <th className="px-4 py-3 fw-600 text-muted" onClick={() => handleSort('nombre')} style={{ cursor: 'pointer', color: '#495057' }}>
+                                            <div className="d-flex align-items-center gap-2">
+                                                Propiedad
+                                                <ChevronDown size={14} />
+                                            </div>
+                                        </th>
+                                        <th className="px-4 py-3 fw-600 text-muted" style={{ color: '#495057' }}>Ubicación</th>
+                                        <th className="px-4 py-3 fw-600 text-muted" style={{ color: '#495057' }}>
+                                            <div className="d-flex align-items-center gap-2">
+                                                Capacidad
+                                                <ChevronDown size={14} />
+                                            </div>
+                                        </th>
+                                        <th className="px-4 py-3 fw-600 text-muted" style={{ color: '#495057' }}>Habitaciones</th>
+                                        <th className="px-4 py-3 fw-600 text-muted" style={{ color: '#495057' }}>Baños</th>
+                                        <th className="px-4 py-3 fw-600 text-muted" onClick={() => handleSort('precio_por_noche')} style={{ cursor: 'pointer', color: '#495057' }}>
+                                            <div className="d-flex align-items-center gap-2">
+                                                Precio/Noche
+                                                <ChevronDown size={14} />
+                                            </div>
+                                        </th>
+                                        <th className="px-4 py-3 fw-600 text-muted" style={{ color: '#495057' }}>Estado</th>
+                                        <th className="px-4 py-3 fw-600 text-muted" style={{ color: '#495057' }}>Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {sortedProperties.map((property) => (
+                                        <tr key={property.id_hosteleria} style={{ borderBottom: '1px solid #e9ecef' }}>
+                                            <td className="px-4 py-4">
+                                                <div className="d-flex align-items-center gap-3">
+                                                    <img
+                                                        src={property.image || 'https://images.unsplash.com/photo-1566073771259-6a8506099945?w=100'}
+                                                        alt={property.nombre}
+                                                        style={{ width: '50px', height: '50px', borderRadius: '8px', objectFit: 'cover' }}
+                                                    />
+                                                    <div>
+                                                        <p className="fw-600 mb-0" style={{ color: '#1a1a1a' }}>
+                                                            {property.nombre}
+                                                        </p>
+                                                        <small className="text-muted">ID: {property.id_hosteleria}</small>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td className="px-4 py-4">
+                                                <div className="d-flex align-items-center gap-2">
+                                                    <MapPin size={16} className="text-muted" />
+                                                    <span className="text-muted small">{formatearDireccion(property.direccion)}</span>
+                                                </div>
+                                            </td>
+                                            <td className="px-4 py-4">
+                                                <div className="d-flex align-items-center gap-2">
+                                                    <Users size={16} style={{ color: '#CD5C5C' }} />
+                                                    <span className="fw-500">{property.capacidad}</span>
+                                                </div>
+                                            </td>
+                                            <td className="px-4 py-4">
+                                                <div className="d-flex align-items-center gap-2">
+                                                    <Bed size={16} style={{ color: '#CD5C5C' }} />
+                                                    <span className="fw-500">{property.habitaciones || 'N/A'}</span>
+                                                </div>
+                                            </td>
+                                            <td className="px-4 py-4">
+                                                <div className="d-flex align-items-center gap-2">
+                                                    <Bath size={16} style={{ color: '#CD5C5C' }} />
+                                                    <span className="fw-500">{property.banos || 'N/A'}</span>
+                                                </div>
+                                            </td>
+                                            <td className="px-4 py-4">
+                                                <span className="fw-bold" style={{ color: '#CD5C5C', fontSize: '1.1rem' }}>
+                                                    ${property.precio_por_noche?.toLocaleString('es-MX')}
+                                                </span>
+                                            </td>
+                                            <td className="px-4 py-4">
+                                                <span className={`badge rounded-pill px-3 py-2 ${
+                                                    property.estado === 'activo'
+                                                        ? 'bg-success-subtle text-success'
+                                                        : 'bg-secondary-subtle text-secondary'
+                                                }`}>
+                                                    {property.estado === 'activo' ? 'Activa' : 'Inactiva'}
+                                                </span>
+                                            </td>
+                                            <td className="px-4 py-4">
+                                                <div className="d-flex gap-2">
+                                                    <button
+                                                        className="btn btn-sm btn-outline-secondary rounded-2 p-2"
+                                                        onClick={() => handleToggleActive(property.id_hosteleria, property.estado === 'activo')}
+                                                        title={property.estado === 'activo' ? 'Desactivar' : 'Activar'}
+                                                        style={{ width: '36px', height: '36px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                                                    >
+                                                        {property.estado === 'activo' ? <EyeOff size={16} /> : <Eye size={16} />}
+                                                    </button>
+                                                    <button
+                                                        className="btn btn-sm btn-outline-primary rounded-2 p-2"
+                                                        title="Editar"
+                                                        style={{ width: '36px', height: '36px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                                                    >
+                                                        <Edit size={16} />
+                                                    </button>
+                                                    <button
+                                                        className="btn btn-sm btn-outline-danger rounded-2 p-2"
+                                                        onClick={() => handleDeleteProperty(property.id_hosteleria)}
+                                                        title="Eliminar"
+                                                        style={{ width: '36px', height: '36px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                                                    >
+                                                        <Trash2 size={16} />
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                    )}
+                </div>
             </div>
         </div>
     );

@@ -486,7 +486,8 @@ export default function UserAdmin() {
                                                 onChange={handleInputChange}
                                             >
                                                 <option value="usuario">Usuario</option>
-                                                <option value="admin">Administrador</option>
+                                                <option value="invitado">Anfitrion</option>
+                                                <option value="admin">Admin</option>
                                             </select>
                                         </div>
 

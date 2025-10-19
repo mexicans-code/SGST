@@ -131,6 +131,10 @@ export default function Profile() {
             showNotification('Debes ser anfitrión para ver propiedades', 'error');
         }
     };
+
+    const handleVerPublicaciones = () => {
+        navigate('/host/publications');
+    };
     const handleVerReservas = () => {
         navigate('/user/reservations');
     };
@@ -233,6 +237,7 @@ export default function Profile() {
                                             </div>
 
                                             {formData.rol === 'anfitrion' && (
+                                                <div>
                                                 <button
                                                     type="button"
                                                     className="btn w-100 text-white fw-semibold"
@@ -258,6 +263,34 @@ export default function Profile() {
                                                     <i className="bi bi-house-door me-2"></i>
                                                     Ver mis propiedades
                                                 </button>
+
+                                                <button
+                                                    type="button"
+                                                    className="btn w-100 text-white fw-semibold mt-5"
+                                                    style={{
+                                                        backgroundColor: '#4682B4',
+                                                        border: 'none',
+                                                        padding: '12px',
+                                                        transition: 'all 0.3s ease',
+                                                        boxShadow: '0 2px 8px rgba(70, 130, 180, 0.3)'
+                                                    }}
+                                                    onMouseEnter={(e) => {
+                                                        e.target.style.backgroundColor = '#35648f';
+                                                        e.target.style.transform = 'translateY(-2px)';
+                                                        e.target.style.boxShadow = '0 4px 12px rgba(70, 130, 180, 0.4)';
+                                                    }}
+                                                    onMouseLeave={(e) => {
+                                                        e.target.style.backgroundColor = '#4682B4';
+                                                        e.target.style.transform = 'translateY(0)';
+                                                        e.target.style.boxShadow = '0 2px 8px rgba(70, 130, 180, 0.3)';
+                                                    }}
+                                                    onClick={handleVerPublicaciones}
+                                                >
+                                                    <i className="bi bi-house-door me-2"></i>
+                                                    Mis Publicaciones
+                                                </button>
+
+                                                </div>
                                             )}
 
                                             {formData.rol === 'usuario' && (

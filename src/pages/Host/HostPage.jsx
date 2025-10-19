@@ -174,7 +174,7 @@ export default function HostUploadPage() {
                 codigo_postal: formData.codigo_postal,
                 pais: formData.pais
             }),
-            image: images[0].url // URL de Cloudinary
+            image: images[0].url 
         };
     
         console.log('📤 Enviando payload:', payload);
