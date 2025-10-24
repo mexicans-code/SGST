@@ -261,7 +261,7 @@ export default function Profile() {
                                                     onClick={handleVerPropiedades}
                                                 >
                                                     <i className="bi bi-house-door me-2"></i>
-                                                    Ver mis propiedades
+                                                    Reservas Recibidas
                                                 </button>
 
                                                 <button
