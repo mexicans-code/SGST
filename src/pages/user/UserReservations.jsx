@@ -10,6 +10,7 @@ import ChatModal from "../../components/Chat";
 import { useNavigate } from "react-router-dom";
 import ReviewUsers from "../../components/ReviewUsers";
 import ReservationDetailsModal from "../../components/ReservationDetailsModal";
+import Swal from "sweetalert2";
 
 const STATUS_BADGES = {
   confirmada: { bg: "success", text: "Confirmada" },
@@ -50,33 +51,54 @@ export default function UserReservations() {
     }
   };
 
-  const fetchReservations = useCallback(async (currentUserId) => {
-    setLoading(true);
-    try {
-      const token = localStorage.getItem("token");
-      const response = await fetch(
-        "http://localhost:3000/api/booking/getBookings",
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-
-      const result = await response.json();
-
-      if (result.success && result.data) {
-        const userReservations = result.data.filter(
-          (reserva) => reserva.usuario?.id_usuario === currentUserId
-        );
-        setReservations(userReservations);
+const fetchReservations = useCallback(async (currentUserId) => {
+  setLoading(true);
+  try {
+    const token = localStorage.getItem("token");
+    const response = await fetch(
+      "http://localhost:3000/api/booking/getBookings",
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
       }
-    } catch (error) {
-      console.error("Error al obtener reservaciones:", error);
-    } finally {
-      setLoading(false);
+    );
+
+    const result = await response.json();
+
+    if (result.success && result.data) {
+      // Filtrar solo reservas del usuario Y que estén confirmadas
+      const userReservations = result.data.filter(
+        (reserva) => 
+          reserva.usuario?.id_usuario === currentUserId &&
+          reserva.reserva?.estado === "confirmada"
+      );
+      
+      setReservations(userReservations);
+
+      // Mostrar alerta solo si no hay reservas confirmadas
+      if (userReservations.length === 0) {
+        Swal.fire({
+          icon: 'info',
+          title: 'Sin reservaciones',
+          text: 'No tienes reservaciones confirmadas en este momento.',
+          confirmButtonColor: '#CD5C5C'
+        });
+      }
     }
-  }, []);
+  } catch (error) {
+    console.error("Error al obtener reservaciones:", error);
+    Swal.fire({
+      icon: 'error',
+      title: 'Error',
+      text: 'No se pudieron cargar las reservaciones.',
+      confirmButtonColor: '#CD5C5C'
+    });
+  } finally {
+    setLoading(false);
+  }
+}, []);
+
 
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -182,49 +204,73 @@ export default function UserReservations() {
     return `${direccion.ciudad || ""}, ${direccion.estado || ""}`.trim();
   };
 
-  const handleCancelReservation = async (reservaId) => {
-    if (
-      window.confirm(
-        "¿Estás seguro de que deseas cancelar esta reservación? Esta acción no se puede deshacer."
-      )
-    ) {
-      setLoading(true);
-      try {
-        const token = localStorage.getItem("token");
-        // Aquí implementa tu endpoint de cancelación real
-        /*
-         const response = await fetch(`http://localhost:3000/api/booking/cancel/${reservaId}`, {
-           method: 'PUT',
-           headers: {
-             'Authorization': `Bearer ${token}`,
-             'Content-Type': 'application/json'
-           }
-         });
-        */
-        alert("Reservación cancelada exitosamente");
+const handleCancelReservation = async (reservaId) => {
+  const result = await Swal.fire({
+    title: '¿Cancelar reservación?',
+    text: "Esta acción no se puede deshacer. Se cancelará tu reserva definitivamente.",
+    icon: 'warning',
+    showCancelButton: true,
+    confirmButtonColor: '#CD5C5C',
+    cancelButtonColor: '#6c757d',
+    confirmButtonText: 'Sí, cancelar',
+    cancelButtonText: 'No, mantener'
+  });
+
+  if (result.isConfirmed) {
+    setLoading(true);
+    try {
+      const token = localStorage.getItem("token");
+      
+      const response = await fetch(
+        `http://localhost:3000/api/booking/cancelBooking/${reservaId}`, 
+        {
+          method: 'PUT',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        }
+      );
+
+      const data = await response.json();
+
+      if (data.success) {
+        // Mostrar mensaje de éxito
+        await Swal.fire({
+          icon: 'success',
+          title: 'Reservación cancelada',
+          text: 'Tu reservación ha sido cancelada exitosamente.',
+          confirmButtonColor: '#CD5C5C'
+        });
+
+        // Cerrar el modal de detalles
         setDetailsModalOpen(false);
 
-        // Recargar las reservaciones tras cancelar
-        const response = await fetch("http://localhost:3000/api/booking/getBookings", {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
+        // Recargar las reservaciones
+        await fetchReservations(userId);
+      } else {
+        // Mostrar error específico del servidor
+        await Swal.fire({
+          icon: 'error',
+          title: 'No se pudo cancelar',
+          text: data.message || 'Error al cancelar la reservación',
+          confirmButtonColor: '#CD5C5C'
         });
-        const result = await response.json();
-        if (result.success && result.data) {
-          const userReservations = result.data.filter(
-            (reserva) => reserva.usuario?.id_usuario === userId
-          );
-          setReservations(userReservations);
-        }
-      } catch (error) {
-        console.error("Error al cancelar reservación:", error);
-        alert("Error al cancelar la reservación");
-      } finally {
-        setLoading(false);
       }
+    } catch (error) {
+      console.error("Error al cancelar reservación:", error);
+      await Swal.fire({
+        icon: 'error',
+        title: 'Error',
+        text: 'Hubo un problema al cancelar la reservación. Intenta nuevamente.',
+        confirmButtonColor: '#CD5C5C'
+      });
+    } finally {
+      setLoading(false);
     }
-  };
+  }
+};
+
 
   const handleOpenDetails = (data) => {
     setSelectedReservation(data);
@@ -311,7 +357,6 @@ export default function UserReservations() {
           </button>
         </div>
 
-        {/* Tabs para filtrar */}
         <div className="mb-4 d-flex gap-3 flex-wrap">
           {[
             { key: "todas", label: `Todas (${stats.todas})` },
@@ -366,7 +411,7 @@ export default function UserReservations() {
           <div className="row g-4" aria-label="Listado de reservaciones filtradas">
             {filteredReservations.map((data) => {
               const info = getReservationInfo(data);
-              const precioTotal = calcularPrecioTotal(data);
+              const precioTotal = calcularPrecioTotal(data);  
 
               return (
                 <article

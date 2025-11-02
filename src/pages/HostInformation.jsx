@@ -4,9 +4,6 @@ import { useEffect, useState } from 'react';
 import axios from 'axios';
 import Swal from 'sweetalert2';
 
-
-
-
 const HostInformation = () => {
     const navigate = useNavigate();
 
@@ -28,7 +25,6 @@ const HostInformation = () => {
             return null;
         }
     }
-
 
     useEffect(() => {
         const storedUser = localStorage.getItem("token");
@@ -71,12 +67,23 @@ const HostInformation = () => {
 
                 console.log("Respuesta del servidor:", response.data);
 
-                const updatedUser = {
-                    ...user,
-                    rol: 'anfitrion'
-                };
-
-                setUser(updatedUser);
+                // CAMBIO PRINCIPAL: Guardar el nuevo token en localStorage
+                if (response.data.token) {
+                    localStorage.setItem("token", response.data.token);
+                    
+                    // Decodificar el nuevo token para actualizar el estado
+                    const newDecodedToken = parseJwt(response.data.token);
+                    console.log("Nuevo token decodificado:", newDecodedToken);
+                    setUser(newDecodedToken);
+                } else {
+                    // Fallback si por alguna razón no viene el token
+                    console.warn("No se recibió token del servidor");
+                    const updatedUser = {
+                        ...user,
+                        rol: 'anfitrion'
+                    };
+                    setUser(updatedUser);
+                }
 
                 await Swal.fire({
                     title: '¡Éxito!',
@@ -88,7 +95,6 @@ const HostInformation = () => {
                 setTimeout(() => {
                     navigate("/host/upload");
                 }, 2000);
-
 
             } catch (error) {
                 console.log("Error al convertirse en anfitrión:", error);

@@ -10,6 +10,11 @@ import {
   MessageCircle,
   ChevronRight,
   Sparkles,
+  Plus,
+  ArrowRight,
+  ArrowLeft,
+  Home,
+  Compass,
 } from "lucide-react";
 import ChatModal from "../../components/Chat";
 import { useNavigate } from "react-router-dom";
@@ -24,6 +29,9 @@ export default function HostReservations() {
   const [selectedEstablecimiento, setSelectedEstablecimiento] = useState(null);
   const [selectedReservation, setSelectedReservation] = useState(null);
   const navigate = useNavigate();
+
+  const [selectedProperty, setSelectedProperty] = useState(null);
+  const [isEditOpen, setIsEditOpen] = useState(false);
 
   const parseJwt = (token) => {
     try {
@@ -98,25 +106,6 @@ export default function HostReservations() {
   const formatDate = (date) =>
     new Date(date).toLocaleDateString("es-MX", { day: "numeric", month: "short", year: "numeric" });
 
-  if (loading) {
-    return (
-      <div className="d-flex justify-content-center align-items-center" style={{ minHeight: "60vh" }}>
-        <div className="spinner-border text-dark" role="status">
-          <span className="visually-hidden">Cargando...</span>
-        </div>
-      </div>
-    );
-  }
-
-  const filtered = getFiltered();
-  const stats = tabs.reduce(
-    (acc, tab) => ({
-      ...acc,
-      [tab.key]: tab.estado === null ? reservations.length : reservations.filter((r) => r.reserva?.estado === tab.estado).length,
-    }),
-    {}
-  );
-
   const handleOpenChat = (data) => {
     const isExp = data.experiencia !== null;
     const anfitrion = isExp ? data.experiencia?.anfitrion : data.anfitrion;
@@ -132,6 +121,55 @@ export default function HostReservations() {
     setSelectedEstablecimiento(establecimientoData);
     setChatOpen(true);
   };
+
+  const handleOpenEdit = (property) => {
+    setSelectedProperty(property);
+    setIsEditOpen(true);
+  };
+
+  const handleCloseEdit = () => {
+    setSelectedProperty(null);
+    setIsEditOpen(false);
+  };
+
+  const handleSaveProperty = (updatedProperty) => {
+    setReservations((prev) =>
+      prev.map((r) =>
+        r.establecimiento?.id_hosteleria === updatedProperty.id_hosteleria
+          ? { ...r, establecimiento: updatedProperty }
+          : r
+      )
+    );
+    handleCloseEdit();
+  };
+
+  const onClose = () => {
+    setChatOpen(false);
+    setSelectedAnfitrion(null);
+    setSelectedEstablecimiento(null);
+  };
+
+  if (loading) {
+    return (
+      <div className="d-flex justify-content-center align-items-center" style={{ minHeight: "60vh" }}>
+        <div className="spinner-border text-dark" role="status">
+          <span className="visually-hidden">Cargando...</span>
+        </div>
+      </div>
+    );
+  }
+
+  const filtered = getFiltered();
+  const stats = tabs.reduce(
+    (acc, tab) => ({
+      ...acc,
+      [tab.key]:
+        tab.estado === null
+          ? reservations.length
+          : reservations.filter((r) => r.reserva?.estado === tab.estado).length,
+    }),
+    {}
+  );
 
   return (
     <div style={{ backgroundColor: "#f8f9fa", minHeight: "100vh", paddingTop: "7rem", paddingBottom: "3rem" }}>
@@ -241,7 +279,8 @@ export default function HostReservations() {
                           </span>
                           {!isExp && (
                             <span className="d-flex align-items-center gap-1">
-                              <Clock size={16} /> {calcNights(data.reserva?.fecha_inicio, data.reserva?.fecha_fin)} noches
+                              <Clock size={16} />{" "}
+                              {calcNights(data.reserva?.fecha_inicio, data.reserva?.fecha_fin)} noches
                             </span>
                           )}
                           <span className="fw-semibold text-dark d-flex align-items-center gap-1">
@@ -260,7 +299,7 @@ export default function HostReservations() {
                           onClick={() => {
                             handleOpenChat(data);
                           }}
-                          title="Contactar anfitrión"
+                          title="Contactar usuario"
                         >
                           <MessageCircle size={16} />
                         </button>
@@ -273,7 +312,6 @@ export default function HostReservations() {
           </div>
         )}
 
-        {/* Details Modal */}
         {selectedReservation && (
           <div
             className="modal show d-block"
@@ -285,16 +323,18 @@ export default function HostReservations() {
                 <div className="modal-header border-0 pb-0" style={{ backgroundColor: "#F4EFEA" }}>
                   <div>
                     <h4 className="modal-title fw-bold mb-1" style={{ color: "#CD5C5C" }}>
-                      Detalles de tu Reservación
+                      Detalles de la Reservación
                     </h4>
                     <p className="text-muted small mb-0">
                       ID: #{selectedReservation.reserva?.id_reserva} •{" "}
-                      {selectedReservation.reserva?.tipo_reserva === "experiencia"
-                        ? "Experiencia"
-                        : "Alojamiento"}
+                      {selectedReservation.experiencia !== null ? "Experiencia" : "Alojamiento"}
                     </p>
                   </div>
-                  <button type="button" className="btn-close" onClick={() => setSelectedReservation(null)}></button>
+                  <button
+                    type="button"
+                    className="btn-close"
+                    onClick={() => setSelectedReservation(null)}
+                  ></button>
                 </div>
 
                 <div className="modal-body p-4">
@@ -303,26 +343,31 @@ export default function HostReservations() {
                   {/* Info del servicio */}
                   <div className="mb-4">
                     <h6 className="fw-bold mb-3" style={{ color: "#CD5C5C" }}>
-                      {selectedReservation.reserva?.tipo_reserva === "experiencia" ? (
+                      {selectedReservation.experiencia !== null ? (
                         <>
                           <Compass size={18} className="me-2" />
-                          Tu Experiencia
+                          Experiencia
                         </>
                       ) : (
                         <>
                           <Home size={18} className="me-2" />
-                          Tu Alojamiento
+                          Alojamiento
                         </>
                       )}
                     </h6>
-                    <div className="d-flex gap-3 align-items-center p-3 rounded-3" style={{ backgroundColor: "#F8F9FA" }}>
+                    <div
+                      className="d-flex gap-3 align-items-center p-3 rounded-3"
+                      style={{ backgroundColor: "#F8F9FA" }}
+                    >
                       <img
                         src={
                           selectedReservation.experiencia?.image ||
                           selectedReservation.establecimiento?.image ||
                           "https://images.unsplash.com/photo-1566073771259-6a8506099945?w=500"
                         }
-                        alt={selectedReservation.experiencia?.titulo || selectedReservation.establecimiento?.nombre}
+                        alt={
+                          selectedReservation.experiencia?.titulo || selectedReservation.establecimiento?.nombre
+                        }
                         style={{
                           width: "80px",
                           height: "80px",
@@ -334,7 +379,8 @@ export default function HostReservations() {
                         <h6 className="fw-bold mb-1">
                           {selectedReservation.experiencia?.titulo || selectedReservation.establecimiento?.nombre}
                         </h6>
-                        {(selectedReservation.establecimiento?.direccion || selectedReservation.experiencia?.ubicacion) && (
+                        {(selectedReservation.establecimiento?.direccion ||
+                          selectedReservation.experiencia?.ubicacion) && (
                           <p className="text-muted mb-0 small">
                             <MapPin size={14} className="me-1" />
                             {selectedReservation.establecimiento
@@ -350,12 +396,12 @@ export default function HostReservations() {
                   <div className="mb-4">
                     <h6 className="fw-bold mb-3" style={{ color: "#CD5C5C" }}>
                       <Calendar size={18} className="me-2" />
-                      {selectedReservation.reserva?.tipo_reserva === "experiencia"
+                      {selectedReservation.experiencia !== null
                         ? "Fecha de la experiencia"
-                        : "Fechas de tu estancia"}
+                        : "Fechas de estancia"}
                     </h6>
 
-                    {selectedReservation.reserva?.tipo_reserva === "experiencia" ? (
+                    {selectedReservation.experiencia !== null ? (
                       <div className="p-3 rounded-3" style={{ backgroundColor: "#F8F9FA" }}>
                         <small className="text-muted d-block mb-1">Fecha programada</small>
                         <strong>
@@ -385,34 +431,31 @@ export default function HostReservations() {
                         </div>
                         <div className="mt-2 text-muted small">
                           <Clock size={14} className="me-1" />
-                          {calcNights(selectedReservation.reserva?.fecha_inicio, selectedReservation.reserva?.fecha_fin)}{" "}
+                          {calcNights(
+                            selectedReservation.reserva?.fecha_inicio,
+                            selectedReservation.reserva?.fecha_fin
+                          )}{" "}
                           noches • {selectedReservation.reserva?.personas} huésped(es)
                         </div>
                       </>
                     )}
                   </div>
 
-                  {/* Anfitrión */}
+                  {/* Usuario que reservó */}
                   <div className="mb-4">
                     <h6 className="fw-bold mb-3" style={{ color: "#CD5C5C" }}>
                       <User size={18} className="me-2" />
-                      {selectedReservation.reserva?.tipo_reserva === "experiencia" ? "Guía" : "Anfitrión"}
+                      Usuario
                     </h6>
                     <div className="p-3 rounded-3" style={{ backgroundColor: "#F8F9FA" }}>
                       <div className="mb-2">
-                        <strong>{selectedReservation.experiencia?.anfitrion?.nombre || selectedReservation.anfitrion?.nombre || "No disponible"}</strong>
+                        <strong>{selectedReservation.usuario?.nombre || "No disponible"}</strong>
                       </div>
                       <div className="d-flex flex-column gap-2">
                         <span className="text-muted small">
                           <Mail size={14} className="me-2" />
-                          {selectedReservation.experiencia?.anfitrion?.email || selectedReservation.anfitrion?.email || "No disponible"}
+                          {selectedReservation.usuario?.email || "No disponible"}
                         </span>
-                        {(selectedReservation.experiencia?.anfitrion?.telefono || selectedReservation.anfitrion?.telefono) && (
-                          <span className="text-muted small">
-                            <Phone size={14} className="me-2" />
-                            {selectedReservation.experiencia?.anfitrion?.telefono || selectedReservation.anfitrion?.telefono}
-                          </span>
-                        )}
                       </div>
                     </div>
                   </div>
@@ -426,9 +469,13 @@ export default function HostReservations() {
                     <div className="p-3 rounded-3" style={{ backgroundColor: "#F8F9FA" }}>
                       <div className="d-flex justify-content-between mb-2">
                         <span className="text-muted">
-                          {selectedReservation.reserva?.tipo_reserva === "experiencia"
-                            ? `$${selectedReservation.experiencia?.precio.toLocaleString("es-MX")} × ${selectedReservation.reserva?.personas} persona(s)`
-                            : `$${selectedReservation.establecimiento?.precio_por_noche.toLocaleString("es-MX")} × ${calcNights(
+                          {selectedReservation.experiencia !== null
+                            ? `$${selectedReservation.experiencia?.precio.toLocaleString(
+                                "es-MX"
+                              )} × ${selectedReservation.reserva?.personas} persona(s)`
+                            : `$${selectedReservation.establecimiento?.precio_por_noche.toLocaleString(
+                                "es-MX"
+                              )} × ${calcNights(
                                 selectedReservation.reserva?.fecha_inicio,
                                 selectedReservation.reserva?.fecha_fin
                               )} noches`}
@@ -444,23 +491,6 @@ export default function HostReservations() {
                       </div>
                     </div>
                   </div>
-
-                  {/* Cancelación */}
-                  {(selectedReservation.reserva?.estado === "confirmada" ||
-                    selectedReservation.reserva?.estado === "pendiente") && (
-                    <div className="border-top pt-3">
-                      <h6 className="fw-bold mb-3 text-danger">¿Necesitas cancelar?</h6>
-                      <button
-                        className="btn btn-danger w-100 rounded-pill"
-                        onClick={() => onCancelReservation(selectedReservation.reserva?.id_reserva)}
-                      >
-                        Cancelar mi Reservación
-                      </button>
-                      <small className="text-muted d-block mt-2 text-center">
-                        Esta acción no se puede deshacer
-                      </small>
-                    </div>
-                  )}
                 </div>
 
                 {/* Footer */}
@@ -469,24 +499,16 @@ export default function HostReservations() {
                     selectedReservation.reserva?.estado === "pendiente") && (
                     <button
                       className="btn btn-outline-secondary rounded-pill px-4"
-                      onClick={() =>
-                        onOpenChat(
-                          selectedReservation.experiencia?.anfitrion || selectedReservation.anfitrion,
-                          selectedReservation.reserva?.tipo_reserva === "experiencia"
-                            ? selectedReservation.experiencia
-                            : selectedReservation.establecimiento,
-                          selectedReservation.reserva?.tipo_reserva
-                        )
-                      }
+                      onClick={() => handleOpenChat(selectedReservation)}
                     >
                       <MessageCircle size={16} className="me-2" />
-                      Contactar {selectedReservation.reserva?.tipo_reserva === "experiencia" ? "Guía" : "Anfitrión"}
+                      Contactar Usuario
                     </button>
                   )}
                   <button
                     className="btn rounded-pill px-4"
                     style={{ backgroundColor: "#CD5C5C", color: "white" }}
-                    onClick={onClose}
+                    onClick={() => setSelectedReservation(null)}
                   >
                     Cerrar
                   </button>

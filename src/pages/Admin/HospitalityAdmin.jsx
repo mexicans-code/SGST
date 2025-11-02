@@ -9,28 +9,45 @@ export default function HospitalityAdmin() {
         nombre: '',
         descripcion: '',
         precio_por_noche: '',
+        habitaciones: '',
+        banos: '',
         capacidad: '',
-        ubicacion: '',
+        direccion: {
+            calle: '',
+            ciudad: '',
+            estado: '',
+            pais: '',
+            colonia: '',
+            numero_exterior: '',
+            numero_interior: ''
+        },
         image: '',
-        estado: 'pendiente'
+        estado: 'activo'
     });
 
     useEffect(() => {
         cargarHosteleria();
     }, []);
 
-    const cargarHosteleria = async () => {
-        try {
-            const response = await fetch('http://localhost:3000/api/hospitality/getHotelData');
-            const data = await response.json();
-            if (data.success) {
-                setUsers(data.data);
-            }
-        } catch (error) {
-            console.error('Error al cargar hostelería:', error);
-            alert('Error al cargar los establecimientos');
+const cargarHosteleria = async () => {
+    try {
+        const response = await fetch('http://localhost:3000/api/hospitality/getHotelData');
+        const data = await response.json();
+        
+        if (data.success) {
+            const normalizedData = data.data.map(hotel => ({
+                ...hotel,
+                direccion: hotel.direcciones || hotel.direccion
+            }));
+            
+            setUsers(normalizedData);
         }
-    };
+    } catch (error) {
+        console.error('Error al cargar hostelería:', error);
+        alert('Error al cargar los establecimientos');
+    }
+};
+
 
     const handleInputChange = (e) => {
         setFormData({
@@ -39,18 +56,38 @@ export default function HospitalityAdmin() {
         });
     };
 
+    const handleDireccionChange = (e) => {
+        setFormData({
+            ...formData,
+            direccion: {
+                ...formData.direccion,
+                [e.target.name]: e.target.value
+            }
+        });
+    };
+
     const openModal = (user = null) => {
         if (user) {
             setEditingUser(user);
             setFormData({
-                id_anfitrion: user.id_anfitrion,
-                nombre: user.nombre,
-                descripcion: user.descripcion,
-                precio_por_noche: user.precio_por_noche,
-                capacidad: user.capacidad,
-                ubicacion: user.ubicacion,
+                id_anfitrion: user.id_anfitrion || '',
+                nombre: user.nombre || '',
+                descripcion: user.descripcion || '',
+                precio_por_noche: user.precio_por_noche || '',
+                habitaciones: user.habitaciones || '',
+                banos: user.banos || '',
+                capacidad: user.capacidad || '',
+                direccion: user.direccion || {
+                    calle: '',
+                    ciudad: '',
+                    estado: '',
+                    pais: '',
+                    colonia: '',
+                    numero_exterior: '',
+                    numero_interior: ''
+                },
                 image: user.image || '',
-                estado: user.estado || 'pendiente'
+                estado: user.estado || 'activo'
             });
         } else {
             setEditingUser(null);
@@ -59,10 +96,20 @@ export default function HospitalityAdmin() {
                 nombre: '',
                 descripcion: '',
                 precio_por_noche: '',
+                habitaciones: '',
+                banos: '',
                 capacidad: '',
-                ubicacion: '',
+                direccion: {
+                    calle: '',
+                    ciudad: '',
+                    estado: '',
+                    pais: '',
+                    colonia: '',
+                    numero_exterior: '',
+                    numero_interior: ''
+                },
                 image: '',
-                estado: 'pendiente'
+                estado: 'activo'
             });
         }
         setShowModal(true);
@@ -88,6 +135,8 @@ export default function HospitalityAdmin() {
                 if (data.success) {
                     alert('Establecimiento actualizado correctamente');
                     cargarHosteleria();
+                } else {
+                    alert(data.error || 'Error al actualizar');
                 }
             } else {
                 // Crear
@@ -100,6 +149,8 @@ export default function HospitalityAdmin() {
                 if (data.success) {
                     alert('Establecimiento creado correctamente');
                     cargarHosteleria();
+                } else {
+                    alert(data.error || 'Error al crear');
                 }
             }
             closeModal();
@@ -119,12 +170,19 @@ export default function HospitalityAdmin() {
                 if (data.success) {
                     alert('Establecimiento eliminado correctamente');
                     cargarHosteleria();
+                } else {
+                    alert(data.message || 'Error al eliminar');
                 }
             } catch (error) {
                 console.error('Error:', error);
                 alert('Error al eliminar el establecimiento');
             }
         }
+    };
+
+    const formatearDireccion = (direccion) => {
+        if (!direccion) return 'Sin dirección';
+        return `${direccion.ciudad || ''}, ${direccion.estado || ''}`.trim() || 'Sin dirección';
     };
 
     return (
@@ -257,7 +315,7 @@ export default function HospitalityAdmin() {
                                             <i className="bi bi-people-fill"></i>
                                         </div>
                                     </div>
-                                    <h3 className="fw-bold text-success">{users.reduce((sum, u) => sum + u.capacidad, 0)}</h3>
+                                    <h3 className="fw-bold text-success">{users.reduce((sum, u) => sum + (u.capacidad || 0), 0)}</h3>
                                     <p className="text-muted mb-0">Capacidad Total</p>
                                 </div>
                             </div>
@@ -270,7 +328,7 @@ export default function HospitalityAdmin() {
                                             <i className="bi bi-currency-dollar"></i>
                                         </div>
                                     </div>
-                                    <h3 className="fw-bold text-warning">${users.length > 0 ? (users.reduce((sum, u) => sum + u.precio_por_noche, 0) / users.length).toFixed(0) : 0}</h3>
+                                    <h3 className="fw-bold text-warning">${users.length > 0 ? (users.reduce((sum, u) => sum + (u.precio_por_noche || 0), 0) / users.length).toFixed(0) : 0}</h3>
                                     <p className="text-muted mb-0">Precio Promedio</p>
                                 </div>
                             </div>
@@ -300,6 +358,8 @@ export default function HospitalityAdmin() {
                                         <th>Anfitrión</th>
                                         <th>Descripción</th>
                                         <th>Precio/Noche</th>
+                                        <th>Habitaciones</th>
+                                        <th>Baños</th>
                                         <th>Capacidad</th>
                                         <th>Ubicación</th>
                                         <th>Estado</th>
@@ -323,7 +383,9 @@ export default function HospitalityAdmin() {
                                                 </span>
                                             </td>
                                             <td>
-                                                <small className="text-muted">{user.descripcion.substring(0, 50)}...</small>
+                                                <small className="text-muted">
+                                                    {user.descripcion ? user.descripcion.substring(0, 50) + '...' : 'Sin descripción'}
+                                                </small>
                                             </td>
                                             <td>
                                                 <span className="badge bg-success rounded-pill px-3 py-2">
@@ -332,11 +394,21 @@ export default function HospitalityAdmin() {
                                             </td>
                                             <td>
                                                 <span className="badge bg-info rounded-pill px-3 py-2">
+                                                    {user.habitaciones || 0}
+                                                </span>
+                                            </td>
+                                            <td>
+                                                <span className="badge bg-info rounded-pill px-3 py-2">
+                                                    {user.banos || 0}
+                                                </span>
+                                            </td>
+                                            <td>
+                                                <span className="badge bg-info rounded-pill px-3 py-2">
                                                     {user.capacidad}
                                                 </span>
                                             </td>
                                             <td className="text-muted">
-                                                {user.ubicacion}
+                                                {formatearDireccion(user.direccion)}
                                             </td>
                                             <td>
                                                 <span className={`badge ${user.estado === 'activo' ? 'bg-success' : 'bg-warning'} rounded-pill px-3 py-2`}>
@@ -370,6 +442,7 @@ export default function HospitalityAdmin() {
                     </div>
                 </div>
 
+                {/* MODAL */}
                 <div className={`modal fade ${showModal ? 'show' : ''}`}
                     style={{ display: showModal ? 'block' : 'none' }}
                     tabIndex="-1">
@@ -439,8 +512,8 @@ export default function HospitalityAdmin() {
                                     </div>
 
                                     <div className="row">
-                                        <div className="col-md-4 mb-3">
-                                            <label className="form-label fw-semibold">Capacidad (personas)</label>
+                                        <div className="col-md-3 mb-3">
+                                            <label className="form-label fw-semibold">Capacidad</label>
                                             <input
                                                 type="number"
                                                 className="form-control"
@@ -451,19 +524,31 @@ export default function HospitalityAdmin() {
                                                 required
                                             />
                                         </div>
-                                        <div className="col-md-4 mb-3">
-                                            <label className="form-label fw-semibold">Ubicación</label>
+                                        <div className="col-md-3 mb-3">
+                                            <label className="form-label fw-semibold">Habitaciones</label>
                                             <input
-                                                type="text"
+                                                type="number"
                                                 className="form-control"
-                                                name="ubicacion"
-                                                value={formData.ubicacion}
+                                                name="habitaciones"
+                                                value={formData.habitaciones}
                                                 onChange={handleInputChange}
-                                                placeholder="Cancún, México"
+                                                placeholder="3"
                                                 required
                                             />
                                         </div>
-                                        <div className="col-md-4 mb-3">
+                                        <div className="col-md-3 mb-3">
+                                            <label className="form-label fw-semibold">Baños</label>
+                                            <input
+                                                type="number"
+                                                className="form-control"
+                                                name="banos"
+                                                value={formData.banos}
+                                                onChange={handleInputChange}
+                                                placeholder="2"
+                                                required
+                                            />
+                                        </div>
+                                        <div className="col-md-3 mb-3">
                                             <label className="form-label fw-semibold">Estado</label>
                                             <select
                                                 className="form-select"
@@ -473,9 +558,104 @@ export default function HospitalityAdmin() {
                                                 required
                                             >
                                                 <option value="activo">Activo</option>
-                                                <option value="inactivo">Inactivo</option>
                                                 <option value="pendiente">Pendiente</option>
+                                                <option value="inactivo">Inactivo</option>
                                             </select>
+                                        </div>
+                                    </div>
+
+                                    {/* SECCIÓN DE DIRECCIÓN */}
+                                    <div className="card bg-light border-0 p-3 mb-3">
+                                        <h6 className="fw-bold mb-3">
+                                            <i className="bi bi-geo-alt-fill me-2"></i>Dirección
+                                        </h6>
+                                        <div className="row">
+                                            <div className="col-md-6 mb-3">
+                                                <label className="form-label">Calle</label>
+                                                <input
+                                                    type="text"
+                                                    className="form-control"
+                                                    name="calle"
+                                                    value={formData.direccion.calle}
+                                                    onChange={handleDireccionChange}
+                                                    placeholder="Av. Revolución"
+                                                    required
+                                                />
+                                            </div>
+                                            <div className="col-md-3 mb-3">
+                                                <label className="form-label">No. Ext</label>
+                                                <input
+                                                    type="text"
+                                                    className="form-control"
+                                                    name="numero_exterior"
+                                                    value={formData.direccion.numero_exterior}
+                                                    onChange={handleDireccionChange}
+                                                    placeholder="123"
+                                                />
+                                            </div>
+                                            <div className="col-md-3 mb-3">
+                                                <label className="form-label">No. Int</label>
+                                                <input
+                                                    type="text"
+                                                    className="form-control"
+                                                    name="numero_interior"
+                                                    value={formData.direccion.numero_interior}
+                                                    onChange={handleDireccionChange}
+                                                    placeholder="A"
+                                                />
+                                            </div>
+                                        </div>
+                                        <div className="row">
+                                            <div className="col-md-4 mb-3">
+                                                <label className="form-label">Colonia</label>
+                                                <input
+                                                    type="text"
+                                                    className="form-control"
+                                                    name="colonia"
+                                                    value={formData.direccion.colonia}
+                                                    onChange={handleDireccionChange}
+                                                    placeholder="Centro"
+                                                    required
+                                                />
+                                            </div>
+                                            <div className="col-md-4 mb-3">
+                                                <label className="form-label">Ciudad</label>
+                                                <input
+                                                    type="text"
+                                                    className="form-control"
+                                                    name="ciudad"
+                                                    value={formData.direccion.ciudad}
+                                                    onChange={handleDireccionChange}
+                                                    placeholder="Cancún"
+                                                    required
+                                                />
+                                            </div>
+                                            <div className="col-md-4 mb-3">
+                                                <label className="form-label">Estado</label>
+                                                <input
+                                                    type="text"
+                                                    className="form-control"
+                                                    name="estado"
+                                                    value={formData.direccion.estado}
+                                                    onChange={handleDireccionChange}
+                                                    placeholder="Quintana Roo"
+                                                    required
+                                                />
+                                            </div>
+                                        </div>
+                                        <div className="row">
+                                            <div className="col-md-12 mb-3">
+                                                <label className="form-label">País</label>
+                                                <input
+                                                    type="text"
+                                                    className="form-control"
+                                                    name="pais"
+                                                    value={formData.direccion.pais}
+                                                    onChange={handleDireccionChange}
+                                                    placeholder="México"
+                                                    required
+                                                />
+                                            </div>
                                         </div>
                                     </div>
 

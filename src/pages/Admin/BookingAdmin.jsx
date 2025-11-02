@@ -23,6 +23,7 @@ export default function BookingAdmin() {
         try {
             const response = await fetch('http://localhost:3000/api/booking/getBookings');
             const data = await response.json();
+            
             if (data.success) {
                 setBookings(data.data);
             }
@@ -47,10 +48,10 @@ export default function BookingAdmin() {
         if (booking) {
             setEditingBooking(booking);
             setFormData({
-                fecha_inicio: booking.fecha_inicio,
-                fecha_fin: booking.fecha_fin,
-                personas: booking.personas,
-                estado: booking.estado
+                fecha_inicio: booking.reserva.fecha_inicio,
+                fecha_fin: booking.reserva.fecha_fin,
+                personas: booking.reserva.personas,
+                estado: booking.reserva.estado
             });
         } else {
             setEditingBooking(null);
@@ -83,7 +84,7 @@ export default function BookingAdmin() {
                 };
                 
                 const response = await fetch(
-                    `http://localhost:3000/api/booking/updateBooking/${editingBooking.id_reserva}`,
+                    `http://localhost:3000/api/booking/updateBooking/${editingBooking.reserva.id_reserva}`,
                     {
                         method: 'PUT',
                         headers: { 'Content-Type': 'application/json' },
@@ -175,7 +176,7 @@ export default function BookingAdmin() {
             try {
                 const response = await fetch(
                     `http://localhost:3000/api/booking/cancelBooking/${id}`,
-                    { method: 'PATCH' }
+                    { method: 'PUT' } // Cambié de PATCH a PUT
                 );
                 
                 const data = await response.json();
@@ -189,7 +190,7 @@ export default function BookingAdmin() {
                     });
                     cargarReservas();
                 } else {
-                    throw new Error(data.error);
+                    throw new Error(data.message || data.error);
                 }
             } catch (error) {
                 Swal.fire({
@@ -249,6 +250,24 @@ export default function BookingAdmin() {
                     text: error.message || 'No se pudo eliminar la reserva.',
                 });
             }
+        }
+    };
+
+    // Función auxiliar para obtener el nombre del establecimiento
+    const getNombreEstablecimiento = (booking) => {
+        if (booking.reserva.tipo_reserva === 'experiencia') {
+            return booking.experiencia?.titulo || 'Experiencia N/A';
+        } else {
+            return booking.establecimiento?.nombre || 'Hotel N/A';
+        }
+    };
+
+    const getUbicacion = (booking) => {
+        if (booking.reserva.tipo_reserva === 'experiencia') {
+            return 'Experiencia turística';
+        } else {
+            const dir = booking.establecimiento?.direccion;
+            return dir ? `${dir.ciudad}, ${dir.estado}` : 'N/A';
         }
     };
 
@@ -360,7 +379,7 @@ export default function BookingAdmin() {
                             <div className="stats-card card text-center h-100">
                                 <div className="card-body">
                                     <h3 className="fw-bold text-success">
-                                        {bookings.filter(b => b.estado === 'confirmada').length}
+                                        {bookings.filter(b => b.reserva?.estado === 'confirmada').length}
                                     </h3>
                                     <p className="text-muted mb-0">Confirmadas</p>
                                 </div>
@@ -370,7 +389,7 @@ export default function BookingAdmin() {
                             <div className="stats-card card text-center h-100">
                                 <div className="card-body">
                                     <h3 className="fw-bold text-warning">
-                                        {bookings.filter(b => b.estado === 'pendiente').length}
+                                        {bookings.filter(b => b.reserva?.estado === 'pendiente').length}
                                     </h3>
                                     <p className="text-muted mb-0">Pendientes</p>
                                 </div>
@@ -380,7 +399,7 @@ export default function BookingAdmin() {
                             <div className="stats-card card text-center h-100">
                                 <div className="card-body">
                                     <h3 className="fw-bold text-danger">
-                                        {bookings.filter(b => b.estado === 'cancelada').length}
+                                        {bookings.filter(b => b.reserva?.estado === 'cancelada').length}
                                     </h3>
                                     <p className="text-muted mb-0">Canceladas</p>
                                 </div>
@@ -395,7 +414,8 @@ export default function BookingAdmin() {
                                     <tr>
                                         <th>ID</th>
                                         <th>Usuario</th>
-                                        <th>Hostelería</th>
+                                        <th>Establecimiento</th>
+                                        <th>Tipo</th>
                                         <th>Fechas</th>
                                         <th>Personas</th>
                                         <th>Estado</th>
@@ -404,49 +424,57 @@ export default function BookingAdmin() {
                                 </thead>
                                 <tbody>
                                     {bookings.map((booking) => (
-                                        <tr key={booking.id_reserva}>
+                                        <tr key={booking.reserva.id_reserva}>
                                             <td>
                                                 <span className="badge bg-secondary rounded-pill px-3 py-2">
-                                                    #{booking.id_reserva}
+                                                    #{booking.reserva.id_reserva}
                                                 </span>
                                             </td>
                                             <td>
                                                 <div className="d-flex align-items-center">
                                                     <i className="bi bi-person-fill text-primary me-2"></i>
                                                     <div>
-                                                        <div className="fw-semibold">{booking.usuario?.nombre || 'N/A'}</div>
+                                                        <div className="fw-semibold text-truncate" style={{ maxWidth: '200px' }}>{booking.usuario?.nombre || 'N/A'}</div>
                                                         <small className="text-muted">{booking.usuario?.email || ''}</small>
                                                     </div>
                                                 </div>
                                             </td>
                                             <td>
                                                 <div className="d-flex align-items-center">
-                                                    <i className="bi bi-building-fill text-info me-2"></i>
+                                                    <i className={`bi ${booking.reserva.tipo_reserva === 'experiencia' ? 'bi-compass-fill' : 'bi-building-fill'} text-info me-2`}></i>
                                                     <div>
-                                                        <div className="fw-semibold">{booking.hosteleria?.nombre || 'N/A'}</div>
-                                                        <small className="text-muted">{booking.hosteleria?.ubicacion || ''}</small>
+                                                        <div className="fw-semibold text-truncate">{getNombreEstablecimiento(booking)}</div>
+                                                        <small className="text-muted">{getUbicacion(booking)}</small>
                                                     </div>
                                                 </div>
                                             </td>
                                             <td>
+                                                <span className={`badge ${booking.reserva.tipo_reserva === 'experiencia' ? 'bg-purple' : 'bg-info'} rounded-pill px-3 py-2`}>
+                                                    {booking.reserva.tipo_reserva === 'experiencia' ? 'Experiencia' : 'Hospedaje'}
+                                                </span>
+                                            </td>
+                                            <td>
                                                 <small className="text-muted">
-                                                    {booking.fecha_inicio} → {booking.fecha_fin}
+                                                    <div>{booking.reserva.fecha_inicio}</div>
+                                                    {booking.reserva.fecha_fin && (
+                                                        <div>→ {booking.reserva.fecha_fin}</div>
+                                                    )}
                                                 </small>
                                             </td>
                                             <td>
                                                 <span className="badge bg-dark rounded-pill px-3 py-2">
                                                     <i className="bi bi-people-fill me-1"></i>
-                                                    {booking.personas}
+                                                    {booking.reserva.personas}
                                                 </span>
                                             </td>
                                             <td>
                                                 <span className={`badge ${
-                                                    booking.estado === 'confirmada' ? 'bg-success' :
-                                                    booking.estado === 'pendiente' ? 'bg-warning' :
-                                                    booking.estado === 'completada' ? 'bg-info' :
+                                                    booking.reserva.estado === 'confirmada' ? 'bg-success' :
+                                                    booking.reserva.estado === 'pendiente' ? 'bg-warning' :
+                                                    booking.reserva.estado === 'completada' ? 'bg-info' :
                                                     'bg-danger'
                                                 } rounded-pill px-3 py-2`}>
-                                                    {booking.estado}
+                                                    {booking.reserva.estado}
                                                 </span>
                                             </td>
                                             <td>
@@ -459,15 +487,15 @@ export default function BookingAdmin() {
                                                         <i className="bi bi-pencil"></i>
                                                     </button>
                                                     <button
-                                                        onClick={() => handleCancel(booking.id_reserva, booking.estado)}
+                                                        onClick={() => handleCancel(booking.reserva.id_reserva, booking.reserva.estado)}
                                                         className="btn btn-outline-warning btn-sm"
                                                         title="Cancelar"
-                                                        disabled={booking.estado === 'cancelada'}
+                                                        disabled={booking.reserva.estado === 'cancelada'}
                                                     >
                                                         <i className="bi bi-x-circle"></i>
                                                     </button>
                                                     <button
-                                                        onClick={() => handleDelete(booking.id_reserva, booking.estado)}
+                                                        onClick={() => handleDelete(booking.reserva.id_reserva, booking.reserva.estado)}
                                                         className="btn btn-outline-danger btn-sm"
                                                         title="Eliminar"
                                                     >
@@ -483,6 +511,7 @@ export default function BookingAdmin() {
                     </div>
                 </div>
 
+                {/* MODAL - Igual que antes pero con las rutas corregidas */}
                 <div className={`modal fade ${showModal ? 'show' : ''}`}
                     style={{ display: showModal ? 'block' : 'none' }}
                     tabIndex="-1">

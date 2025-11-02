@@ -13,20 +13,21 @@ import ReportAdmin from "./pages/Admin/ReportAdmin";
 import ProfileAdmin from "./pages/Admin/ProfileAdmin";
 import LoginPage from "./pages/Auth/LoginPage";
 import RegisterPage from "./pages/Auth/RegisterPage";
-import HostUploadPage from "./pages/Host/HostPage";
-import HostAdmin from "./pages/Host/HostAdmin";
+import HostUploadPage from "./pages/Host/HostPageUploadHotel";
+import HostAdmin from "./pages/Host/HostAdminDashboard";
 import Dashboard from "./pages/Admin/Dashboard";
 import HostInformation from "./pages/HostInformation";
 import ExperiencesSection from "./pages/TourismSection";
 import Profile from "./pages/ProfileHome";
 import ReservationUser from "./pages/ReservationUser";
-import HostPublications from "./pages/Host/HostPublications";
+import HostPublications from "./pages/Host/HostPublicationsDashboard";
 import ProtectedRoute from "./components/ProtectedRoute";
 import HeroSection from "./pages/HeroSection";
 import TourismReservationInfo from "./pages/TourismReservationInfo";
 import UserReservations from "./pages/user/UserReservations";
 import ReviewUsers from "./components/ReviewUsers";
 import Reviews from "./components/Reviews";
+import CreateTouristExperience from "./pages/Host/HostPageUploadTourism";
 
 function PropertiesPage() {
   return (
@@ -152,6 +153,14 @@ export default function App() {
                       <HostUploadPage />
                     </ProtectedRoute>
                   } 
+                />
+                <Route 
+                  path="/host/upload/tourism" 
+                  element={
+                    <ProtectedRoute allowedRoles={["anfitrion"]}>
+                      <CreateTouristExperience />
+                    </ProtectedRoute>
+                  }
                 />
                 <Route 
                   path="/host/admin" 

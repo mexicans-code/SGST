@@ -1,16 +1,15 @@
 import React from 'react';
 import { Calendar, MapPin, Clock, User, DollarSign, Home, Phone, Mail, MessageCircle, XCircle, Compass } from 'lucide-react';
 
-export default function ReservationDetailsModal({ 
-    isOpen, 
-    onClose, 
-    reservation, 
+export default function ReservationDetailsModal({
+    isOpen,
+    onClose,
+    reservation,
     onCancelReservation,
-    onOpenChat 
+    onOpenChat
 }) {
     if (!isOpen || !reservation) return null;
 
-    // Helper para obtener info según el tipo
     const getReservationInfo = (data) => {
         const isExperiencia = data.reserva?.tipo_reserva === 'experiencia';
 
@@ -83,17 +82,16 @@ export default function ReservationDetailsModal({
     const info = getReservationInfo(reservation);
 
     return (
-        <div 
-            className="modal show d-block" 
-            style={{ backgroundColor: 'rgba(0,0,0,0.5)' }} 
+        <div
+            className="modal show d-block"
+            style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}
             onClick={onClose}
         >
-            <div 
-                className="modal-dialog modal-dialog-centered modal-lg" 
+            <div
+                className="modal-dialog modal-dialog-centered modal-lg"
                 onClick={(e) => e.stopPropagation()}
             >
                 <div className="modal-content rounded-4 border-0 shadow-lg">
-                    {/* Header */}
                     <div className="modal-header border-0 pb-0" style={{ backgroundColor: '#F4EFEA' }}>
                         <div>
                             <h4 className="modal-title fw-bold mb-1" style={{ color: '#CD5C5C' }}>
@@ -103,21 +101,18 @@ export default function ReservationDetailsModal({
                                 ID: #{reservation.reserva?.id_reserva} • {info.tipo === 'experiencia' ? 'Experiencia' : 'Alojamiento'}
                             </p>
                         </div>
-                        <button 
-                            type="button" 
-                            className="btn-close" 
+                        <button
+                            type="button"
+                            className="btn-close"
                             onClick={onClose}
                         ></button>
                     </div>
 
-                    {/* Body */}
                     <div className="modal-body p-4">
-                        {/* Estado */}
                         <div className="mb-4 text-center">
                             {getStatusBadge(reservation.reserva?.estado)}
                         </div>
 
-                        {/* Info del servicio */}
                         <div className="mb-4">
                             <h6 className="fw-bold mb-3" style={{ color: '#CD5C5C' }}>
                                 {info.tipo === 'experiencia' ? (
@@ -126,18 +121,18 @@ export default function ReservationDetailsModal({
                                     <><Home size={18} className="me-2" />Tu Alojamiento</>
                                 )}
                             </h6>
-                            <div 
-                                className="d-flex gap-3 align-items-center p-3 rounded-3" 
+                            <div
+                                className="d-flex gap-3 align-items-center p-3 rounded-3"
                                 style={{ backgroundColor: '#F8F9FA' }}
                             >
                                 <img
                                     src={info.imagen}
                                     alt={info.nombre}
-                                    style={{ 
-                                        width: '80px', 
-                                        height: '80px', 
-                                        objectFit: 'cover', 
-                                        borderRadius: '8px' 
+                                    style={{
+                                        width: '80px',
+                                        height: '80px',
+                                        objectFit: 'cover',
+                                        borderRadius: '8px'
                                     }}
                                 />
                                 <div>
@@ -152,7 +147,6 @@ export default function ReservationDetailsModal({
                             </div>
                         </div>
 
-                        {/* Fechas */}
                         <div className="mb-4">
                             <h6 className="fw-bold mb-3" style={{ color: '#CD5C5C' }}>
                                 <Calendar size={18} className="me-2" />
@@ -192,7 +186,6 @@ export default function ReservationDetailsModal({
                             )}
                         </div>
 
-                        {/* Anfitrión */}
                         <div className="mb-4">
                             <h6 className="fw-bold mb-3" style={{ color: '#CD5C5C' }}>
                                 <User size={18} className="me-2" />
@@ -217,7 +210,6 @@ export default function ReservationDetailsModal({
                             </div>
                         </div>
 
-                        {/* Resumen de pago */}
                         <div className="mb-4">
                             <h6 className="fw-bold mb-3" style={{ color: '#CD5C5C' }}>
                                 <DollarSign size={18} className="me-2" />
@@ -245,7 +237,6 @@ export default function ReservationDetailsModal({
                             </div>
                         </div>
 
-                        {/* Cancelación */}
                         {(reservation.reserva?.estado === 'confirmada' || reservation.reserva?.estado === 'pendiente') && (
                             <div className="border-top pt-3">
                                 <h6 className="fw-bold mb-3 text-danger">¿Necesitas cancelar?</h6>
@@ -263,7 +254,6 @@ export default function ReservationDetailsModal({
                         )}
                     </div>
 
-                    {/* Footer */}
                     <div className="modal-footer border-0" style={{ backgroundColor: '#F8F9FA' }}>
                         {(reservation.reserva?.estado === 'confirmada' || reservation.reserva?.estado === 'pendiente') && (
                             <button
@@ -278,9 +268,9 @@ export default function ReservationDetailsModal({
                                 Contactar {info.tipo === 'experiencia' ? 'Guía' : 'Anfitrión'}
                             </button>
                         )}
-                        <button 
-                            className="btn rounded-pill px-4" 
-                            style={{ backgroundColor: '#CD5C5C', color: 'white' }} 
+                        <button
+                            className="btn rounded-pill px-4"
+                            style={{ backgroundColor: '#CD5C5C', color: 'white' }}
                             onClick={onClose}
                         >
                             Cerrar
