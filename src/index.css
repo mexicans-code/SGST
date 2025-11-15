@@ -115,3 +115,14 @@ body,
 .react-datepicker__month {
   margin: 1rem !important;
 }
+
+
+.pdftarget {
+    position: absolute !important;
+    left: -9999px !important;
+    width: 900px !important;
+    top: 0;
+    height: auto;
+    overflow: visible;
+    background: white;
+}

@@ -27,6 +27,7 @@ import {
 } from 'lucide-react';
 
 import { useNavigate } from "react-router-dom";
+import Reviews from '../components/Reviews';
 
 export default function TourismReservationInfo() {
     // Estado para los datos de la experiencia
@@ -523,7 +524,13 @@ export default function TourismReservationInfo() {
                             </div>
                         </div>
 
-                        {/* Comentarios */}
+
+                        <div className="col-8 card border-0 shadow-sm rounded-4">
+                            <Reviews />
+                        </div>
+
+
+                        {/* Comentarios
                         <div className="card border-0 shadow-sm rounded-4 mb-4">
                             <div className="card-body p-4">
                                 <div
@@ -587,7 +594,7 @@ export default function TourismReservationInfo() {
                                     </div>
                                 )}
                             </div>
-                        </div>
+                        </div> */}
                     </div>
 
                     {/* Panel lateral de resumen */}

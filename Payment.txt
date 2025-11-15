@@ -13,20 +13,18 @@ import {
     Mail,
     CreditCard,
     Store,
-    Shield
+    Shield,
+    Calendar
 } from 'lucide-react';
-
 import Swal from "sweetalert2";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import { initMercadoPago, CardPayment } from '@mercadopago/sdk-react';
+import { useGoogleLogin } from '@react-oauth/google';
 
 const MERCADOPAGO_PUBLIC_KEY = 'TEST-f6336aad-6b41-408e-bacf-bd3263a24f01';
 
-// Esta api es para producción const MERCADOPAGO_PUBLIC_KEY = 'APP_USR-9979abe7-f266-42d9-a9f3-c0182c66e148';
-
 initMercadoPago(MERCADOPAGO_PUBLIC_KEY);
-
 
 export default function PaymentSummary({
     reservationData = null,
@@ -49,8 +47,8 @@ export default function PaymentSummary({
     const [isLoading, setIsLoading] = useState(false);
     const [purchaseCompleted, setPurchaseCompleted] = useState(false);
     const [showMPBrick, setShowMPBrick] = useState(false);
-    const navigate = useNavigate();
-
+    const [showGoogleCalendar, setShowGoogleCalendar] = useState(false);
+    const [purchaseResponseData, setPurchaseResponseData] = useState(null);
     const [priceBreakdown, setPriceBreakdown] = useState({
         nights: 0,
         subtotal: 0,
@@ -59,81 +57,16 @@ export default function PaymentSummary({
         total: 0
     });
 
-    useEffect(() => {
-        const currentData = getCurrentReservationData();
+    const navigate = useNavigate();
+    const usuario = JSON.parse(localStorage.getItem('usuario'));
 
-        if (currentData?.reservationType === 'tourism') {
-            const participants = currentData.participants || 1;
-            const pricePerPerson = currentData.pricePerPerson || currentData.price || 0;
-
-            const subtotal = pricePerPerson * participants;
-            const serviceFee = Math.round(subtotal * serviceFeePercentage);
-            const taxes = Math.round(subtotal * taxPercentage);
-            const total = subtotal + serviceFee + taxes;
-
-            setPriceBreakdown({
-                nights: 0,
-                participants,
-                subtotal,
-                serviceFee,
-                taxes,
-                total
-            });
-        } else if (checkIn && checkOut && currentData?.price) {
-            const checkInDate = new Date(checkIn);
-            const checkOutDate = new Date(checkOut);
-            const nights = Math.ceil((checkOutDate - checkInDate) / (1000 * 60 * 60 * 24));
-
-            if (nights > 0) {
-                const subtotal = currentData.price * nights;
-                const serviceFee = Math.round(subtotal * serviceFeePercentage);
-                const taxes = Math.round(subtotal * taxPercentage);
-                const total = subtotal + serviceFee + taxes;
-
-                setPriceBreakdown({
-                    nights,
-                    subtotal,
-                    serviceFee,
-                    taxes,
-                    total
-                });
-            }
-        }
-    }, [checkIn, checkOut, serviceFeePercentage, taxPercentage]);
-
-    useEffect(() => {
-        const loadReservationData = () => {
-            try {
-                const storedData = localStorage.getItem('reservationData');
-                if (storedData) {
-                    const parsedData = JSON.parse(storedData);
-                    console.log('Datos cargados desde localStorage:', parsedData);
-                    console.log("id de la propiedad: ", parsedData.id);
-
-                    if (!reservationData) {
-                        setCheckIn(parsedData.checkIn || '');
-                        setCheckOut(parsedData.checkOut || '');
-                    }
-
-                    return parsedData;
-                }
-            } catch (error) {
-                console.error('Error cargando datos de reserva:', error);
-            }
-            return null;
-        };
-
-        const savedData = loadReservationData();
-        if (savedData && !reservationData) {
-            setPriceBreakdown({
-                nights: savedData.nights || 0,
-                subtotal: savedData.subtotal || 0,
-                serviceFee: savedData.serviceFee || 0,
-                taxes: savedData.taxes || 0,
-                total: savedData.total || 0
-            });
-        }
-    }, []);
+    if (!usuario) {
+        return (
+            <div className="alert alert-danger mt-5">
+                Error: No se encontraron datos del usuario. Por favor, inicia sesión nuevamente.
+            </div>
+        );
+    }
 
     const getReservationType = (data) => {
         return data?.reservationType || (data?.id_experiencia ? 'tourism' : 'hosteleria');
@@ -150,13 +83,10 @@ export default function PaymentSummary({
                 const parsedData = JSON.parse(storedData);
                 const reservationType = getReservationType(parsedData);
 
-                console.log("Tipo de reserva:", reservationType);
-                console.log("Datos parseados:", parsedData);
-
                 if (reservationType === 'tourism') {
                     return {
                         id: parsedData.id_experiencia || parsedData.id,
-                        id_anfitrion: parsedData.id_anfitrion || parsedData.id_anfitrion || null,
+                        id_anfitrion: parsedData.id_anfitrion || null,
                         id_experiencia: parsedData.id_experiencia || parsedData.id,
                         name: parsedData.name || "Experiencia no disponible",
                         description: parsedData.description || "Sin descripción",
@@ -202,36 +132,126 @@ export default function PaymentSummary({
 
         return null;
     };
-    const defaultSupportInfo = {
-        phone: "+52 55 1234 5678",
-        email: "soporte@ejemplo.com",
-        available: "24/7"
-    };
 
-    const currentReservationData = getCurrentReservationData();
-    const currentSupportInfo = supportInfo || defaultSupportInfo;
+    const handleGoogleCalendarSuccess = async (tokenResponse) => {
+        try {
+            console.log('✅ Google autorizado');
+            const accessToken = tokenResponse.access_token;
 
-    // Configuración de Mercado Pago Brick
-    const initialization = {
-        amount: priceBreakdown.total,
-        payer: {
-            email: JSON.parse(localStorage.getItem("usuario") || '{}').email || ''
-        }
-    };
-
-    const customization = {
-        paymentMethods: {
-            maxInstallments: 12,
-            minInstallments: 1
-        },
-        visual: {
-            style: {
-                theme: 'default'
+            if (!accessToken) {
+                throw new Error('No se recibió access_token');
             }
+
+            console.log('✅ Access token obtenido:', accessToken.substring(0, 20) + '...');
+
+            const currentReservationData = getCurrentReservationData();
+
+            const calendarResponse = await axios.post(
+                'http://localhost:3004/create-calendar-event',
+                {
+                    accessToken: accessToken,
+                    credential: null,
+                    reservationId: purchaseResponseData.reservationId,
+                    id_reserva: purchaseResponseData.id_reserva,
+                    usuarioEmail: purchaseResponseData.usuarioEmail,
+                    tipo: purchaseResponseData.tipo,
+                    purchaseData: {
+                        fecha_inicio: checkIn,
+                        fecha_fin: checkOut,
+                        fecha: currentReservationData.selectedDate || checkIn,
+                        hosteleria: currentReservationData.reservationType !== 'tourism' ? {
+                            nombre: currentReservationData.name,
+                            ubicacion: currentReservationData.location
+                        } : null,
+                        experiencia: currentReservationData.reservationType === 'tourism' ? {
+                            nombre: currentReservationData.name,
+                            punto_encuentro: currentReservationData.meetingPoint,
+                            duracion: currentReservationData.duration
+                        } : null
+                    }
+                }
+            );
+
+            console.log('📅 Evento creado:', calendarResponse.data);
+
+            Swal.fire({
+                icon: 'success',
+                title: '¡Sincronizado!',
+                html: `✅ Evento creado en tu Google Calendar personal<br>✅ También registrado en nuestro sistema`,
+                confirmButtonColor: '#87CEEB'
+            });
+
+            setShowGoogleCalendar(false);
+
+        } catch (error) {
+            console.error('Error:', error);
+            Swal.fire({
+                icon: 'warning',
+                title: 'Compra confirmada',
+                text: 'Tu reserva está registrada. Intenta agregar el evento manualmente.',
+                confirmButtonColor: '#87CEEB'
+            });
+            setShowGoogleCalendar(false);
         }
     };
 
-    // Callback cuando se envía el pago desde Mercado Pago
+    const handleGoogleCalendarError = () => {
+        console.log('Usuario canceló Google Calendar');
+        setShowGoogleCalendar(false);
+    };
+
+    const getAmenityIcon = (amenity) => {
+        const amenityLower = amenity.toLowerCase();
+        if (amenityLower.includes('wifi')) return <Wifi size={16} style={{ color: '#87CEEB' }} />;
+        if (amenityLower.includes('estacion') || amenityLower.includes('parking')) return <Car size={16} style={{ color: '#87CEEB' }} />;
+        if (amenityLower.includes('cocina') || amenityLower.includes('kitchen')) return <Coffee size={16} style={{ color: '#87CEEB' }} />;
+        if (amenityLower.includes('tv')) return <Tv size={16} style={{ color: '#87CEEB' }} />;
+        if (amenityLower.includes('aire') || amenityLower.includes('air')) return <Wind size={16} style={{ color: '#87CEEB' }} />;
+        return <Star size={16} style={{ color: '#87CEEB' }} />;
+    };
+
+    const handleGoBack = () => {
+        if (onGoBack) {
+            onGoBack();
+        } else {
+            window.history.back();
+        }
+    };
+
+    const formatCardNumber = (value) => {
+        const v = value.replace(/\s+/g, '').replace(/[^0-9]/gi, '');
+        const matches = v.match(/\d{4,16}/g);
+        const match = matches && matches[0] || '';
+        const parts = [];
+
+        for (let i = 0, len = match.length; i < len; i += 4) {
+            parts.push(match.substring(i, i + 4));
+        }
+
+        if (parts.length) {
+            return parts.join(' ');
+        } else {
+            return v;
+        }
+    };
+
+    const formatExpiryDate = (value) => {
+        const v = value.replace(/\s+/g, '').replace(/[^0-9]/gi, '');
+        if (v.length >= 2) {
+            return v.substring(0, 2) + '/' + v.substring(2, 4);
+        }
+        return v;
+    };
+
+    const isPaymentReady = () => {
+        if (!agreedToTerms) return false;
+        if (priceBreakdown.total === 0) return false;
+        if (paymentMethod === 'card') {
+            if (!cardNumber || !expiryDate || !cvv || !cardName) return false;
+        }
+        return true;
+    };
+
     const onSubmitMP = async (formData) => {
         setIsLoading(true);
         const usuarioData = JSON.parse(localStorage.getItem("usuario"));
@@ -344,123 +364,22 @@ export default function PaymentSummary({
     };
 
     const handlePaymentClick = async () => {
-        const usuarioData = JSON.parse(localStorage.getItem("usuario"));
-
-        if (currentReservationData?.reservationType === 'tourism') {
-            if (!currentReservationData?.id_experiencia) {
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Error',
-                    text: 'No se encontró el ID de la experiencia. Por favor, vuelve a seleccionar la experiencia.',
-                });
-                return;
-            }
-        } else {
-            if (!currentReservationData?.id_hosteleria) {
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Error',
-                    text: 'No se encontró el ID de la hostelería. Por favor, vuelve a seleccionar la propiedad.',
-                });
-                return;
-            }
-        }
-
-        if (!agreedToTerms) {
-            Swal.fire({
-                icon: 'warning',
-                title: 'Atención',
-                text: 'Debes aceptar los términos y condiciones para continuar',
-            });
-            return;
-        }
-
-        if (priceBreakdown.total === 0) {
-            Swal.fire({
-                icon: 'error',
-                title: 'Error en el precio',
-                text: currentReservationData?.reservationType === 'tourism'
-                    ? 'Verifica la cantidad de participantes.'
-                    : 'Verifica las fechas seleccionadas.',
-            });
-            return;
-        }
-
-        // Si selecciona Mercado Pago, mostrar el brick
-        if (paymentMethod === 'mercadopago') {
-            setShowMPBrick(true);
-            return;
-        }
-
-        // Validación para otros métodos de pago
-        if (paymentMethod === 'card') {
-            if (!cardNumber || !expiryDate || !cvv || !cardName) {
-                Swal.fire({
-                    icon: 'warning',
-                    title: 'Campos incompletos',
-                    text: 'Por favor completa todos los campos de la tarjeta',
-                });
-                return;
-            }
-        }
+        if (!isPaymentReady()) return;
 
         setIsLoading(true);
-
         try {
-            const reservationId = 'RES-' + Math.random().toString(36).substr(2, 9).toUpperCase();
-
-            const purchaseData = currentReservationData.reservationType === 'tourism' ? {
-                reservationId,
-                tipo: 'tourism',
+            const paymentData = {
+                reservationId: `RES-${Math.random().toString(36).substr(2, 9).toUpperCase()}`,
+                tipo: currentReservationData.reservationType || 'hosteleria',
                 reserva: {
-                    id_usuario: usuarioData.id_usuario,
-                    id_experiencia: currentReservationData.id_experiencia,
-                    id_anfitrion: currentReservationData.id_anfitrion,
-                    fecha: currentReservationData.selectedDate,
-                    hora: currentReservationData.selectedTime,
-                    participantes: currentReservationData.participants,
-                    estado: 'confirmada',
-                    comentarios: currentReservationData.comments || ''
-                },
-                pago: {
-                    monto: priceBreakdown.total,
-                    metodo: paymentMethod,
-                    fecha_pago: new Date().toISOString(),
-                    estado: 'completado',
-                    detalles: paymentMethod === 'card' ? {
-                        lastFour: cardNumber.slice(-4),
-                        cardholderName: cardName
-                    } : { method: paymentMethod }
-                },
-                usuarioData: {
-                    id_usuario: usuarioData.id_usuario,
-                    nombre: usuarioData.nombre,
-                    email: usuarioData.email
-                },
-                experiencia: {
-                    nombre: currentReservationData.name,
-                    ubicacion: currentReservationData.location,
-                    precio_por_persona: currentReservationData.pricePerPerson,
-                    duracion: currentReservationData.duration,
-                    punto_encuentro: currentReservationData.meetingPoint,
-                    categoria: currentReservationData.category,
-                    incluye: currentReservationData.includes || []
-                },
-                pricing: {
-                    ...priceBreakdown,
-                    participantes: currentReservationData.participants,
-                    precio_por_persona: currentReservationData.pricePerPerson
-                },
-                timestamp: new Date().toISOString()
-            } : {
-                reservationId,
-                tipo: 'hosteleria',
-                reserva: {
-                    id_usuario: usuarioData.id_usuario,
-                    id_hosteleria: currentReservationData.id_hosteleria,
+                    id_usuario: usuario.id_usuario,
+                    id_hosteleria: currentReservationData.id_hosteleria || null,
+                    id_experiencia: currentReservationData.id_experiencia || null,
                     fecha_inicio: checkIn,
                     fecha_fin: checkOut,
-                    personas: currentReservationData.guests,
+                    fecha: currentReservationData.selectedDate || checkIn,
+                    personas: currentReservationData.guests || 1,
+                    participantes: currentReservationData.participants || 1,
                     estado: 'confirmada'
                 },
                 pago: {
@@ -468,164 +387,170 @@ export default function PaymentSummary({
                     metodo: paymentMethod,
                     fecha_pago: new Date().toISOString(),
                     estado: 'completado',
-                    detalles: paymentMethod === 'card' ? {
-                        lastFour: cardNumber.slice(-4),
-                        cardholderName: cardName
-                    } : { method: paymentMethod }
+                    detalles: {
+                        lastFour: cardNumber.slice(-4) || '****',
+                        cardholderName: cardName || 'Usuario'
+                    }
                 },
                 usuarioData: {
-                    id_usuario: usuarioData.id_usuario,
-                    nombre: usuarioData.nombre,
-                    email: usuarioData.email
+                    id_usuario: usuario.id_usuario,
+                    nombre: usuario.nombre,
+                    email: usuario.email
                 },
-                hosteleria: {
+                hosteleria: currentReservationData.reservationType !== 'tourism' ? {
                     nombre: currentReservationData.name,
                     ubicacion: currentReservationData.location,
+                    direccion: currentReservationData.address || '',
                     precio_por_noche: currentReservationData.price
-                },
+                } : null,
+                experiencia: currentReservationData.reservationType === 'tourism' ? {
+                    nombre: currentReservationData.name,
+                    punto_encuentro: currentReservationData.meetingPoint || '',
+                    ubicacion: currentReservationData.location,
+                    duracion: currentReservationData.duration || 2
+                } : null,
                 pricing: priceBreakdown,
                 timestamp: new Date().toISOString()
             };
 
-            console.log('Datos a enviar:', purchaseData);
+            const response = await axios.post('http://localhost:3004/purchase', paymentData);
 
-            const response = await fetch('http://localhost:3000/api/pay/purchase', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(purchaseData)
-            });
+            console.log('✅ Compra exitosa:', response.data);
 
-            if (!response.ok) {
-                throw new Error('Error al procesar la compra');
+            if (response.data.needsGoogleCalendarAuth) {
+                setPurchaseResponseData(response.data);
+                setShowGoogleCalendar(true);
             }
-
-            const data = await response.json();
-            console.log('Compra procesada exitosamente:', data);
 
             setPurchaseCompleted(true);
 
-            // Mensaje personalizado según el tipo de reserva
-            const successMessage = currentReservationData.reservationType === 'tourism' ? {
-                title: '¡Experiencia Reservada!',
-                details: `
-                        <p><strong>Código de reserva:</strong> ${purchaseData.reservationId}</p>
-                        <p><strong>Experiencia:</strong> ${currentReservationData.name}</p>
-                        <p><strong>Fecha:</strong> ${new Date(currentReservationData.selectedDate).toLocaleDateString('es-ES', {
-                    weekday: 'long',
-                    year: 'numeric',
-                    month: 'long',
-                    day: 'numeric'
-                })}</p>
-                        <p><strong>Hora:</strong> ${currentReservationData.selectedTime} hrs</p>
-                        <p><strong>Participantes:</strong> ${currentReservationData.participants} persona${currentReservationData.participants > 1 ? 's' : ''}</p>
-                        <p><strong>Punto de encuentro:</strong> ${currentReservationData.meetingPoint}</p>
-                        <p><strong>Total pagado:</strong> $${purchaseData.pricing.total} MXN</p>
-                        <p class="text-muted mt-3">Se ha enviado un correo de confirmación con todos los detalles a<br><strong>${usuarioData.email}</strong></p>
-                        <p class="text-info mt-2"><small>💡 Recuerda llegar 15 minutos antes</small></p>
-                    `
-            } : {
-                title: '¡Reserva Confirmada!',
-                details: `
-                        <p><strong>Código de reserva:</strong> ${purchaseData.reservationId}</p>
-                        <p><strong>Check-in:</strong> ${new Date(checkIn).toLocaleDateString('es-ES')}</p>
-                        <p><strong>Check-out:</strong> ${new Date(checkOut).toLocaleDateString('es-ES')}</p>
-                        <p><strong>Noches:</strong> ${priceBreakdown.nights}</p>
-                        <p><strong>Total pagado:</strong> $${purchaseData.pricing.total} MXN</p>
-                        <p class="text-muted mt-3">Se ha enviado un correo de confirmación a<br><strong>${usuarioData.email}</strong></p>
-                    `
-            };
-
-            await Swal.fire({
+            Swal.fire({
                 icon: 'success',
-                title: successMessage.title,
-                html: successMessage.details,
-                confirmButtonText: 'Ir a inicio',
-                confirmButtonColor: currentReservationData.reservationType === 'tourism' ? '#87CEEB' : '#667eea',
-                allowOutsideClick: false,
-                customClass: {
-                    popup: 'animated fadeInDown'
-                }
+                title: '¡Compra Exitosa!',
+                text: `Reserva ${response.data.reservationId} confirmada`,
+                confirmButtonColor: '#87CEEB'
             });
-
-            if (onPaymentSuccess) {
-                onPaymentSuccess(data);
-            }
-
-            // Limpiar localStorage después de la compra exitosa
-            localStorage.removeItem('reservationData');
-
-            navigate('/');
 
         } catch (error) {
-            console.error('Error al procesar compra:', error);
-
+            console.error('Error en pago:', error);
             Swal.fire({
                 icon: 'error',
-                title: 'Error al procesar el pago',
-                text: error.message || 'Hubo un problema al procesar tu pago. Por favor, intenta nuevamente.',
-                confirmButtonText: 'Reintentar',
-                confirmButtonColor: '#dc3545'
+                title: 'Error en el pago',
+                text: error.response?.data?.error || 'No se pudo procesar el pago'
             });
-
-            setPurchaseCompleted(false);
         } finally {
             setIsLoading(false);
         }
     };
 
-    const getAmenityIcon = (amenity) => {
-        const amenityLower = amenity.toLowerCase();
-        if (amenityLower.includes('wifi')) return <Wifi size={16} style={{ color: '#87CEEB' }} />;
-        if (amenityLower.includes('estacion') || amenityLower.includes('parking')) return <Car size={16} style={{ color: '#87CEEB' }} />;
-        if (amenityLower.includes('cocina') || amenityLower.includes('kitchen')) return <Coffee size={16} style={{ color: '#87CEEB' }} />;
-        if (amenityLower.includes('tv')) return <Tv size={16} style={{ color: '#87CEEB' }} />;
-        if (amenityLower.includes('aire') || amenityLower.includes('air')) return <Wind size={16} style={{ color: '#87CEEB' }} />;
-        return <Star size={16} style={{ color: '#87CEEB' }} />;
-    };
+    const googleLogin = useGoogleLogin({
+        onSuccess: handleGoogleCalendarSuccess,
+        onError: handleGoogleCalendarError,
+        flow: 'implicit',
+        scope: 'openid profile email https://www.googleapis.com/auth/calendar'
+    });
 
-    const handleGoBack = () => {
-        if (onGoBack) {
-            onGoBack();
-        } else {
-            window.history.back();
+    const initialization = {
+        amount: priceBreakdown.total,
+        payer: {
+            email: JSON.parse(localStorage.getItem("usuario") || '{}').email || ''
         }
     };
 
-    const formatCardNumber = (value) => {
-        const v = value.replace(/\s+/g, '').replace(/[^0-9]/gi, '');
-        const matches = v.match(/\d{4,16}/g);
-        const match = matches && matches[0] || '';
-        const parts = [];
-
-        for (let i = 0, len = match.length; i < len; i += 4) {
-            parts.push(match.substring(i, i + 4));
-        }
-
-        if (parts.length) {
-            return parts.join(' ');
-        } else {
-            return v;
+    const customization = {
+        paymentMethods: {
+            maxInstallments: 12,
+            minInstallments: 1
+        },
+        visual: {
+            style: {
+                theme: 'default'
+            }
         }
     };
 
-    const formatExpiryDate = (value) => {
-        const v = value.replace(/\s+/g, '').replace(/[^0-9]/gi, '');
-        if (v.length >= 2) {
-            return v.substring(0, 2) + '/' + v.substring(2, 4);
+    useEffect(() => {
+        const currentData = getCurrentReservationData();
+
+        if (currentData?.reservationType === 'tourism') {
+            const participants = currentData.participants || 1;
+            const pricePerPerson = currentData.pricePerPerson || currentData.price || 0;
+
+            const subtotal = pricePerPerson * participants;
+            const serviceFee = Math.round(subtotal * serviceFeePercentage);
+            const taxes = Math.round(subtotal * taxPercentage);
+            const total = subtotal + serviceFee + taxes;
+
+            setPriceBreakdown({
+                nights: 0,
+                participants,
+                subtotal,
+                serviceFee,
+                taxes,
+                total
+            });
+        } else if (checkIn && checkOut && currentData?.price) {
+            const checkInDate = new Date(checkIn);
+            const checkOutDate = new Date(checkOut);
+            const nights = Math.ceil((checkOutDate - checkInDate) / (1000 * 60 * 60 * 24));
+
+            if (nights > 0) {
+                const subtotal = currentData.price * nights;
+                const serviceFee = Math.round(subtotal * serviceFeePercentage);
+                const taxes = Math.round(subtotal * taxPercentage);
+                const total = subtotal + serviceFee + taxes;
+
+                setPriceBreakdown({
+                    nights,
+                    subtotal,
+                    serviceFee,
+                    taxes,
+                    total
+                });
+            }
         }
-        return v;
+    }, [checkIn, checkOut, serviceFeePercentage, taxPercentage]);
+
+    useEffect(() => {
+        const loadReservationData = () => {
+            try {
+                const storedData = localStorage.getItem('reservationData');
+                if (storedData) {
+                    const parsedData = JSON.parse(storedData);
+
+                    if (!reservationData) {
+                        setCheckIn(parsedData.checkIn || '');
+                        setCheckOut(parsedData.checkOut || '');
+                    }
+
+                    return parsedData;
+                }
+            } catch (error) {
+                console.error('Error cargando datos de reserva:', error);
+            }
+            return null;
+        };
+
+        const savedData = loadReservationData();
+        if (savedData && !reservationData) {
+            setPriceBreakdown({
+                nights: savedData.nights || 0,
+                subtotal: savedData.subtotal || 0,
+                serviceFee: savedData.serviceFee || 0,
+                taxes: savedData.taxes || 0,
+                total: savedData.total || 0
+            });
+        }
+    }, []);
+
+    const defaultSupportInfo = {
+        phone: "+52 55 1234 5678",
+        email: "soporte@ejemplo.com",
+        available: "24/7"
     };
 
-    const isPaymentReady = () => {
-        if (!agreedToTerms) return false;
-        if (priceBreakdown.total === 0) return false;
-        if (paymentMethod === 'card') {
-            if (!cardNumber || !expiryDate || !cvv || !cardName) return false;
-        }
-        return true;
-    };
+    const currentReservationData = getCurrentReservationData();
+    const currentSupportInfo = supportInfo || defaultSupportInfo;
 
     return (
         <div style={{ backgroundColor: '#FFFFFF' }} className="min-vh-100 py-4">
@@ -996,6 +921,66 @@ export default function PaymentSummary({
                     </div>
                 </div>
             </div>
+            {/* Modal de Google Calendar */}
+            {showGoogleCalendar && purchaseResponseData && (
+                <div
+                    className="position-fixed top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center"
+                    style={{ backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 9999 }}
+                    onClick={() => setShowGoogleCalendar(false)}
+                >
+                    <div
+                        className="card rounded-4 shadow-lg border-0"
+                        style={{ maxWidth: '400px', width: '90%' }}
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        <div className="card-body p-5 text-center">
+                            <div
+                                className="mb-4 rounded-circle d-flex align-items-center justify-content-center mx-auto"
+                                style={{ width: '80px', height: '80px', backgroundColor: '#E8F4F8' }}
+                            >
+                                <Calendar size={40} style={{ color: '#87CEEB' }} />
+                            </div>
+
+                            <h4 className="fw-bold mb-2" style={{ color: '#2C3E50' }}>
+                                Agregar a Google Calendar
+                            </h4>
+                            <p className="text-muted mb-4">
+                                Sincroniza tu reserva con tu Google Calendar automáticamente
+                            </p>
+
+                            <div className="d-grid gap-2">
+                                {/* ✅ Cambiar a botón con onClick */}
+                                <button
+                                    onClick={() => googleLogin()}
+                                    className="btn btn-primary"
+                                    style={{ background: '#4285F4', border: 'none' }}
+                                >
+                                    Conectar Google Calendar
+                                </button>
+
+                                <button
+                                    className="btn btn-light border-2"
+                                    onClick={() => setShowGoogleCalendar(false)}
+                                    style={{ color: '#87CEEB', borderColor: '#87CEEB' }}
+                                >
+                                    Omitir este paso
+                                </button>
+                            </div>
+
+                            <small className="text-muted d-block mt-3">
+                                Tu reserva ya está confirmada. Puedes agregar a tu calendario después.
+                            </small>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+
+
+
         </div>
+
+
+
     );
 }

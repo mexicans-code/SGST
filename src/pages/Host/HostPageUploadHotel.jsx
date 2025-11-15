@@ -164,7 +164,7 @@ export default function HostUploadPage() {
             habitaciones: formData.habitaciones || '1',
             banos: formData.banos || '1',
             tipo_propiedad: formData.tipo_propiedad,
-            estado: 'activo',
+            estado: 'pendiente',
             descuento_semanal: formData.descuento_semanal || null,
             descuento_mensual: formData.descuento_mensual || null,
             direccion: JSON.stringify({

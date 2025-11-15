@@ -169,8 +169,9 @@ export default function HotelListings() {
         const result = await response.json();
         console.log('Datos de hoteles recibidos:', result);
 
-        if (result.success && result.data) {
-          setHotels(result.data);
+        if(result.success && result.data){
+          const hotelesActivos = result.data.filter(hotel => hotel.estado === 'activo');
+          setHotels(hotelesActivos);
         } else {
           throw new Error('Formato de respuesta inválido');
         }

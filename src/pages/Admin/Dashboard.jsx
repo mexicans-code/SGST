@@ -1,150 +1,338 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, BarChart, Bar, PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
+import { useNavigate } from "react-router-dom";
+import jsPDF from "jspdf";
+import html2canvas from "html2canvas";
+import ReporteReservas from "../../components/ReporteReservas";
+import ReporteHoteles from "../../components/ReporteHoteles";
+import ReporteUsuario from "../../components/ReporteUsuario";
+import ReporteFinanzas from "../../components/ReporteFinanzas";
 
 export default function Dashboard() {
-    // Datos de ejemplo para gráficas
-    const reservasData = [
-        { mes: 'Ene', reservas: 45, ingresos: 15000 },
-        { mes: 'Feb', reservas: 52, ingresos: 18500 },
-        { mes: 'Mar', reservas: 48, ingresos: 16800 },
-        { mes: 'Abr', reservas: 61, ingresos: 22100 },
-        { mes: 'May', reservas: 55, ingresos: 19250 },
-        { mes: 'Jun', reservas: 67, ingresos: 24500 }
-    ];
-
-    const estadosData = [
-        { name: 'Confirmadas', value: 65, color: '#28a745' },
-        { name: 'Pendientes', value: 25, color: '#ffc107' },
-        { name: 'Canceladas', value: 10, color: '#dc3545' }
-    ];
-
-    const hospederiaData = [
-        { nombre: 'Hotel Colonial Centro', reservas: 25, ingresos: 8500 },
-        { nombre: 'Hostal Juventud', reservas: 35, ingresos: 4200 },
-        { nombre: 'Casa Rural La Montaña', reservas: 20, ingresos: 6800 },
-        { nombre: 'Boutique Hotel Plaza', reservas: 15, ingresos: 9500 }
-    ];
-
-    const [reports, setReports] = useState([
-        {
-            id_reporte: 1,
-            nombre: "Reporte Mensual de Reservas",
-            tipo: "Reservas",
-            fecha_generacion: "2024-12-01",
-            periodo: "Noviembre 2024",
-            estado: "Completado",
-            archivo: "reservas_nov_2024.pdf"
-        },
-        {
-            id_reporte: 2,
-            nombre: "Análisis de Ingresos Q4",
-            tipo: "Financiero",
-            fecha_generacion: "2024-12-05",
-            periodo: "Oct-Dic 2024",
-            estado: "Completado",
-            archivo: "ingresos_q4_2024.xlsx"
-        },
-        {
-            id_reporte: 3,
-            nombre: "Reporte de Ocupación",
-            tipo: "Ocupación",
-            fecha_generacion: "2024-12-10",
-            periodo: "Diciembre 2024",
-            estado: "Procesando",
-            archivo: "ocupacion_dic_2024.pdf"
-        },
-        {
-            id_reporte: 4,
-            nombre: "Satisfacción del Cliente",
-            tipo: "Calidad",
-            fecha_generacion: "2024-12-15",
-            periodo: "Noviembre 2024",
-            estado: "Pendiente",
-            archivo: "satisfaccion_nov_2024.pdf"
-        }
-    ]);
-
+    const [resumen, setResumen] = useState(null);
+    const [hosteleriaData, setHosteleriaData] = useState([]);
+    const [anfitrionData, setAnfitrionData] = useState([]);
+    const [resenasData, setResenasData] = useState(null);
+    const [showInfo, setShowInfo] = useState({});
+    const [users, setUsers] = useState([]);
+    const [hotels, setHotels] = useState([]);
+    const [bookings, setBookings] = useState([]);
+    const navigate = useNavigate();
+    const [tipoReporte, setTipoReporte] = useState(null);
+    const [nombreReporte, setNombreReporte] = useState("");
     const [showModal, setShowModal] = useState(false);
-    const [editingReport, setEditingReport] = useState(null);
-    const [formData, setFormData] = useState({
-        nombre: '',
-        tipo: 'Reservas',
-        periodo: '',
-        estado: 'Pendiente',
-        archivo: ''
+    const [contenidoReporte, setContenidoReporte] = useState(null);
+    const [opcionesSeleccionadas, setOpcionesSeleccionadas] = useState({
+        publicaciones: false,
+        reservas: false,
+        financiero: false,
+        calidad: false,
+        graficas: false,
     });
 
-    const handleInputChange = (e) => {
-        setFormData({
-            ...formData,
-            [e.target.name]: e.target.value
-        });
-    };
+    const generarPDFCompleto = async () => {
+        try {
+            alert("⏳ Generando PDF, por favor espera...");
 
-    const openModal = (report = null) => {
-        if (report) {
-            setEditingReport(report);
-            setFormData({
-                nombre: report.nombre,
-                tipo: report.tipo,
-                periodo: report.periodo,
-                estado: report.estado,
-                archivo: report.archivo
-            });
-        } else {
-            setEditingReport(null);
-            setFormData({
-                nombre: '',
-                tipo: 'Reservas',
-                periodo: '',
-                estado: 'Pendiente',
-                archivo: ''
-            });
+            const ids = ["reporte-reservas", "reporte-hoteles", "reporte-usuarios"];
+            const pdf = new jsPDF("p", "mm", "a4");
+            let isFirstPage = true;
+
+            for (let i = 0; i < ids.length; i++) {
+                const elemento = document.getElementById(ids[i]);
+                if (!elemento) {
+                    console.warn(`No se encontró elemento con id ${ids[i]}`);
+                    continue;
+                }
+
+                // Hacer visible temporalmente
+                elemento.style.position = "static";
+                elemento.style.left = "0";
+                elemento.style.width = "900px";
+
+                const canvas = await html2canvas(elemento, {
+                    scale: 2,
+                    useCORS: true,
+                    backgroundColor: "#ffffff",
+                    scrollY: -window.scrollY,
+                    windowWidth: elemento.scrollWidth,
+                });
+
+                const imgData = canvas.toDataURL("image/jpeg", 0.98);
+
+                const pageWidth = pdf.internal.pageSize.getWidth();
+                const pageHeight = pdf.internal.pageSize.getHeight();
+                const imgWidth = pageWidth;
+                const imgHeight = (canvas.height * imgWidth) / canvas.width;
+
+                let heightLeft = imgHeight;
+                let position = 0;
+
+                // Si no es la primera página, agregar nueva
+                if (!isFirstPage) {
+                    pdf.addPage();
+                }
+                isFirstPage = false;
+
+                pdf.addImage(imgData, "JPEG", 0, position, imgWidth, imgHeight);
+                heightLeft -= pageHeight;
+
+                while (heightLeft > 0) {
+                    position = heightLeft - imgHeight;
+                    pdf.addPage();
+                    pdf.addImage(imgData, "JPEG", 0, position, imgWidth, imgHeight);
+                    heightLeft -= pageHeight;
+                }
+
+                // Restaurar estilos
+                elemento.style.position = "absolute";
+                elemento.style.left = "-9999px";
+            }
+
+            pdf.save("Reporte_Completo.pdf");
+            alert("✅ PDF generado exitosamente");
+        } catch (error) {
+            console.error("Error al generar reporte completo:", error);
+            alert("❌ Error al generar el PDF");
         }
-        setShowModal(true);
     };
 
-    const closeModal = () => {
-        setShowModal(false);
-        setEditingReport(null);
-    };
 
-    const handleSubmit = () => {
-        if (editingReport) {
-            setReports(reports.map(report =>
-                report.id_reporte === editingReport.id_reporte
-                    ? { ...report, ...formData, fecha_generacion: new Date().toISOString().split('T')[0] }
-                    : report
-            ));
-        } else {
-            const newReport = {
-                id_reporte: Math.max(...reports.map(r => r.id_reporte)) + 1,
-                ...formData,
-                fecha_generacion: new Date().toISOString().split('T')[0]
-            };
-            setReports([...reports, newReport]);
-        }
-        closeModal();
-    };
 
-    const handleDelete = (id) => {
-        if (confirm('¿Eliminar reporte?')) {
-            setReports(reports.filter(report => report.id_reporte !== id));
-        }
-    };
 
-    const generateReport = (tipo) => {
-        const newReport = {
-            id_reporte: Math.max(...reports.map(r => r.id_reporte)) + 1,
-            nombre: `Reporte de ${tipo} - ${new Date().toLocaleDateString()}`,
-            tipo: tipo,
-            fecha_generacion: new Date().toISOString().split('T')[0],
-            periodo: new Date().toLocaleDateString(),
-            estado: "Procesando",
-            archivo: `${tipo.toLowerCase()}_${Date.now()}.pdf`
+    useEffect(() => {
+        const fetchResumen = async () => {
+            try {
+                const token = localStorage.getItem('token');
+                const response = await fetch('http://localhost:3000/api/dashboard/resumen', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const data = await response.json();
+                if (data.success) setResumen(data);
+            } catch (error) {
+                console.error('Error fetch resumen:', error);
+            }
         };
-        setReports([...reports, newReport]);
+        fetchResumen();
+    }, []);
+
+    useEffect(() => {
+        const fetchHosteleria = async () => {
+            try {
+                const token = localStorage.getItem('token');
+                const response = await fetch('http://localhost:3000/api/dashboard/ingresos-hosteleria', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const data = await response.json();
+                if (data.success) setHosteleriaData(data.data);
+            } catch (error) {
+                console.error('Error fetch hostelería:', error);
+            }
+        };
+        fetchHosteleria();
+    }, []);
+
+    useEffect(() => {
+        const fetchBookings = async () => {
+            try {
+                const response = await fetch('http://localhost:3000/api/booking/getBookings');
+                const data = await response.json();
+
+                console.log('Response from fetchBookings:', response);
+                console.log('Data from fetchBookings:', data);
+
+                if (data.success) {
+                    setBookings(data.data);
+                } else {
+                    console.error('Error: La respuesta no fue exitosa', data);
+                }
+            } catch (error) {
+                console.error('Error fetch reservas:', error);
+            }
+        };
+        fetchBookings();
+    }, []);
+
+    useEffect(() => {
+        const fetchAnfitrion = async () => {
+            try {
+                const token = localStorage.getItem('token');
+                const response = await fetch('http://localhost:3000/api/dashboard/ingresos-anfitrion', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const data = await response.json();
+                if (data.success) {
+                    const formateados = data.data.map(item => ({
+                        nombre: item.nombre_anfitrion || `Anfitrión ${item.id_anfitrion}`,
+                        total_reservas: item.total_reservas,
+                        ingresos_totales: item.ingresos_totales,
+                        cabañas: item.hostelerias || []
+                    }));
+                    setAnfitrionData(formateados);
+                }
+            } catch (error) {
+                console.error('Error fetch anfitriones:', error);
+            }
+        };
+        fetchAnfitrion();
+    }, []);
+
+    useEffect(() => {
+        const fetchResenas = async () => {
+            try {
+                const token = localStorage.getItem('token');
+                const response = await fetch('http://localhost:3000/api/dashboard/resenas', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const data = await response.json();
+                if (data.success) setResenasData(data);
+            } catch (error) {
+                console.error('Error fetch reseñas:', error);
+            }
+        };
+        fetchResenas();
+    }, []);
+
+    useEffect(() => {
+        const fetchHotels = async () => {
+            try {
+                const response = await fetch('http://localhost:3000/api/hospitality/getHotelData');
+                const data = await response.json();
+                if (data.success) {
+                    setHotels(data.data);
+                }
+            } catch (error) {
+                console.error('Error fetch hoteles:', error);
+            }
+        };
+        fetchHotels();
+    }, []);
+
+    useEffect(() => {
+        const cargarUsuarios = async () => {
+            try {
+                const response = await fetch('http://localhost:3000/api/adminUser/getUsers');
+                const data = await response.json();
+                if (data.success) {
+                    setUsers(data.data);
+                }
+            } catch (error) {
+                console.error('Error al cargar usuarios:', error);
+            }
+        };
+        cargarUsuarios();
+    }, []);
+
+    const reservasData = resumen ? Object.keys(resumen.ingresosPorMes).map(key => {
+        const [year, mesNum] = key.split('-');
+        const meses = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"];
+        return {
+            mes: meses[parseInt(mesNum) - 1],
+            reservas: resumen.reservasPorMes[key] || 0,
+            ingresos: resumen.ingresosPorMes[key] || 0
+        };
+    }) : [];
+
+    const estadosData = resumen ? [
+        { name: 'Confirmadas', value: resumen.resumenReservas.estados.confirmada, color: '#28a745', porcentaje: resumen.resumenReservas.porcentajes.confirmada },
+        { name: 'Canceladas', value: resumen.resumenReservas.estados.cancelada, color: '#dc3545', porcentaje: resumen.resumenReservas.porcentajes.cancelada },
+        { name: 'Pendientes', value: resumen.resumenReservas.estados.pendiente, color: '#ffc107', porcentaje: resumen.resumenReservas.porcentajes.pendiente }
+    ] : [];
+
+    const toggleInfo = (chart) => {
+        setShowInfo(prev => ({ ...prev, [chart]: !prev[chart] }));
     };
+
+    const toggleOpcion = (opcion) => {
+        setOpcionesSeleccionadas(prev => ({ ...prev, [opcion]: !prev[opcion] }));
+    };
+
+    const getNombreEstablecimiento = (booking) => {
+        if (booking.establecimiento) {
+            return booking.establecimiento.nombre || 'Nombre no disponible';
+        }
+        return 'No aplica';
+    };
+
+    const getUbicacion = (establecimiento) => {
+        if (establecimiento && establecimiento.direccion) {
+            const direccion = establecimiento.direccion;
+            return `${direccion.calle}, ${direccion.numero_exterior}, ${direccion.colonia}, ${direccion.ciudad}, ${direccion.estado}, ${direccion.codigo_postal}, ${direccion.pais}`;
+        }
+        return 'Dirección no disponible';
+    };
+
+    const handleGenerarPersonalizado = () => {
+        if (!nombreReporte.trim()) return;
+
+        if (tipoReporte === "Reservas") {
+            // Generar solo reporte de reservas
+            alert("⏳ Generando PDF de Reservas...");
+            setTimeout(async () => {
+                const elemento = document.getElementById("reporte-reservas");
+                if (elemento) {
+                    elemento.style.position = "static";
+                    elemento.style.left = "0";
+                    const canvas = await html2canvas(elemento, { scale: 2, useCORS: true, backgroundColor: "#ffffff" });
+                    const pdf = new jsPDF("p", "mm", "a4");
+                    const imgData = canvas.toDataURL("image/jpeg", 0.98);
+                    const pageWidth = pdf.internal.pageSize.getWidth();
+                    const imgHeight = (canvas.height * pageWidth) / canvas.width;
+                    pdf.addImage(imgData, "JPEG", 0, 0, pageWidth, imgHeight);
+                    pdf.save(`${nombreReporte}.pdf`);
+                    elemento.style.position = "absolute";
+                    elemento.style.left = "-9999px";
+                }
+            }, 500);
+        } else if (tipoReporte === "Financiero") {
+            // Generar solo reporte financiero
+            alert("⏳ Generando PDF Financiero...");
+            setTimeout(async () => {
+                const elemento = document.getElementById("reporte-finanzas");
+                if (elemento) {
+                    elemento.style.position = "static";
+                    elemento.style.left = "0";
+                    const canvas = await html2canvas(elemento, { scale: 2, useCORS: true, backgroundColor: "#ffffff" });
+                    const pdf = new jsPDF("p", "mm", "a4");
+                    const imgData = canvas.toDataURL("image/jpeg", 0.98);
+                    const pageWidth = pdf.internal.pageSize.getWidth();
+                    const imgHeight = (canvas.height * pageWidth) / canvas.width;
+                    pdf.addImage(imgData, "JPEG", 0, 0, pageWidth, imgHeight);
+                    pdf.save(`${nombreReporte}.pdf`);
+                    elemento.style.position = "absolute";
+                    elemento.style.left = "-9999px";
+                }
+            }, 500);
+        } else if (tipoReporte === "Mis Publicaciones") {
+            // Generar solo reporte de hoteles
+            alert("⏳ Generando PDF de Hoteles...");
+            setTimeout(async () => {
+                const elemento = document.getElementById("reporte-hoteles");
+                if (elemento) {
+                    elemento.style.position = "static";
+                    elemento.style.left = "0";
+                    const canvas = await html2canvas(elemento, { scale: 2, useCORS: true, backgroundColor: "#ffffff" });
+                    const pdf = new jsPDF("p", "mm", "a4");
+                    const imgData = canvas.toDataURL("image/jpeg", 0.98);
+                    const pageWidth = pdf.internal.pageSize.getWidth();
+                    const imgHeight = (canvas.height * pageWidth) / canvas.width;
+                    pdf.addImage(imgData, "JPEG", 0, 0, pageWidth, imgHeight);
+                    pdf.save(`${nombreReporte}.pdf`);
+                    elemento.style.position = "absolute";
+                    elemento.style.left = "-9999px";
+                }
+            }, 500);
+        } else if (tipoReporte === "Personalizado") {
+            // Generar reporte completo o personalizado
+            generarPDFCompleto();
+        } else {
+            alert("Tipo de reporte no reconocido");
+        }
+
+        setShowModal(false);
+        setNombreReporte("");
+    };
+
 
     return (
         <>
@@ -152,110 +340,69 @@ export default function Dashboard() {
             <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.10.0/font/bootstrap-icons.min.css" rel="stylesheet" />
 
             <style>{`
-                body { 
-                    min-height: 100vh;
-                    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
-                }
-                .main-container {
-                    background: rgba(255, 255, 255, 0.95);
-                    backdrop-filter: blur(20px);
-                    border-radius: 20px;
-                    box-shadow: 0 20px 40px rgba(0,0,0,0.1);
-                    border: 1px solid rgba(255, 255, 255, 0.2);
-                }
-                .stats-card {
-                    background: linear-gradient(135deg, #fff 0%, #f8f9fa 100%);
-                    border: none;
-                    border-radius: 16px;
-                    transition: all 0.3s ease;
-                    box-shadow: 0 4px 15px rgba(0,0,0,0.08);
-                }
-                .stats-card:hover {
-                    transform: translateY(-5px);
-                    box-shadow: 0 8px 25px rgba(0,0,0,0.15);
-                }
-                .user-table {
-                    background: white;
-                    border-radius: 16px;
-                    overflow: hidden;
-                    box-shadow: 0 4px 20px rgba(0,0,0,0.08);
-                    border: none;
-                }
-                .table th {
-                    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-                    border: none;
-                    font-weight: 600;
-                    color: #495057;
-                    padding: 1rem;
-                }
-                .table td {
-                    border: none;
-                    padding: 1rem;
-                    vertical-align: middle;
-                    border-bottom: 1px solid #f8f9fa;
-                }
-                .table tbody tr:hover {
-                    background: rgba(102, 126, 234, 0.05);
-                }
-                .avatar {
-                    width: 45px;
-                    height: 45px;
-                    border-radius: 50%;
-                    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-                    display: inline-flex;
-                    align-items: center;
-                    justify-content: center;
-                    color: white;
-                    font-weight: 600;
-                    font-size: 16px;
-                }
-                .btn-primary {
-                    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-                    border: none;
-                    border-radius: 12px;
-                    padding: 12px 24px;
-                    font-weight: 500;
-                    transition: all 0.3s ease;
-                }
-                .btn-primary:hover {
-                    transform: translateY(-2px);
-                    box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
-                    background: linear-gradient(135deg, #5a6fd8 0%, #6a4190 100%);
-                }
-                .modal-content {
-                    border: none;
-                    border-radius: 20px;
-                    box-shadow: 0 20px 60px rgba(0,0,0,0.3);
-                }
-                .form-control, .form-select {
-                    border: 2px solid #e9ecef;
-                    border-radius: 12px;
-                    padding: 12px 16px;
-                    transition: all 0.3s ease;
-                }
-                .form-control:focus, .form-select:focus {
-                    border-color: #667eea;
-                    box-shadow: 0 0 15px rgba(102, 126, 234, 0.15);
-                }
-                .chart-container {
-                    background: white;
-                    border-radius: 16px;
-                    padding: 2rem;
-                    box-shadow: 0 4px 20px rgba(0,0,0,0.08);
-                    margin-bottom: 2rem;
-                }
-                .quick-actions {
-                    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-                    border-radius: 16px;
-                    padding: 2rem;
-                    color: white;
-                    margin-bottom: 2rem;
-                }
+                .main-container { background: rgba(255,255,255,0.95); backdrop-filter: blur(20px); border-radius: 20px; box-shadow: 0 20px 40px rgba(0,0,0,0.1); border: 1px solid rgba(255,255,255,0.2); }
+                .stats-card { background: linear-gradient(135deg,#fff,#f8f9fa); border: none; border-radius: 16px; transition: .3s; box-shadow: 0 4px 15px rgba(0,0,0,0.08); }
+                .stats-card:hover { transform: translateY(-5px); box-shadow: 0 8px 25px rgba(0,0,0,0.15); }
+                .chart-container { background: white; border-radius: 16px; padding: 2rem; box-shadow: 0 4px 20px rgba(0,0,0,0.08); margin-bottom: 2rem; }
+                .quick-actions { background: linear-gradient(135deg,#667eea,#764ba2); border-radius: 16px; padding: 2rem; color: white; margin-bottom: 2rem; }
+                .btn-light:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(102,126,234,0.4); background: linear-gradient(135deg,#5a6fd8,#6a4190); color: white; }
+                .pdftarget { position: absolute !important; left: -9999px !important; width: 900px !important; top: 0; height: auto; overflow: visible; background: white; }
             `}</style>
+
+            {showModal && (
+                <div className="modal fade show d-block" style={{ backgroundColor: "rgba(0,0,0,0.5)" }}>
+                    <div className="modal-dialog modal-dialog-centered">
+                        <div className="modal-content border-0 shadow-lg rounded-4">
+                            <div className="modal-header bg-primary text-white rounded-top-4">
+                                <h5 className="modal-title fw-bold">
+                                    {tipoReporte === "Personalizado" ? "Crear Reporte Personalizado" : `Crear Reporte de ${tipoReporte}`}
+                                </h5>
+                                <button className="btn-close btn-close-white" onClick={() => { setShowModal(false); setTipoReporte(null); setNombreReporte(""); }}></button>
+                            </div>
+
+                            <div className="modal-body">
+                                <div className="mb-3">
+                                    <label className="form-label fw-semibold">Nombre del reporte</label>
+                                    <input
+                                        type="text"
+                                        className="form-control"
+                                        value={nombreReporte}
+                                        onChange={(e) => setNombreReporte(e.target.value)}
+                                        placeholder="Ej. Reporte de noviembre"
+                                        required
+                                    />
+                                </div>
+
+                                {tipoReporte === "Personalizado" && (
+                                    <div className="mb-3">
+                                        <label className="form-label fw-semibold">Selecciona qué incluir:</label>
+                                        {Object.keys(opcionesSeleccionadas).map((op) => (
+                                            <div key={op} className="form-check">
+                                                <input
+                                                    className="form-check-input"
+                                                    type="checkbox"
+                                                    checked={opcionesSeleccionadas[op]}
+                                                    onChange={() => toggleOpcion(op)}
+                                                    id={op}
+                                                />
+                                                <label className="form-check-label text-capitalize" htmlFor={op}>{op}</label>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+
+                            <div className="modal-footer">
+                                <button className="btn btn-secondary" onClick={() => { setShowModal(false); setTipoReporte(null); setNombreReporte(""); }}>Cancelar</button>
+                                <button className="btn btn-primary" disabled={!nombreReporte.trim()} onClick={handleGenerarPersonalizado}>Generar</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             <div className="container-fluid p-4">
                 <div className="main-container p-4">
-                    {/* Header */}
                     <div className="d-flex justify-content-between align-items-center mb-4">
                         <div>
                             <h1 className="h2 fw-bold text-dark mb-1">
@@ -264,141 +411,167 @@ export default function Dashboard() {
                             </h1>
                             <p className="text-muted mb-0">Analiza el rendimiento y genera reportes</p>
                         </div>
-                        <button onClick={() => openModal()} className="btn btn-primary">
-                            <i className="bi bi-plus-lg me-2"></i>Nuevo Reporte
-                        </button>
                     </div>
 
-                    {/* Quick Actions */}
-                    <div className="quick-actions">
-                        <h4 className="mb-3">
-                            <i className="bi bi-lightning-charge me-2"></i>
-                            Generar Reportes Rápidos
-                        </h4>
-                        <div className="row">
-                            <div className="col-md-3 mb-2">
-                                <button
-                                    className="btn btn-light w-100"
-                                    onClick={() => generateReport('Reservas')}
-                                >
-                                    <i className="bi bi-calendar-check me-2"></i>
-                                    Reservas
-                                </button>
-                            </div>
-                            <div className="col-md-3 mb-2">
-                                <button
-                                    className="btn btn-light w-100"
-                                    onClick={() => generateReport('Financiero')}
-                                >
-                                    <i className="bi bi-currency-dollar me-2"></i>
-                                    Financiero
-                                </button>
-                            </div>
-                            <div className="col-md-3 mb-2">
-                                <button
-                                    className="btn btn-light w-100"
-                                    onClick={() => generateReport('Ocupación')}
-                                >
-                                    <i className="bi bi-building me-2"></i>
-                                    Ocupación
-                                </button>
-                            </div>
-                            <div className="col-md-3 mb-2">
-                                <button
-                                    className="btn btn-light w-100"
-                                    onClick={() => generateReport('Calidad')}
-                                >
-                                    <i className="bi bi-star me-2"></i>
-                                    Calidad
-                                </button>
-                            </div>
+                    <div className="quick-actions mb-4">
+                        <h4 className="mb-3"><i className="bi bi-lightning-charge me-2"></i>Generar Reportes Rápidos</h4>
+                        <div className="row text-center">
+                            {[
+                                { tipo: "Reservas", icon: "bi-calendar-check" },
+                                { tipo: "Financiero", icon: "bi-currency-dollar" },
+                                { tipo: "Mis Publicaciones", icon: "bi-building" },
+                                { tipo: "Calidad", icon: "bi-star" },
+                                { tipo: "Personalizado", icon: "bi-sliders" },
+                            ].map(({ tipo, icon }) => (
+                                <div className="col-md-2 mb-2" key={tipo}>
+                                    <button
+                                        className="btn btn-light w-100 fw-semibold d-flex align-items-center justify-content-center gap-2"
+                                        onClick={() => { setTipoReporte(tipo); setShowModal(true); }}
+                                    >
+                                        <i className={`bi ${icon}`}></i>{tipo}
+                                    </button>
+                                </div>
+                            ))}
                         </div>
                     </div>
 
-                    {/* Stats */}
-                    <div className="row g-4 mb-4">
-                        <div className="col-lg-3 col-md-6">
-                            <div className="stats-card card text-center h-100">
-                                <div className="card-body">
-                                    <div className="d-flex align-items-center justify-content-center mb-3">
-                                        <div className="avatar">
-                                            <i className="bi bi-file-earmark-text"></i>
-                                        </div>
-                                    </div>
-                                    <h3 className="fw-bold text-primary">{reports.length}</h3>
-                                    <p className="text-muted mb-0">Total Reportes</p>
-                                </div>
-                            </div>
-                        </div>
-                        <div className="col-lg-3 col-md-6">
-                            <div className="stats-card card text-center h-100">
-                                <div className="card-body">
-                                    <div className="d-flex align-items-center justify-content-center mb-3">
-                                        <div className="avatar" style={{ background: 'linear-gradient(135deg, #28a745 0%, #20c997 100%)' }}>
-                                            <i className="bi bi-check-circle-fill"></i>
-                                        </div>
-                                    </div>
-                                    <h3 className="fw-bold text-success">{reports.filter(r => r.estado === 'Completado').length}</h3>
-                                    <p className="text-muted mb-0">Completados</p>
-                                </div>
-                            </div>
-                        </div>
-                        <div className="col-lg-3 col-md-6">
-                            <div className="stats-card card text-center h-100">
-                                <div className="card-body">
-                                    <div className="d-flex align-items-center justify-content-center mb-3">
-                                        <div className="avatar" style={{ background: 'linear-gradient(135deg, #ffc107 0%, #fd7e14 100%)' }}>
-                                            <i className="bi bi-clock-fill"></i>
-                                        </div>
-                                    </div>
-                                    <h3 className="fw-bold text-warning">{reports.filter(r => r.estado === 'Procesando').length}</h3>
-                                    <p className="text-muted mb-0">Procesando</p>
-                                </div>
-                            </div>
-                        </div>
-                        <div className="col-lg-3 col-md-6">
-                            <div className="stats-card card text-center h-100">
-                                <div className="card-body">
-                                    <div className="d-flex align-items-center justify-content-center mb-3">
-                                        <div className="avatar" style={{ background: 'linear-gradient(135deg, #17a2b8 0%, #6f42c1 100%)' }}>
-                                            <i className="bi bi-hourglass-split"></i>
-                                        </div>
-                                    </div>
-                                    <h3 className="fw-bold text-info">{reports.filter(r => r.estado === 'Pendiente').length}</h3>
-                                    <p className="text-muted mb-0">Pendientes</p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+                    <ReporteReservas bookings={bookings} />
+                    <ReporteFinanzas bookings={bookings} />
+                    <ReporteHoteles hotels={hotels} bookings={bookings} />
+                    <ReporteUsuario users={users} />
+                </div>
+            </div>
 
-                    {/* Charts */}
-                    <div className="row mb-4">
-                        <div className="col-lg-8">
-                            <div className="chart-container">
-                                <h5 className="mb-4">
-                                    <i className="bi bi-graph-up me-2"></i>
-                                    Reservas e Ingresos por Mes
-                                </h5>
-                                <ResponsiveContainer width="100%" height={300}>
-                                    <LineChart data={reservasData}>
-                                        <CartesianGrid strokeDasharray="3 3" />
-                                        <XAxis dataKey="mes" />
-                                        <YAxis yAxisId="left" />
-                                        <YAxis yAxisId="right" orientation="right" />
-                                        <Tooltip />
-                                        <Legend />
-                                        <Bar yAxisId="left" dataKey="reservas" fill="#667eea" name="Reservas" />
-                                        <Line yAxisId="right" type="monotone" dataKey="ingresos" stroke="#28a745" strokeWidth={3} name="Ingresos ($)" />
-                                    </LineChart>
-                                </ResponsiveContainer>
+            <div className="row g-4 mb-4">
+                {[...resenasData?.por_hosteleria || []]
+                    .sort((a, b) => b.promedio_calificacion - a.promedio_calificacion)
+                    .slice(0, 5)
+                    .map((h) => {
+                        const gradient = h.promedio_calificacion >= 4.5
+                            ? 'linear-gradient(135deg, #ffc107 0%, #fd7e14 100%)'
+                            : h.promedio_calificacion >= 4
+                                ? 'linear-gradient(135deg, #28a745 0%, #20c997 100%)'
+                                : 'linear-gradient(135deg, #6c757d 0%, #adb5bd 100%)';
+
+                        return (
+                            <div key={h.id_hosteleria} className="col-lg-2 col-md-4 col-sm-6">
+                                <div className="stats-card card text-center h-100 hover-card">
+                                    <div className="card-body d-flex flex-column align-items-center justify-content-center">
+                                        <div className="avatar mb-3" style={{ background: gradient, width: '60px', height: '60px', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '50%', fontSize: '1.5rem', color: 'white' }}>
+                                            <i className="bi bi-building"></i>
+                                        </div>
+                                        <h6 className="fw-bold text-truncate mb-1">{h.nombre}</h6>
+                                        <p className="text-muted mb-2" style={{ fontSize: '0.85rem' }}>
+                                            {h.total_resenas} reseñas
+                                        </p>
+                                        <span className={`badge ${h.promedio_calificacion >= 4 ? 'bg-success' : 'bg-warning'}`} style={{ fontSize: '0.85rem' }}>
+                                            {h.promedio_calificacion} ⭐
+                                        </span>
+                                    </div>
+                                </div>
                             </div>
-                        </div>
-                        <div className="col-lg-4">
-                            <div className="chart-container">
-                                <h5 className="mb-4">
-                                    <i className="bi bi-pie-chart me-2"></i>
-                                    Estados de Reservas
-                                </h5>
+                        )
+                    })}
+
+                {[...resenasData?.por_anfitrion || []]
+                    .slice(0, 5)
+                    .map((a) => {
+                        const gradient = a.promedio_calificacion >= 4.5
+                            ? 'linear-gradient(135deg, #ffc107 0%, #fd7e14 100%)'
+                            : a.promedio_calificacion >= 4
+                                ? 'linear-gradient(135deg, #28a745 0%, #20c997 100%)'
+                                : 'linear-gradient(135deg, #6c757d 0%, #adb5bd 100%)';
+
+                        return (
+                            <div key={a.id_anfitrion} className="col-lg-2 col-md-4 col-sm-6">
+                                <div className="stats-card card text-center h-100 hover-card">
+                                    <div className="card-body d-flex flex-column align-items-center justify-content-center">
+                                        <div className="avatar mb-3" style={{ background: gradient, width: '60px', height: '60px', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '50%', fontSize: '1.5rem', color: 'white' }}>
+                                            <i className="bi bi-person-circle"></i>
+                                        </div>
+                                        <h6 className="fw-bold text-truncate mb-1">Anfitrión {a.id_anfitrion}</h6>
+                                        <p className="text-muted mb-2" style={{ fontSize: '0.85rem' }}>
+                                            {a.total_resenas} reseñas
+                                        </p>
+                                        <span className={`badge ${a.promedio_calificacion >= 4 ? 'bg-success' : 'bg-warning'}`} style={{ fontSize: '0.85rem' }}>
+                                            {a.promedio_calificacion} ⭐
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        )
+                    })}
+            </div>
+
+            <div className="row mb-4">
+                <div className="col-lg-8">
+                    <div className="chart-container">
+                        <h5 className="mb-4">
+                            <i className="bi bi-graph-up me-2"></i>
+                            Reservas e Ingresos por Mes
+                        </h5>
+
+                        <i
+                            className="bi bi-exclamation-circle text-primary position-absolute top-0 end-0 m-3"
+                            style={{ cursor: 'pointer', fontSize: '1.2rem' }}
+                            onClick={() => toggleInfo('meses')}
+                        ></i>
+
+                        {showInfo['meses'] && (
+                            <div className="chart-tooltip">
+                                <p>
+                                    Este gráfico muestra la evolución mensual de reservas e ingresos.
+                                    Las barras indican la cantidad de reservas y la línea representa los ingresos ($).
+                                    Permite identificar tendencias y temporadas altas o bajas.
+                                </p>
+                            </div>
+                        )}
+
+                        {!resumen ? (
+                            <p>Cargando datos...</p>
+                        ) : (
+                            <ResponsiveContainer width="100%" height={300}>
+                                <LineChart data={reservasData}>
+                                    <CartesianGrid strokeDasharray="3 3" />
+                                    <XAxis dataKey="mes" />
+                                    <YAxis yAxisId="left" />
+                                    <YAxis yAxisId="right" orientation="right" />
+                                    <Tooltip />
+                                    <Legend />
+                                    <Bar yAxisId="left" dataKey="reservas" fill="#667eea" name="Reservas" />
+                                    <Line yAxisId="right" type="monotone" dataKey="ingresos" stroke="#28a745" strokeWidth={3} name="Ingresos ($)" />
+                                </LineChart>
+                            </ResponsiveContainer>
+                        )}
+                    </div>
+                </div>
+
+                <div className="col-lg-4">
+                    <div className="chart-container">
+                        <h5 className="mb-4">
+                            <i className="bi bi-pie-chart me-2"></i>
+                            Estados de Reservas
+                        </h5>
+
+                        <i
+                            className="bi bi-exclamation-circle text-primary position-absolute top-0 end-0 m-3"
+                            style={{ cursor: 'pointer', fontSize: '1.2rem' }}
+                            onClick={() => toggleInfo('estados')}
+                        ></i>
+
+                        {showInfo['estados'] && (
+                            <div className="chart-tooltip">
+                                <p>
+                                    Este gráfico de pastel muestra la distribución de reservas por estado: confirmadas, canceladas y pendientes.
+                                    Ayuda a visualizar rápidamente el porcentaje de cada tipo y el total de reservas gestionadas.
+                                </p>
+                            </div>
+                        )}
+
+                        {!resumen ? (
+                            <p>Cargando datos de estados...</p>
+                        ) : (
+                            <>
                                 <ResponsiveContainer width="100%" height={300}>
                                     <PieChart>
                                         <Pie
@@ -406,244 +579,116 @@ export default function Dashboard() {
                                             cx="50%"
                                             cy="50%"
                                             labelLine={false}
-                                            label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                                            label={({ name, porcentaje }) => `${name}: ${porcentaje}`}
                                             outerRadius={80}
-                                            fill="#8884d8"
                                             dataKey="value"
                                         >
                                             {estadosData.map((entry, index) => (
                                                 <Cell key={`cell-${index}`} fill={entry.color} />
                                             ))}
                                         </Pie>
-                                        <Tooltip />
+                                        <Tooltip formatter={(value, name) => [`${value}`, `${name}`]} />
                                     </PieChart>
                                 </ResponsiveContainer>
-                            </div>
-                        </div>
-                    </div>
 
-                    <div className="row mb-4">
-                        <div className="col-12">
-                            <div className="chart-container">
-                                <h5 className="mb-4">
-                                    <i className="bi bi-bar-chart me-2"></i>
-                                    Rendimiento por Establecimiento
-                                </h5>
-                                <ResponsiveContainer width="100%" height={300}>
-                                    <BarChart data={hospederiaData}>
-                                        <CartesianGrid strokeDasharray="3 3" />
-                                        <XAxis dataKey="nombre" />
-                                        <YAxis yAxisId="left" />
-                                        <YAxis yAxisId="right" orientation="right" />
-                                        <Tooltip />
-                                        <Legend />
-                                        <Bar yAxisId="left" dataKey="reservas" fill="#667eea" name="Reservas" />
-                                        <Bar yAxisId="right" dataKey="ingresos" fill="#28a745" name="Ingresos ($)" />
-                                    </BarChart>
-                                </ResponsiveContainer>
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Reports Table */}
-                    <div className="user-table">
-                        <div className="table-responsive">
-                            <table className="table table-hover mb-0">
-                                <thead>
-                                    <tr>
-                                        <th>ID</th>
-                                        <th>Nombre del Reporte</th>
-                                        <th>Tipo</th>
-                                        <th>Fecha Generación</th>
-                                        <th>Período</th>
-                                        <th>Estado</th>
-                                        <th>Archivo</th>
-                                        <th className="text-center">Acciones</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {reports.map((report) => (
-                                        <tr key={report.id_reporte}>
-                                            <td>
-                                                <span className="badge bg-secondary rounded-pill px-3 py-2">
-                                                    {report.id_reporte}
-                                                </span>
-                                            </td>
-                                            <td>
-                                                <div className="fw-semibold">{report.nombre}</div>
-                                            </td>
-                                            <td>
-                                                <span className={`badge rounded-pill px-3 py-2 ${report.tipo === 'Financiero' ? 'bg-success' :
-                                                        report.tipo === 'Reservas' ? 'bg-primary' :
-                                                            report.tipo === 'Ocupación' ? 'bg-info' :
-                                                                'bg-warning'
-                                                    }`}>
-                                                    <i className={`bi ${report.tipo === 'Financiero' ? 'bi-currency-dollar' :
-                                                            report.tipo === 'Reservas' ? 'bi-calendar-check' :
-                                                                report.tipo === 'Ocupación' ? 'bi-building' :
-                                                                    'bi-star'
-                                                        } me-1`}></i>
-                                                    {report.tipo}
-                                                </span>
-                                            </td>
-                                            <td>
-                                                <div className="text-muted">
-                                                    <i className="bi bi-calendar-event me-1"></i>
-                                                    {report.fecha_generacion}
-                                                </div>
-                                            </td>
-                                            <td className="text-muted">
-                                                {report.periodo}
-                                            </td>
-                                            <td>
-                                                <span className={`badge rounded-pill px-3 py-2 ${report.estado === 'Completado' ? 'bg-success' :
-                                                        report.estado === 'Procesando' ? 'bg-warning' :
-                                                            'bg-secondary'
-                                                    }`}>
-                                                    <i className={`bi ${report.estado === 'Completado' ? 'bi-check-circle-fill' :
-                                                            report.estado === 'Procesando' ? 'bi-clock-fill' :
-                                                                'bi-hourglass-split'
-                                                        } me-1`}></i>
-                                                    {report.estado}
-                                                </span>
-                                            </td>
-                                            <td>
-                                                <span className="text-muted small">
-                                                    <i className="bi bi-file-earmark me-1"></i>
-                                                    {report.archivo}
-                                                </span>
-                                            </td>
-                                            <td>
-                                                <div className="d-flex gap-2 justify-content-center">
-                                                    <button
-                                                        className="btn btn-outline-success btn-sm"
-                                                        title="Descargar"
-                                                    >
-                                                        <i className="bi bi-download"></i>
-                                                    </button>
-                                                    <button
-                                                        onClick={() => openModal(report)}
-                                                        className="btn btn-outline-primary btn-sm"
-                                                        title="Editar"
-                                                    >
-                                                        <i className="bi bi-pencil"></i>
-                                                    </button>
-                                                    <button
-                                                        onClick={() => handleDelete(report.id_reporte)}
-                                                        className="btn btn-outline-danger btn-sm"
-                                                        title="Eliminar"
-                                                    >
-                                                        <i className="bi bi-trash"></i>
-                                                    </button>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </table>
-                        </div>
+                                <div className="mt-3">
+                                    <p><strong>Total de reservas:</strong> {resumen.resumenReservas.totalReservas}</p>
+                                </div>
+                            </>
+                        )}
                     </div>
                 </div>
+            </div>
 
-                {/* Modal */}
-                <div className={`modal fade ${showModal ? 'show' : ''}`}
-                    style={{ display: showModal ? 'block' : 'none' }}
-                    tabIndex="-1">
-                    <div className="modal-dialog modal-dialog-centered">
-                        <div className="modal-content">
-                            <div className="modal-header border-0 pb-0">
-                                <h5 className="modal-title fw-bold">
-                                    <i className={`bi ${editingReport ? 'bi-pencil-square' : 'bi-file-earmark-plus'} text-primary me-2`}></i>
-                                    {editingReport ? 'Editar Reporte' : 'Nuevo Reporte'}
-                                </h5>
-                                <button type="button" className="btn-close" onClick={closeModal}></button>
-                            </div>
-                            <div>
-                                <div className="modal-body">
-                                    <div className="mb-3">
-                                        <label className="form-label fw-semibold">Nombre del Reporte</label>
-                                        <input
-                                            type="text"
-                                            className="form-control"
-                                            name="nombre"
-                                            value={formData.nombre}
-                                            onChange={handleInputChange}
-                                            placeholder="Reporte Mensual de Reservas"
-                                            required
-                                        />
-                                    </div>
+            <div className="chart-container mb-4">
+                <h5 className="mb-4">
+                    <i className="bi bi-building me-2"></i>
+                    Rendimiento por Establecimiento
+                </h5>
 
-                                    <div className="row">
-                                        <div className="col-md-6 mb-3">
-                                            <label className="form-label fw-semibold">Tipo</label>
-                                            <select
-                                                className="form-select"
-                                                name="tipo"
-                                                value={formData.tipo}
-                                                onChange={handleInputChange}
-                                            >
-                                                <option value="Reservas">Reservas</option>
-                                                <option value="Financiero">Financiero</option>
-                                                <option value="Ocupación">Ocupación</option>
-                                                <option value="Calidad">Calidad</option>
-                                            </select>
-                                        </div>
-                                        <div className="col-md-6 mb-3">
-                                            <label className="form-label fw-semibold">Estado</label>
-                                            <select
-                                                className="form-select"
-                                                name="estado"
-                                                value={formData.estado}
-                                                onChange={handleInputChange}
-                                            >
-                                                <option value="Pendiente">Pendiente</option>
-                                                <option value="Procesando">Procesando</option>
-                                                <option value="Completado">Completado</option>
-                                            </select>
-                                        </div>
-                                    </div>
+                <i
+                    className="bi bi-exclamation-circle text-primary position-absolute top-0 end-0 m-3"
+                    style={{ cursor: 'pointer', fontSize: '1.2rem' }}
+                    onClick={() => toggleInfo('hosteleria')}
+                ></i>
 
-                                    <div className="mb-3">
-                                        <label className="form-label fw-semibold">Período</label>
-                                        <input
-                                            type="text"
-                                            className="form-control"
-                                            name="periodo"
-                                            value={formData.periodo}
-                                            onChange={handleInputChange}
-                                            placeholder="Noviembre 2024"
-                                            required
-                                        />
-                                    </div>
-
-                                    <div className="mb-3">
-                                        <label className="form-label fw-semibold">Nombre del Archivo</label>
-                                        <input
-                                            type="text"
-                                            className="form-control"
-                                            name="archivo"
-                                            value={formData.archivo}
-                                            onChange={handleInputChange}
-                                            placeholder="reporte_reservas.pdf"
-                                        />
-                                    </div>
-                                </div>
-                                <div className="modal-footer border-0 pt-0">
-                                    <button type="button" className="btn btn-light" onClick={closeModal}>
-                                        Cancelar
-                                    </button>
-                                    <button type="button" className="btn btn-primary" onClick={handleSubmit}>
-                                        <i className={`bi ${editingReport ? 'bi-check-lg' : 'bi-plus-lg'} me-2`}></i>
-                                        {editingReport ? 'Actualizar' : 'Crear'}
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
+                {showInfo['hosteleria'] && (
+                    <div className="chart-tooltip">
+                        <p>
+                            Este gráfico muestra el rendimiento de cada establecimiento en cuanto a reservas e ingresos.
+                            Permite comparar los establecimientos más y menos rentables de manera rápida.
+                        </p>
                     </div>
-                </div>
+                )}
 
-                {showModal && (
-                    <div className="modal-backdrop fade show" onClick={closeModal}></div>
+                {!hosteleriaData.length ? (
+                    <p>Cargando rendimiento por establecimiento...</p>
+                ) : (
+                    <ResponsiveContainer width="100%" height={300}>
+                        <BarChart data={hosteleriaData}>
+                            <CartesianGrid strokeDasharray="3 3" />
+                            <XAxis dataKey="nombre" />
+                            <YAxis yAxisId="left" />
+                            <YAxis yAxisId="right" orientation="right" />
+                            <Tooltip />
+                            <Legend />
+                            <Bar yAxisId="left" dataKey="total_reservas" fill="#667eea" name="Reservas" />
+                            <Bar yAxisId="right" dataKey="ingresos_totales" fill="#28a745" name="Ingresos ($)" />
+                        </BarChart>
+                    </ResponsiveContainer>
+                )}
+            </div>
+
+            <div className="chart-container mb-4">
+                <h5 className="mb-4">
+                    <i className="bi bi-person-lines-fill me-2"></i>
+                    Rendimiento por Anfitrión
+                </h5>
+
+                <i
+                    className="bi bi-exclamation-circle text-primary position-absolute top-0 end-0 m-3"
+                    style={{ cursor: 'pointer', fontSize: '1.2rem' }}
+                    onClick={() => toggleInfo('anfitrion')}
+                ></i>
+
+                {showInfo['anfitrion'] && (
+                    <div className="chart-tooltip">
+                        <p>
+                            Este gráfico compara los ingresos y reservas de cada anfitrión.
+                            Además, muestra las cabañas gestionadas por cada uno, permitiendo identificar los anfitriones con mejor desempeño.
+                        </p>
+                    </div>
+                )}
+
+                {!anfitrionData.length ? (
+                    <p>Cargando rendimiento por anfitrión...</p>
+                ) : (
+                    <ResponsiveContainer width="100%" height={300}>
+                        <BarChart data={anfitrionData}>
+                            <CartesianGrid strokeDasharray="3 3" />
+                            <XAxis dataKey="nombre" />
+                            <YAxis yAxisId="left" />
+                            <YAxis yAxisId="right" orientation="right" />
+                            <Tooltip formatter={(value, name) => {
+                                if (name === 'total_reservas') return [`${value}`, 'Reservas'];
+                                if (name === 'ingresos_totales') return [`$${value}`, 'Ingresos ($)'];
+                                return [value, name];
+                            }} />
+                            <Legend />
+                            <Bar yAxisId="left" dataKey="total_reservas" fill="#6f42c1" name="Reservas" />
+                            <Bar yAxisId="right" dataKey="ingresos_totales" fill="#20c997" name="Ingresos ($)" />
+                        </BarChart>
+                    </ResponsiveContainer>
+                )}
+
+                {anfitrionData.length > 0 && (
+                    <div className="mt-3">
+                        {anfitrionData.map((anfitrion, idx) => (
+                            <div key={idx} className="mb-2">
+                                <strong>{anfitrion.nombre}</strong>: {anfitrion.cabañas.join(', ') || 'Sin cabañas asignadas'}
+                            </div>
+                        ))}
+                    </div>
                 )}
             </div>
         </>

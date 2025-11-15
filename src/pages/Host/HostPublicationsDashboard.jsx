@@ -326,7 +326,19 @@ export default function HostProperties() {
               >
                 <Home size={18} className="me-2" />
                 Nueva Propiedad
+                </button>
+
+              <button
+                className="btn rounded-2"
+                onClick={() => navigate("/host/report")}
+                style={{ backgroundColor: "#8B4789", color: "white", padding: "0.75rem 1.5rem" }}
+              >
+                <Compass size={18} className="me-2" />
+                Reportes
               </button>
+
+
+
               <button
                 className="btn rounded-2"
                 onClick={() => navigate("/host/upload/tourism")}

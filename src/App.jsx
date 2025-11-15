@@ -29,6 +29,8 @@ import ReviewUsers from "./components/ReviewUsers";
 import Reviews from "./components/Reviews";
 import CreateTouristExperience from "./pages/Host/HostPageUploadTourism";
 
+import HostReport from "./pages/Host/HostReport";
+
 function PropertiesPage() {
   return (
     <div className="container py-5">
@@ -135,17 +137,14 @@ export default function App() {
                   </>
                 } />
 
-                {/* RUTAS DE AUTENTICACIÓN */}
                 <Route path="/login" element={<LoginPage />} />
                 <Route path="/register" element={<RegisterPage />} />
                 
-                {/* RUTAS PÚBLICAS */}
                 <Route path="/propiedades" element={<PropertiesPage />} />
                 <Route path="/reservation" element={<ReservationInfo />} />
                 <Route path="/reservation/tourism" element={<TourismReservationInfo />} />
                 <Route path="/payment" element={<PaymentSummary />} />
                 
-                {/* RUTAS PROTEGIDAS PARA ANFITRIONES */}
                 <Route 
                   path="/host/upload" 
                   element={
@@ -153,6 +152,14 @@ export default function App() {
                       <HostUploadPage />
                     </ProtectedRoute>
                   } 
+                />
+                <Route 
+                  path="/host/report" 
+                  element={
+                    <ProtectedRoute allowedRoles={["anfitrion"]}>
+                      <HostReport />
+                    </ProtectedRoute>
+                  }
                 />
                 <Route 
                   path="/host/upload/tourism" 
