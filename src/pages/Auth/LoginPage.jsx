@@ -12,21 +12,28 @@ export default function LoginPage() {
         password: ""
     });
 
+    const redirigirPorRol = (rol) => {
+        switch (rol) {
+            case 'admin':
+                return '/dashboard';
+            case 'anfitrion':
+                return '/host/publications';
+            case 'usuario':
+                return '/';
+            default:
+                return '/';
+        }
+    };
+
     const handleSubmit = async (e) => {
         e.preventDefault();
-
         try {
             const response = await axios.post("http://localhost:3000/api/auth/login", formData);
-            
-            console.log("=== RESPUESTA COMPLETA DEL SERVIDOR ===");
-            console.log(response.data);
-            
             localStorage.setItem("token", response.data.token);
             localStorage.setItem("usuario", JSON.stringify(response.data.usuario));
             localStorage.setItem("rol", response.data.usuario.rol);
-            
             window.dispatchEvent(new Event('usuarioActualizado'));
-            
+
             await Swal.fire({
                 icon: 'success',
                 title: '¡Bienvenido!',
@@ -35,17 +42,8 @@ export default function LoginPage() {
                 showConfirmButton: false
             });
 
-            // Redirección según el rol
-            if(response.data.usuario.rol === 'admin') {
-                navigate('/dashboard', { replace: true });
-            } else {
-                navigate('/', { replace: true });
-            }
-
+            navigate(redirigirPorRol(response.data.usuario.rol), { replace: true });
         } catch (error) {
-            console.log("=== ERROR EN LOGIN ===");
-            console.log("Error completo:", error);
-            
             Swal.fire({
                 icon: 'error',
                 title: 'Error',
@@ -55,28 +53,15 @@ export default function LoginPage() {
         }
     };
 
-    // Manejador para el login con Google
     const handleGoogleSuccess = async (credentialResponse) => {
         try {
-            console.log("=== GOOGLE LOGIN SUCCESS ===");
-            
-            // Decodificar el token de Google para obtener info del usuario
             const decoded = jwtDecode(credentialResponse.credential);
-            console.log("Datos del usuario de Google:", decoded);
-
-            // Enviar el token de Google a tu backend
             const response = await axios.post("http://localhost:3000/api/auth/google-login", {
                 credential: credentialResponse.credential,
             });
 
-            console.log("=== RESPUESTA DEL SERVIDOR (Google) ===");
-            console.log(response.data);
-
-            // Guardar token en localStorage
             localStorage.setItem("token", response.data.token);
             localStorage.setItem("usuario", JSON.stringify(response.data.usuario));
-            
-            // Disparar evento para actualizar el Navbar
             window.dispatchEvent(new Event('usuarioActualizado'));
 
             await Swal.fire({
@@ -87,15 +72,8 @@ export default function LoginPage() {
                 showConfirmButton: false
             });
 
-            // Redirección según el rol
-            if(response.data.usuario.rol === 'admin') {
-                navigate('/dashboard', { replace: true });
-            } else {
-                navigate('/', { replace: true });
-            }
+            navigate(redirigirPorRol(response.data.usuario.rol), { replace: true });
         } catch (error) {
-            console.error("Error en login con Google:", error);
-            
             Swal.fire({
                 icon: 'error',
                 title: 'Error',
@@ -218,7 +196,7 @@ export default function LoginPage() {
                                                     <span className="px-3 text-muted small fw-semibold">O CONTINÚA CON</span>
                                                     <hr className="flex-grow-1" style={{ height: "2px", opacity: 0.1 }} />
                                                 </div>
-                                                
+
                                                 {/* Botón de Google OAuth */}
                                                 <div className="d-flex justify-content-center">
                                                     <GoogleLogin
@@ -236,7 +214,7 @@ export default function LoginPage() {
                                             <div className="text-center pt-3 pb-2">
                                                 <p className="mb-0 text-muted">
                                                     ¿No tienes una cuenta?{" "}
-                                                    <a href="#!" className="fw-bold text-decoration-none" style={{ color: "#2C3E50" }}>
+                                                    <a href="/register" className="fw-bold text-decoration-none" style={{ color: "#2C3E50" }}>
                                                         Crear cuenta nueva
                                                     </a>
                                                 </p>

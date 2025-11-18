@@ -169,8 +169,7 @@ export default function PaymentSummary({
                         reviews: parsedData.reviews || 0,
                         guests: parsedData.participants || 1,
                         participants: parsedData.participants || 1,
-                        selectedDate: parsedData.selectedDate,
-                        selectedTime: parsedData.selectedTime,
+                        fechaExperiencia: parsedData.fechaExperiencia || null,
                         duration: parsedData.duration,
                         comments: parsedData.comments,
                         category: parsedData.category,
@@ -416,8 +415,7 @@ export default function PaymentSummary({
                     id_usuario: usuarioData.id_usuario,
                     id_experiencia: currentReservationData.id_experiencia,
                     id_anfitrion: currentReservationData.id_anfitrion,
-                    fecha: currentReservationData.selectedDate,
-                    hora: currentReservationData.selectedTime,
+                    fecha: currentReservationData.fechaExperiencia,
                     participantes: currentReservationData.participants,
                     estado: 'confirmada',
                     comentarios: currentReservationData.comments || ''
@@ -512,15 +510,14 @@ export default function PaymentSummary({
                 details: `
                         <p><strong>Código de reserva:</strong> ${purchaseData.reservationId}</p>
                         <p><strong>Experiencia:</strong> ${currentReservationData.name}</p>
-                        <p><strong>Fecha:</strong> ${new Date(currentReservationData.selectedDate).toLocaleDateString('es-ES', {
+                        <p><strong>Fecha:</strong> ${new Date(currentReservationData.fechaExperiencia).toLocaleDateString('es-ES', {
                     weekday: 'long',
                     year: 'numeric',
                     month: 'long',
                     day: 'numeric'
                 })}</p>
-                        <p><strong>Hora:</strong> ${currentReservationData.selectedTime} hrs</p>
                         <p><strong>Participantes:</strong> ${currentReservationData.participants} persona${currentReservationData.participants > 1 ? 's' : ''}</p>
-                        <p><strong>Punto de encuentro:</strong> ${currentReservationData.meetingPoint}</p>
+                        <p><strong>Punto de encuentro:</strong> ${currentReservationData.location}</p>
                         <p><strong>Total pagado:</strong> $${purchaseData.pricing.total} MXN</p>
                         <p class="text-muted mt-3">Se ha enviado un correo de confirmación con todos los detalles a<br><strong>${usuarioData.email}</strong></p>
                         <p class="text-info mt-2"><small>💡 Recuerda llegar 15 minutos antes</small></p>
