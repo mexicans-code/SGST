@@ -1,30 +1,5 @@
 import { useState, useEffect } from 'react';
-import {
-    MapPin,
-    Star,
-    Users,
-    Calendar,
-    MessageSquare,
-    Check,
-    ArrowLeft,
-    Shield,
-    Clock,
-    Phone,
-    Mail,
-    Edit3,
-    Plus,
-    Minus,
-    ChevronDown,
-    ChevronUp,
-    X,
-    Maximize2,
-    ChevronLeft,
-    ChevronRight,
-    Compass,
-    Languages,
-    Award,
-    Camera
-} from 'lucide-react';
+import { MapPin, Star, Users, Calendar, MessageSquare, Check, ArrowLeft, Shield, Clock, Phone, Mail, Edit3, Plus, Minus, ChevronDown, ChevronUp, X, Maximize2, ChevronLeft, ChevronRight, Compass, Languages, Award, Camera } from 'lucide-react';
 
 import { useNavigate } from "react-router-dom";
 import Reviews from '../components/Reviews';
@@ -33,14 +8,7 @@ export default function TourismReservationInfo() {
     // Estado para los datos de la experiencia
     const [experienceData, setExperienceData] = useState(null);
     const [loading, setLoading] = useState(true);
-
     const navigate = useNavigate();
-
-    // Estados para edición
-    const [selectedDate, setSelectedDate] = useState("2024-03-20");
-    const [selectedTime, setSelectedTime] = useState("10:00");
-    const [participants, setParticipants] = useState(2);
-    const [isEditingDate, setIsEditingDate] = useState(false);
     const [isEditingParticipants, setIsEditingParticipants] = useState(false);
     const [comments, setComments] = useState('');
     const [agreedToTerms, setAgreedToTerms] = useState(false);
@@ -52,69 +20,64 @@ export default function TourismReservationInfo() {
 
     // Cargar datos desde localStorage al montar
     useEffect(() => {
-        try {
-            const storedDataString = localStorage.getItem('tourismReservationData');
-            const storedIdAnfitrion = localStorage.getItem('idAnfitrion');
+        const experienceId = localStorage.getItem('experienceId');
 
-            let storedData;
-            if (storedDataString) {
-                storedData = JSON.parse(storedDataString);
-                console.log('Datos cargados desde localStorage:', storedData);
-            } else {
-                storedData = {
-                    id: 1,
-                    name: "Tour por la Sierra Gorda",
-                    description: "Explora las maravillas naturales de la Sierra Gorda con guías expertos. Visita cascadas impresionantes, conoce la flora y fauna local, y disfruta de paisajes inolvidables.",
-                    pricePerPerson: 850,
-                    location: "Jalpan de Serra, Querétaro",
-                    rating: 4.9,
-                    reviews: 234,
-                    duration: "8 horas",
-                    maxParticipants: 12,
-                    minParticipants: 2,
-                    language: "Español e Inglés",
-                    difficulty: "Moderada",
-                    includes: [
-                        "Guía certificado",
-                        "Transporte ida y vuelta",
-                        "Comida y bebidas",
-                        "Equipo de seguridad",
-                        "Seguro de accidentes"
-                    ],
-                    images: [
-                        "https://images.unsplash.com/photo-1501594907352-04cda38ebc29?w=800",
-                        "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800",
-                        "https://images.unsplash.com/photo-1469474968028-56623f02e42e?w=800",
-                        "https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=800",
-                        "https://images.unsplash.com/photo-1542273917363-3b1817f69a2d?w=800"
-                    ],
-                    meetingPoint: "Centro Histórico de Jalpan, frente a la Misión",
-                    availableTimes: ["08:00", "10:00", "14:00", "16:00"],
-                    category: "Aventura y Naturaleza"
-                };
-                console.log('Usando datos de ejemplo');
-            }
-
-            const completeData = {
-                ...storedData,
-                id_anfitrion: storedData.id_anfitrion || storedIdAnfitrion || null,
-                pricePerPerson: storedData.pricePerPerson || storedData.price || 850,
-                includes: storedData.includes || [],
-                images: storedData.images && storedData.images.length > 0
-                    ? storedData.images
-                    : [storedData.imageSrc || "https://images.unsplash.com/photo-1501594907352-04cda38ebc29?w=800"],
-                availableTimes: storedData.availableTimes || ["08:00", "10:00", "14:00", "16:00"]
-            };
-            console.log("✅ Datos de la experiencia cargados con anfitrión:", completeData);
-
-            setExperienceData(completeData);
-
+        if (!experienceId) {
+            console.warn("No se encontró el ID de la experiencia en localStorage");
+            setExperienceData(null);
             setLoading(false);
-        } catch (error) {
-            console.error('Error loading experience data:', error);
-            setLoading(false);
+            return;
         }
+
+        const fetchExperience = async () => {
+            try {
+                setLoading(true);
+                const response = await fetch(`http://localhost:3000/api/adminTouristExperiences/getTouristExperience/${experienceId}`);
+                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                const result = await response.json();
+
+                if (result.success && result.data) {
+                    // Mapea los datos según lo que necesitas
+                    const data = result.data;
+                    const completeData = {
+                        id: data.id_experiencia,
+                        name: data.titulo,
+                        description: data.descripcion || "",
+                        location: data.direcciones ? `${data.direcciones.ciudad}, ${data.direcciones.estado}` : 'Ubicación no disponible',
+                        pricePerPerson: data.precio,
+                        rating: data.calificacion ?? 4.5,
+                        reviews: data.reviews || [],
+                        images: data.image ? [data.image] : [],
+                        category: data.tipo_experiencia,
+                        duration: data.duracion,
+                        minParticipants: 1,
+                        language: data.idioma || "Español",
+                        difficulty: data.dificultad || "Básico",
+                        maxParticipants: data.capacidad,
+                        meetingPoint: data.punto_encuentro || "",
+                        includes: data.incluye || [],
+                        id_anfitrion: data.id_anfitrion || null,
+                        fechaExperiencia: data.fecha_experiencia,
+                        reviews: data.reviews ? data.reviews.length : 0
+                    };
+                    setExperienceData(completeData);
+                } else {
+                    throw new Error("Experiencia no encontrada");
+                }
+            } catch (error) {
+                console.error("Error al cargar la experiencia:", error);
+                setExperienceData(null);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchExperience();
     }, []);
+
+    const [participants, setParticipants] = useState(
+        experienceData ? experienceData.minParticipants : 1 // si no existe experienceData aún, inicia en 1
+    );
 
     if (loading) {
         return (
@@ -176,14 +139,10 @@ export default function TourismReservationInfo() {
             description: experienceData.description,
             location: experienceData.location,
             rating: experienceData.rating,
-            reviews: experienceData.reviews,
             images: experienceData.images,
             category: experienceData.category,
-
-            // Datos de la reserva
-            selectedDate,
-            selectedTime,
             participants,
+            fechaExperiencia: experienceData.fechaExperiencia,
 
             // Pricing
             pricePerPerson: experienceData.pricePerPerson,
@@ -310,7 +269,7 @@ export default function TourismReservationInfo() {
                                             <div className="d-flex flex-wrap gap-3 mb-3">
                                                 <div className="d-flex align-items-center">
                                                     <Clock size={16} className="me-2" style={{ color: '#87CEEB' }} />
-                                                    <span className="small">{experienceData.duration}</span>
+                                                    <span className="small">{experienceData.duration} horas</span>
                                                 </div>
                                                 <div className="d-flex align-items-center">
                                                     <Languages size={16} className="me-2" style={{ color: '#87CEEB' }} />
@@ -349,78 +308,24 @@ export default function TourismReservationInfo() {
                                 </h3>
 
                                 <div className="row g-4">
-                                    {/* Fecha y hora */}
+                                    {/* Fecha de la experiencia */}
                                     <div className="col-md-6">
                                         <div className="d-flex align-items-start">
                                             <Calendar size={24} style={{ color: '#87CEEB' }} className="me-3 mt-1" />
                                             <div className="flex-grow-1">
                                                 <div className="d-flex align-items-center justify-content-between mb-2">
                                                     <h6 className="fw-bold mb-0" style={{ color: '#2C3E50' }}>
-                                                        Fecha y hora
+                                                        Fecha de la experiencia
                                                     </h6>
-                                                    <button
-                                                        onClick={() => setIsEditingDate(!isEditingDate)}
-                                                        className="btn btn-link p-1 text-decoration-none"
-                                                        style={{ color: '#87CEEB' }}
-                                                    >
-                                                        <Edit3 size={16} />
-                                                    </button>
+                                                </div>
+                                                <div className="small text-muted">
+                                                    {experienceData.fechaExperiencia ? formatDate(experienceData.fechaExperiencia) : 'Fecha no disponible'}
                                                 </div>
 
-                                                {isEditingDate ? (
-                                                    <div>
-                                                        <div className="mb-3">
-                                                            <label className="form-label small fw-semibold text-muted">
-                                                                Fecha
-                                                            </label>
-                                                            <input
-                                                                type="date"
-                                                                className="form-control form-control-sm"
-                                                                value={selectedDate}
-                                                                onChange={(e) => setSelectedDate(e.target.value)}
-                                                            />
-                                                        </div>
-                                                        <div className="mb-3">
-                                                            <label className="form-label small fw-semibold text-muted">
-                                                                Horario
-                                                            </label>
-                                                            <select
-                                                                className="form-select form-select-sm"
-                                                                value={selectedTime}
-                                                                onChange={(e) => setSelectedTime(e.target.value)}
-                                                            >
-                                                                {experienceData.availableTimes.map((time) => (
-                                                                    <option key={time} value={time}>
-                                                                        {time} hrs
-                                                                    </option>
-                                                                ))}
-                                                            </select>
-                                                        </div>
-                                                        <button
-                                                            onClick={() => setIsEditingDate(false)}
-                                                            className="btn btn-sm"
-                                                            style={{
-                                                                backgroundColor: '#87CEEB',
-                                                                color: 'white',
-                                                                border: 'none'
-                                                            }}
-                                                        >
-                                                            Confirmar fecha
-                                                        </button>
-                                                    </div>
-                                                ) : (
-                                                    <div>
-                                                        <p className="text-muted mb-2 small">
-                                                            {formatDate(selectedDate)}
-                                                        </p>
-                                                        <span className="badge bg-light text-dark">
-                                                            {selectedTime} hrs • {experienceData.duration}
-                                                        </span>
-                                                    </div>
-                                                )}
                                             </div>
                                         </div>
                                     </div>
+
 
                                     {/* Participantes */}
                                     <div className="col-md-6">
@@ -447,7 +352,7 @@ export default function TourismReservationInfo() {
                                                                 onClick={() => adjustParticipants(-1)}
                                                                 className="btn btn-outline-secondary btn-sm rounded-circle me-3"
                                                                 style={{ width: '32px', height: '32px' }}
-                                                                disabled={participants <= experienceData.minParticipants}
+                                                                disabled={participants <= experienceData.minParticipants} // No deja pasar del mínimo
                                                             >
                                                                 <Minus size={14} />
                                                             </button>
@@ -456,7 +361,7 @@ export default function TourismReservationInfo() {
                                                                 onClick={() => adjustParticipants(1)}
                                                                 className="btn btn-outline-secondary btn-sm rounded-circle ms-3"
                                                                 style={{ width: '32px', height: '32px' }}
-                                                                disabled={participants >= experienceData.maxParticipants}
+                                                                disabled={participants >= experienceData.maxParticipants} // No deja pasar del máximo
                                                             >
                                                                 <Plus size={14} />
                                                             </button>
@@ -483,6 +388,7 @@ export default function TourismReservationInfo() {
                                                         {participants} {participants === 1 ? 'persona' : 'personas'}
                                                     </p>
                                                 )}
+
                                             </div>
                                         </div>
                                     </div>
@@ -619,7 +525,7 @@ export default function TourismReservationInfo() {
                                         <div className="d-flex align-items-center">
                                             <Star size={14} className="text-warning me-1" fill="currentColor" />
                                             <span className="small fw-semibold">{experienceData.rating}</span>
-                                            <span className="text-muted small ms-1">({experienceData.reviews})</span>
+                                            <span className="text-muted small ms-1">({experienceData.reviews} Reseñas) </span>
                                         </div>
                                     </div>
                                 </div>

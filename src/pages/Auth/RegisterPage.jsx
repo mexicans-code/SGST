@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import axios from "axios";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import Swal from "sweetalert2";
 import { GoogleLogin } from '@react-oauth/google';
 
@@ -16,8 +16,56 @@ export default function RegisterPage() {
         confirmPassword: ""
     });
 
+    // Función para redirigir según rol
+    const redirigirPorRol = (rol) => {
+        switch (rol) {
+            case 'admin':
+                return '/dashboard';
+            case 'anfitrion':
+                return '/host/publications';
+            case 'usuario':
+            default:
+                return '/';
+        }
+    };
+
     const handleSubmit = async (e) => {
         e.preventDefault();
+
+        // Sanitizar los datos
+        const sanitizedData = {
+            ...formData,
+            nombre: formData.nombre.trim(),
+            apellido_p: formData.apellido_p.trim(),
+            apellido_m: formData.apellido_m.trim(),
+            email: formData.email.trim(),
+            telefono: formData.telefono.trim()
+        };
+
+        // Validar nombres y apellidos (solo letras y espacios)
+        const nombreRegex = /^[a-zA-ZÁÉÍÓÚáéíóúñÑ\s]+$/;
+        if (!nombreRegex.test(sanitizedData.nombre) ||
+            !nombreRegex.test(sanitizedData.apellido_p) ||
+            !nombreRegex.test(sanitizedData.apellido_m)) {
+            Swal.fire({
+                icon: 'error',
+                title: 'Nombre inválido',
+                text: 'Los nombres y apellidos solo pueden contener letras',
+                confirmButtonColor: '#CD5C5C'
+            });
+            return;
+        }
+
+        const numeroRegex = sanitizedData.telefono.replace(/\D/g, ''); // quitar todo lo que no sea número
+        if (telefonoSoloNumeros.length !== 10) {
+            Swal.fire({
+                icon: 'error',
+                title: 'Teléfono inválido',
+                text: 'El teléfono debe contener exactamente 10 números',
+                confirmButtonColor: '#CD5C5C'
+            });
+            return;
+        }
 
         // Validar que las contraseñas coincidan
         if (formData.password !== formData.confirmPassword) {
@@ -30,10 +78,22 @@ export default function RegisterPage() {
             return;
         }
 
+        // Validar contraseña: al menos 8 caracteres, 1 mayúscula, 1 minúscula y 1 número
+        const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)[A-Za-z\d]{8,}$/;
+        if (!passwordRegex.test(formData.password)) {
+            Swal.fire({
+                icon: 'error',
+                title: 'Contraseña inválida',
+                text: 'La contraseña debe tener al menos 8 caracteres, incluyendo mayúsculas, minúsculas y números',
+                confirmButtonColor: '#CD5C5C'
+            });
+            return;
+        }
+
         try {
             const response = await axios.post("http://localhost:3000/api/auth/register", formData);
             console.log(response.data);
-            
+
             // Limpiar formulario
             setFormData({
                 nombre: "",
@@ -48,7 +108,7 @@ export default function RegisterPage() {
             // Guardar token y usuario
             localStorage.setItem("token", response.data.token);
             localStorage.setItem("usuario", JSON.stringify(response.data.usuario));
-            
+
             // Disparar evento para actualizar el Navbar
             window.dispatchEvent(new Event('usuarioActualizado'));
 
@@ -65,13 +125,24 @@ export default function RegisterPage() {
 
         } catch (error) {
             console.log("Error:", error.response?.data);
-            
-            Swal.fire({
-                icon: 'error',
-                title: 'Error en el registro',
-                text: error.response?.data?.error || 'Ocurrió un error al registrar',
-                confirmButtonColor: '#CD5C5C'
-            });
+
+            if (error.response?.data?.error === "Usuario ya existe") {
+                Swal.fire({
+                    icon: 'info',
+                    title: 'Cuenta existente',
+                    text: 'Ya tienes una cuenta, por favor inicia sesión',
+                    confirmButtonColor: '#CD5C5C'
+                }).then(() => {
+                    navigate("/login"); // Redirige a login
+                });
+            } else {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error en el registro',
+                    text: error.response?.data?.error || 'Ocurrió un error al registrar',
+                    confirmButtonColor: '#CD5C5C'
+                });
+            }
         }
     };
 
@@ -91,10 +162,11 @@ export default function RegisterPage() {
             // Guardar token y usuario
             localStorage.setItem("token", response.data.token);
             localStorage.setItem("usuario", JSON.stringify(response.data.usuario));
-            
+
             // Disparar evento para actualizar el Navbar
             window.dispatchEvent(new Event('usuarioActualizado'));
 
+            // Mostrar mensaje de bienvenida
             await Swal.fire({
                 icon: 'success',
                 title: '¡Bienvenido!',
@@ -103,10 +175,13 @@ export default function RegisterPage() {
                 showConfirmButton: false
             });
 
-            navigate("/");
+            // REDIRECCIONAR SEGÚN EL ROL
+            const ruta = redirigirPorRol(response.data.usuario.rol);
+            navigate(ruta); // redirige a la ruta correcta
+
         } catch (error) {
             console.error("Error en registro/login con Google:", error);
-            
+
             Swal.fire({
                 icon: 'error',
                 title: 'Error',
@@ -123,6 +198,13 @@ export default function RegisterPage() {
             title: 'Error',
             text: 'No se pudo registrar con Google',
             confirmButtonColor: '#CD5C5C'
+        });
+    };
+
+    const handleChange = (e) => {
+        setFormData({
+            ...formData,
+            [e.target.name]: e.target.value
         });
     };
 
@@ -183,8 +265,9 @@ export default function RegisterPage() {
                                                     <input
                                                         type="text"
                                                         id="nombreCompleto"
+                                                        name="nombre"
                                                         value={formData.nombre}
-                                                        onChange={(e) => setFormData({ ...formData, nombre: e.target.value })}
+                                                        onChange={handleChange}
                                                         className="form-control form-control-lg py-3 px-4 rounded-3"
                                                         placeholder="Juan"
                                                         style={{ backgroundColor: "#F4EFEA", border: "2px solid #e9ecef" }}
@@ -201,8 +284,9 @@ export default function RegisterPage() {
                                                     <input
                                                         type="text"
                                                         id="apellidoPaterno"
+                                                        name="apellido_p"
                                                         value={formData.apellido_p}
-                                                        onChange={(e) => setFormData({ ...formData, apellido_p: e.target.value })}
+                                                        onChange={handleChange}
                                                         className="form-control form-control-lg py-3 px-4 rounded-3"
                                                         placeholder="Pérez"
                                                         style={{ backgroundColor: "#F4EFEA", border: "2px solid #e9ecef" }}
@@ -217,8 +301,9 @@ export default function RegisterPage() {
                                                     <input
                                                         type="text"
                                                         id="apellidoMaterno"
+                                                        name="apellido_m"
                                                         value={formData.apellido_m}
-                                                        onChange={(e) => setFormData({ ...formData, apellido_m: e.target.value })}
+                                                        onChange={handleChange}
                                                         className="form-control form-control-lg py-3 px-4 rounded-3"
                                                         placeholder="García"
                                                         style={{ backgroundColor: "#F4EFEA", border: "2px solid #e9ecef" }}
@@ -235,8 +320,9 @@ export default function RegisterPage() {
                                                     <input
                                                         type="email"
                                                         id="email"
+                                                        name="email"
                                                         value={formData.email}
-                                                        onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                                                        onChange={handleChange}
                                                         className="form-control form-control-lg py-3 px-4 rounded-3"
                                                         placeholder="tu@email.com"
                                                         style={{ backgroundColor: "#F4EFEA", border: "2px solid #e9ecef" }}
@@ -251,8 +337,13 @@ export default function RegisterPage() {
                                                     <input
                                                         type="tel"
                                                         id="telefono"
+                                                        name="telefono"
                                                         value={formData.telefono}
-                                                        onChange={(e) => setFormData({ ...formData, telefono: e.target.value })}
+                                                        onChange={handleChange}
+                                                        onInput={(e) => {                                                            e.target.value = e.target.value.replace(/\D/g, '');
+                                                        }}
+                                                        inputMode="numeric" 
+                                                        pattern="\d*"
                                                         className="form-control form-control-lg py-3 px-4 rounded-3"
                                                         placeholder="+52 123 456 7890"
                                                         style={{ backgroundColor: "#F4EFEA", border: "2px solid #e9ecef" }}
@@ -269,8 +360,9 @@ export default function RegisterPage() {
                                                     <input
                                                         type="password"
                                                         id="password"
+                                                        name="password"
                                                         value={formData.password}
-                                                        onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                                                        onChange={handleChange}
                                                         className="form-control form-control-lg py-3 px-4 rounded-3"
                                                         placeholder="Mínimo 8 caracteres"
                                                         style={{ backgroundColor: "#F4EFEA", border: "2px solid #e9ecef" }}
@@ -285,8 +377,9 @@ export default function RegisterPage() {
                                                     <input
                                                         type="password"
                                                         id="confirmPassword"
+                                                        name="confirmPassword"
                                                         value={formData.confirmPassword}
-                                                        onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
+                                                        onChange={handleChange}
                                                         className="form-control form-control-lg py-3 px-4 rounded-3"
                                                         placeholder="Confirma tu contraseña"
                                                         style={{ backgroundColor: "#F4EFEA", border: "2px solid #e9ecef" }}
@@ -333,7 +426,7 @@ export default function RegisterPage() {
                                                     <span className="px-3 text-muted small fw-semibold">O REGÍSTRATE CON</span>
                                                     <hr className="flex-grow-1" style={{ height: "2px", opacity: 0.1 }} />
                                                 </div>
-                                                
+
                                                 <div className="d-flex justify-content-center">
                                                     <GoogleLogin
                                                         onSuccess={handleGoogleSuccess}
@@ -350,9 +443,9 @@ export default function RegisterPage() {
                                             <div className="text-center pt-3 pb-2">
                                                 <p className="mb-0 text-muted">
                                                     ¿Ya tienes una cuenta?{" "}
-                                                    <a href="/login" className="fw-bold text-decoration-none" style={{ color: "#CD5C5C" }}>
+                                                    <Link to="/login" className="fw-bold text-decoration-none" style={{ color: "#CD5C5C" }}>
                                                         Iniciar sesión
-                                                    </a>
+                                                    </Link>
                                                 </p>
                                             </div>
                                         </form>

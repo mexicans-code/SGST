@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react';
 import { Heart, Star, MapPin, Users, Wifi, Car, Coffee, Tv, Wind, X, Calendar, CreditCard } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 // Componente individual de card (mantiene tus estilos originales)
 function AirbnbCard({ hotel }) {
+  const navigate = useNavigate();
   const [imageLoaded, setImageLoaded] = useState(false);
 
   const handleReserve = () => {
@@ -10,7 +12,9 @@ function AirbnbCard({ hotel }) {
       id: hotel.id_hosteleria,
       name: hotel.nombre,
       price: hotel.precio_por_noche,
-      location: hotel.ubicacion,
+      location: hotel.direcciones
+        ? `${hotel.direcciones.ciudad}, ${hotel.direcciones.estado}`
+        : "Ubicación no disponible",
       imageSrc: hotel.image === "255" ? "https://images.unsplash.com/photo-1568605114967-8130f3a36994?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80" : hotel.image,
       guests: hotel.capacidad,
       description: hotel.descripcion,
@@ -27,7 +31,7 @@ function AirbnbCard({ hotel }) {
     console.log("Id de la propiedad: ", hotel.id_hosteleria);
 
     // Navega a la página de reserva
-    window.location.href = '/reservation';
+    navigate('/reservation');
   };
 
   // Función para obtener una calificación aleatoria realista
@@ -55,7 +59,9 @@ function AirbnbCard({ hotel }) {
 
   const name = hotel.nombre;
   const price = hotel.precio_por_noche;
-  const location = hotel.ubicacion;
+  const location = hotel.direcciones
+    ? `${hotel.direcciones.ciudad}, ${hotel.direcciones.estado}`
+    : "Ubicación no disponible";
   const imageSrc = hotel.image === "255" ? "https://images.unsplash.com/photo-1568605114967-8130f3a36994?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80" : hotel.image;
   const guests = hotel.capacidad;
   const description = hotel.descripcion;
@@ -169,14 +175,21 @@ export default function HotelListings() {
         const result = await response.json();
         console.log('Datos de hoteles recibidos:', result);
 
-        if(result.success && result.data){
-          const hotelesActivos = result.data.filter(hotel => hotel.estado === 'activo');
+        if (result.success && result.data) {
+
+          // solo hoteles activos Y con capacidad > 0
+          const hotelesActivos = result.data.filter(
+            hotel => hotel.estado === 'activo' && hotel.capacidad > 0
+          );
+
           setHotels(hotelesActivos);
+
         } else {
           throw new Error('Formato de respuesta inválido');
         }
 
         setError(null);
+
       } catch (err) {
         console.error('Error fetching hotels:', err);
         setError(err.message);
@@ -187,6 +200,7 @@ export default function HotelListings() {
 
     fetchHotels();
   }, []);
+
 
   if (loading) {
     return (

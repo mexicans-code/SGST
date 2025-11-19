@@ -28,8 +28,8 @@ import UserReservations from "./pages/user/UserReservations";
 import ReviewUsers from "./components/ReviewUsers";
 import Reviews from "./components/Reviews";
 import CreateTouristExperience from "./pages/Host/HostPageUploadTourism";
-
 import HostReport from "./pages/Host/HostReport";
+import PublicRoute from "./components/PublicRoute";
 
 function PropertiesPage() {
   return (
@@ -83,8 +83,8 @@ export default function App() {
   }, [darkMode]);
 
   return (
-    <div 
-      className={darkMode ? 'bg-dark text-light' : 'bg-light text-dark'} 
+    <div
+      className={darkMode ? 'bg-dark text-light' : 'bg-light text-dark'}
       style={{ minHeight: '100vh' }}
     >
       <Routes>
@@ -98,7 +98,7 @@ export default function App() {
                 <Route path="/" element={
                   <>
                     <HeroSection />
-                    
+
                     {/* SECCIÓN DE ALOJAMIENTOS */}
                     <div className={`shadow-sm border-bottom ${darkMode ? 'bg-dark' : 'bg-white'}`}>
                       <div className="container py-5">
@@ -137,49 +137,72 @@ export default function App() {
                   </>
                 } />
 
-                <Route path="/login" element={<LoginPage />} />
-                <Route path="/register" element={<RegisterPage />} />
-                
+                <Route
+                  path="/login"
+                  element={
+                    <PublicRoute>
+                      <LoginPage />
+                    </PublicRoute>
+                  }
+                />
+
+                <Route
+                  path="/register"
+                  element={
+                    <PublicRoute>
+                      <RegisterPage />
+                    </PublicRoute>
+                  }
+                />
+
                 <Route path="/propiedades" element={<PropertiesPage />} />
                 <Route path="/reservation" element={<ReservationInfo />} />
                 <Route path="/reservation/tourism" element={<TourismReservationInfo />} />
                 <Route path="/payment" element={<PaymentSummary />} />
-                
-                <Route 
-                  path="/host/upload" 
+
+                <Route
+                  path="/host/upload"
                   element={
                     <ProtectedRoute allowedRoles={["anfitrion"]}>
                       <HostUploadPage />
                     </ProtectedRoute>
-                  } 
+                  }
                 />
-                <Route 
-                  path="/host/report" 
+                <Route
+                  path="/host/publications"
+                  element={
+                    <ProtectedRoute allowedRoles={["anfitrion"]}>
+                      <HostPublications />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/host/report"
                   element={
                     <ProtectedRoute allowedRoles={["anfitrion"]}>
                       <HostReport />
                     </ProtectedRoute>
                   }
                 />
-                <Route 
-                  path="/host/upload/tourism" 
+                <Route
+                  path="/host/upload/tourism"
                   element={
                     <ProtectedRoute allowedRoles={["anfitrion"]}>
                       <CreateTouristExperience />
                     </ProtectedRoute>
                   }
                 />
-                <Route 
-                  path="/host/admin" 
+                <Route
+                  path="/host/admin"
                   element={
                     <ProtectedRoute allowedRoles={["anfitrion"]}>
                       <HostAdmin />
                     </ProtectedRoute>
-                  } 
+                  }
                 />
                 <Route path="/host/information" element={<HostInformation />} />
                 <Route path="/host/publications" element={<HostPublications />} />
-                
+
                 <Route path="/perfil" element={<Profile />} />
                 <Route path="/reservation/user" element={<ReservationUser />} />
                 <Route path="/user/reservations" element={<UserReservations />} />
@@ -188,8 +211,8 @@ export default function App() {
           }
         />
 
-        <Route 
-          path="/dashboard/*" 
+        <Route
+          path="/dashboard/*"
           element={
             <ProtectedRoute allowedRoles={["admin"]}>
               <DashboardLayout />
