@@ -1,36 +1,33 @@
-// components/ProtectedRoute.jsx
-import { Navigate } from "react-router-dom";
+import { Navigate, useLocation } from "react-router-dom";
 
-function ProtectedRoute({ children, allowedRoles = [] }) {
+function PublicRoute({ children }) {
   const token = localStorage.getItem("token");
-  
+  const location = useLocation();
+
   if (!token) {
-    return <Navigate to="/login" replace />;
+    return children;
   }
 
   let userRole = null;
-  
+
   try {
-    const payload = JSON.parse(atob(token.split('.')[1]));
+    const payload = JSON.parse(atob(token.split(".")[1]));
     userRole = payload.rol;
-    
   } catch (error) {
-    console.error("Error al decodificar el token:", error);
+    console.error("Token inválido");
     localStorage.removeItem("token");
     return <Navigate to="/login" replace />;
   }
 
-  if (!allowedRoles.includes(userRole)) {
+  // Solo redirigir si el usuario intenta acceder a páginas públicas
+  if (location.pathname === "/login" || location.pathname === "/register") {
     switch (userRole) {
       case "admin":
         return <Navigate to="/dashboard" replace />;
-
       case "anfitrion":
         return <Navigate to="/host/publications" replace />;
-
       case "usuario":
         return <Navigate to="/" replace />;
-
       default:
         return <Navigate to="/login" replace />;
     }
@@ -39,4 +36,4 @@ function ProtectedRoute({ children, allowedRoles = [] }) {
   return children;
 }
 
-export default ProtectedRoute;
+export default PublicRoute;

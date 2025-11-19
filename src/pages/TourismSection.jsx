@@ -102,39 +102,61 @@ export default function ExperiencesSection({ darkMode = false }) {
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    const fetchExperiences = async () => {
-      try {
-        setLoading(true);
-        const response = await fetch('http://localhost:3000/api/adminTouristExperiences/getTouristExperiences');
-        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-        const result = await response.json();
+  const fetchExperiences = async () => {
+    try {
+      setLoading(true);
+      const response = await fetch('http://localhost:3000/api/adminTouristExperiences/getTouristExperiences');
+      if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+      const result = await response.json();
 
-        if (result.success && result.data) {
-            const validExperiences = result.data.filter(exp => exp.capacidad > 0);
+      if (result.success && result.data) {
 
-          const mappedExperiences = validExperiences.map(exp => ({
-            id: exp.id_experiencia,
-            name: exp.titulo,
-            price: exp.precio,
-            rating: exp.calificacion ?? 4.5,
-            location: exp.direcciones ? `${exp.direcciones.ciudad}, ${exp.direcciones.estado}` : 'Ubicación no disponible',
-            imageSrc: exp.image || 'https://images.unsplash.com/photo-1501594907352-04cda38ebc29?w=800',
-            duration: exp.duracion,
-            category: exp.tipo_experiencia,
-            groupSize: exp.capacidad,
-          }));
-          setExperiences(mappedExperiences);
-        } else throw new Error('Formato de respuesta inválido');
-        setError(null);
-      } catch (err) {
-        console.error('Error fetching experiences:', err);
-        setError(err.message);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchExperiences();
-  }, []);
+        const hoy = new Date();
+        hoy.setHours(0, 0, 0, 0);
+
+        const validExperiences = result.data.filter(exp => {
+
+          const capacidadValida = exp.capacidad > 0;
+
+          const fechaExp = new Date(exp.fecha_experiencia);
+          fechaExp.setHours(0, 0, 0, 0);
+
+          const fechaValida = fechaExp >= hoy;
+
+          return capacidadValida && fechaValida;
+        });
+
+        const mappedExperiences = validExperiences.map(exp => ({
+          id: exp.id_experiencia,
+          name: exp.titulo,
+          price: exp.precio,
+          rating: exp.calificacion ?? 4.5,
+          location: exp.direcciones 
+            ? `${exp.direcciones.ciudad}, ${exp.direcciones.estado}` 
+            : 'Ubicación no disponible',
+          imageSrc: exp.image || 'https://images.unsplash.com/photo-1501594907352-04cda38ebc29?w=800',
+          duration: exp.duracion,
+          category: exp.tipo_experiencia,
+          groupSize: exp.capacidad,
+        }));
+
+        setExperiences(mappedExperiences);
+
+      } else throw new Error('Formato de respuesta inválido');
+
+      setError(null);
+
+    } catch (err) {
+      console.error('Error fetching experiences:', err);
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  fetchExperiences();
+}, []);
+
 
   const handleReserveExperience = (experienceId) => {
     localStorage.setItem('experienceId', experienceId);

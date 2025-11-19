@@ -93,7 +93,19 @@ export default function ReservationInfo() {
 
                     console.log('📅 Fechas bloqueadas para el hotel:', bookings);
                     setBookedRanges(bookings);
+
+                    const firstAvailableCheckIn = getFirstAvailableDate(bookings);
+
+                    let checkOutDate = new Date(firstAvailableCheckIn);
+                    checkOutDate.setDate(checkOutDate.getDate() + 1);
                 }
+                while (bookings.some(r =>
+                    checkOutDate >= new Date(r.start) && checkOutDate <= new Date(r.end)
+                )) {
+                    checkOutDate.setDate(checkOutDate.getDate() + 1);
+                }
+                setCheckIn(firstAvailableCheckIn);
+                setCheckOut(checkOutDate);
             } catch (error) {
                 console.error('Error fetching booked dates:', error);
                 setBookedRanges([]);
@@ -175,6 +187,22 @@ export default function ReservationInfo() {
         localStorage.setItem('reservationData', JSON.stringify(completeReservationData));
         navigate('/payment');
     };
+
+    function getFirstAvailableDate(blockedRanges) {
+        let date = new Date();
+        date.setHours(0, 0, 0, 0);
+
+        while (true) {
+            const isBlocked = blockedRanges.some(range =>
+                date >= new Date(range.start) && date <= new Date(range.end)
+            );
+
+            if (!isBlocked) return date;
+
+            // pasar al siguiente día
+            date.setDate(date.getDate() + 1);
+        }
+    }
 
     return (
         <div style={{ backgroundColor: '#FFFFFF' }} className="min-vh-100 py-4">
