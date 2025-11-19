@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Heart, MapPin, Calendar, Users, Search, ChevronDown } from 'lucide-react';
+import { GATEWAY_URL } from '../const/Const';
 
 export default function HeroSection({ darkMode = false, onSearchResults }) {
   const [checkIn, setCheckIn] = useState('');
@@ -9,14 +10,13 @@ export default function HeroSection({ darkMode = false, onSearchResults }) {
   const [allProperties, setAllProperties] = useState([]);
   const [loading, setLoading] = useState(false);
 
-  // Cargar todas las propiedades al montar
   useEffect(() => {
     fetchAllProperties();
   }, []);
 
   const fetchAllProperties = async () => {
     try {
-      const response = await fetch('http://localhost:3001/getHotelData');
+      const response = await fetch(`${GATEWAY_URL}/getHotelData`);
       const data = await response.json();
       setAllProperties(data);
     } catch (error) {

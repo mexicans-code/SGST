@@ -23,6 +23,8 @@ import { initMercadoPago, CardPayment } from '@mercadopago/sdk-react';
 
 const MERCADOPAGO_PUBLIC_KEY = 'TEST-f6336aad-6b41-408e-bacf-bd3263a24f01';
 
+import { GATEWAY_URL } from '../const/Const';
+
 // Esta api es para producción const MERCADOPAGO_PUBLIC_KEY = 'APP_USR-9979abe7-f266-42d9-a9f3-c0182c66e148';
 
 initMercadoPago(MERCADOPAGO_PUBLIC_KEY);
@@ -271,7 +273,7 @@ export default function PaymentSummary({
 
             console.log('📤 Enviando pago a Mercado Pago:', purchaseData);
 
-            const response = await fetch('http://localhost:3000/api/pay/mercadopago', {
+            const response = await fetch(`${GATEWAY_URL}/api/pay/mercadopago`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
@@ -487,7 +489,7 @@ export default function PaymentSummary({
 
             console.log('Datos a enviar:', purchaseData);
 
-            const response = await fetch('http://localhost:3000/api/pay/purchase', {
+            const response = await fetch(`${GATEWAY_URL}/api/pay/purchase`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'

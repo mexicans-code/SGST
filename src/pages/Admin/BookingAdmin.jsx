@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import Swal from 'sweetalert2';
 
+import { GATEWAY_URL } from '../../const/Const';
+
 export default function BookingAdmin() {
     const [bookings, setBookings] = useState([]);
     const [showModal, setShowModal] = useState(false);
@@ -21,7 +23,7 @@ export default function BookingAdmin() {
 
     const cargarReservas = async () => {
         try {
-            const response = await fetch('http://localhost:3000/api/booking/getBookings');
+            const response = await fetch(`${GATEWAY_URL}/api/booking/getBookings`);
             const data = await response.json();
             
             if (data.success) {
@@ -84,7 +86,7 @@ export default function BookingAdmin() {
                 };
                 
                 const response = await fetch(
-                    `http://localhost:3000/api/booking/updateBooking/${editingBooking.reserva.id_reserva}`,
+                    `${GATEWAY_URL}/api/booking/updateBooking/${editingBooking.reserva.id_reserva}`,
                     {
                         method: 'PUT',
                         headers: { 'Content-Type': 'application/json' },
@@ -118,7 +120,7 @@ export default function BookingAdmin() {
                 };
                 
                 const response = await fetch(
-                    'http://localhost:3000/api/booking/createBooking',
+                    `${GATEWAY_URL}/api/booking/createBooking`,
                     {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
@@ -175,7 +177,7 @@ export default function BookingAdmin() {
         if (result.isConfirmed) {
             try {
                 const response = await fetch(
-                    `http://localhost:3000/api/booking/cancelBooking/${id}`,
+                    `${GATEWAY_URL}/api/booking/cancelBooking/${id}`,
                     { method: 'PUT' } // Cambié de PATCH a PUT
                 );
                 
@@ -226,7 +228,7 @@ export default function BookingAdmin() {
         if (result.isConfirmed) {
             try {
                 const response = await fetch(
-                    `http://localhost:3000/api/booking/deleteBooking/${id}`,
+                    `${GATEWAY_URL}/api/booking/deleteBooking/${id}`,
                     { method: 'DELETE' }
                 );
                 

@@ -9,6 +9,8 @@ import {
 import { useNavigate } from "react-router-dom";
 import Reviews from '../components/Reviews';
 
+import { GATEWAY_URL } from '../const/Const';
+
 import "../index.css";
 
 export default function ReservationInfo() {
@@ -76,7 +78,7 @@ export default function ReservationInfo() {
     useEffect(() => {
         async function fetchBookedDates() {
             try {
-                const res = await fetch("http://localhost:3000/api/booking/getBookings");
+                const res = await fetch(`${GATEWAY_URL}/api/booking/getBookings`);
                 const bookingsApi = await res.json();
 
                 if (bookingsApi.success && bookingsApi.data) {

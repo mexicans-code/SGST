@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
+import { GATEWAY_URL } from '../../const/Const';
+
 
 export default function UserAdmin() {
     const [users, setUsers] = useState([]);
@@ -27,7 +29,7 @@ export default function UserAdmin() {
 
     const cargarUsuarios = async () => {
         try {
-            const response = await axios.get('http://localhost:3000/api/adminUser/getUsers');
+            const response = await axios.get(`${GATEWAY_URL}/api/adminUser/getUsers`);
             if (response.data.success) {
                 setUsers(response.data.data);
             }
@@ -90,10 +92,10 @@ export default function UserAdmin() {
                 if (!dataToUpdate.password) {
                     delete dataToUpdate.password;
                 }
-                await axios.put(`http://localhost:3000/api/adminUser/updateUser/${editingUser.id_usuario}`, dataToUpdate);
+                await axios.put(`${GATEWAY_URL}/api/adminUser/updateUser/${editingUser.id_usuario}`, dataToUpdate);
                 mostrarAlerta('Usuario actualizado correctamente', 'success');
             } else {
-                await axios.post('http://localhost:3000/api/adminUser/createUser', formData);
+                await axios.post(`${GATEWAY_URL}/api/adminUser/createUser`, formData);
                 mostrarAlerta('Usuario creado correctamente', 'success');
             }
 
@@ -108,7 +110,7 @@ export default function UserAdmin() {
     const handleDelete = async (id) => {
         if (confirm('¿Estás seguro de eliminar este usuario?')) {
             try {
-                await axios.delete(`http://localhost:3000/api/adminUser/deleteUser/${id}`);
+                await axios.delete(`${GATEWAY_URL}/api/adminUser/deleteUser/${id}`);
                 mostrarAlerta('Usuario eliminado correctamente', 'success');
                 cargarUsuarios();
             } catch (error) {

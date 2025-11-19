@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { GATEWAY_URL } from '../../const/Const';
 
 export default function HospitalityAdmin() {
     const [users, setUsers] = useState([]);
@@ -31,7 +32,7 @@ export default function HospitalityAdmin() {
 
 const cargarHosteleria = async () => {
     try {
-        const response = await fetch('http://localhost:3000/api/hospitality/getHotelData');
+        const response = await fetch(`${GATEWAY_URL}/api/hospitality/getHotelData`);
         const data = await response.json();
         
         if (data.success) {
@@ -125,8 +126,8 @@ const cargarHosteleria = async () => {
         
         try {
             if (editingUser) {
-                // Actualizar
-                const response = await fetch(`http://localhost:3000/api/hospitality/updateHotel/${editingUser.id_hosteleria}`, {
+                // Actualizar   
+                const response = await fetch(`${GATEWAY_URL}/api/hospitality/updateHotel/${editingUser.id_hosteleria}`, {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(formData)
@@ -140,7 +141,7 @@ const cargarHosteleria = async () => {
                 }
             } else {
                 // Crear
-                const response = await fetch('http://localhost:3000/api/hospitality/createHotel', {
+                const response = await fetch(`${GATEWAY_URL}/api/hospitality/createHotel`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(formData)
@@ -163,7 +164,7 @@ const cargarHosteleria = async () => {
     const handleDelete = async (id) => {
         if (confirm('¿Eliminar este establecimiento?')) {
             try {
-                const response = await fetch(`http://localhost:3000/api/hospitality/deleteHotel/${id}`, {
+                const response = await fetch(`${GATEWAY_URL}/api/hospitality/deleteHotel/${id}`, {
                     method: 'DELETE'
                 });
                 const data = await response.json();

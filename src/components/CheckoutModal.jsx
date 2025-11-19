@@ -2,6 +2,8 @@
 
 import { GoogleLogin } from '@react-oauth/google';
 import axios from 'axios';
+import { GATEWAY_URL } from "../const/Const";
+
 
 export default function CheckoutModal({ isOpen, onClose }) {
     const [showGoogleAuth, setShowGoogleAuth] = useState(false);
@@ -10,7 +12,7 @@ export default function CheckoutModal({ isOpen, onClose }) {
     const handlePurchaseSuccess = async (response) => {
         try {
             const purchaseResponse = await axios.post(
-                'http://localhost:3004/purchase',
+                `${GATEWAY_URL}/api/pay/purchase`,
                 purchaseData
             );
 
@@ -24,7 +26,7 @@ export default function CheckoutModal({ isOpen, onClose }) {
             } else {
                 // Cerrar modal
                 onClose();
-                Swal.fire({
+                swal.fire({
                     icon: 'success',
                     title: '¡Compra Exitosa!',
                     text: 'Tu reserva ha sido procesada'
@@ -40,7 +42,7 @@ export default function CheckoutModal({ isOpen, onClose }) {
             console.log('✅ Google Calendar autorizado');
             
             const calendarResponse = await axios.post(
-                'http://localhost:3004/create-calendar-event',
+                `${GATEWAY_URL}/create-calendar-event`,
                 {
                     credential: credentialResponse.credential,
                     reservationId: purchaseData.reservationId,
@@ -52,7 +54,7 @@ export default function CheckoutModal({ isOpen, onClose }) {
 
             console.log('📅 Evento creado en Calendar:', calendarResponse.data);
 
-            Swal.fire({
+            swal.fire({
                 icon: 'success',
                 title: '¡Compra y Calendario Sincronizado!',
                 text: 'El evento se agregó a tu Google Calendar'
@@ -63,7 +65,7 @@ export default function CheckoutModal({ isOpen, onClose }) {
 
         } catch (error) {
             console.error('Error creando evento:', error);
-            Swal.fire({
+            swal.fire({
                 icon: 'warning',
                 title: 'Compra Exitosa',
                 text: 'Compra procesada, pero no pudimos agregar el evento a tu calendario'
@@ -72,7 +74,7 @@ export default function CheckoutModal({ isOpen, onClose }) {
     };
 
     const handleGoogleCalendarError = () => {
-        Swal.fire({
+        swal.fire({
             icon: 'info',
             title: 'Calendario Opcional',
             text: 'Puedes agregar el evento manualmente a tu calendario más tarde'

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Home, Users, Building, FileText, Settings } from 'lucide-react';
 import { useLocation, Link, useNavigate } from 'react-router-dom';
+import { GATEWAY_URL } from '../const/Const';
 
 export default function DashboardSidebar() {
     const location = useLocation();
@@ -29,7 +30,7 @@ export default function DashboardSidebar() {
                 return;
             }
 
-            const response = await fetch('http://localhost:3000/api/adminProfile/getProfile', {
+            const response = await fetch(`${GATEWAY_URL}/api/adminProfile/getProfile`, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             

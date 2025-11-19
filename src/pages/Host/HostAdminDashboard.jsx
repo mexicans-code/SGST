@@ -18,6 +18,8 @@ import {
 } from "lucide-react";
 import ChatModal from "../../components/Chat";
 import { useNavigate } from "react-router-dom";
+import { GATEWAY_URL } from "../../const/Const";
+
 
 export default function HostReservations() {
   const [reservations, setReservations] = useState([]);
@@ -48,7 +50,7 @@ export default function HostReservations() {
 
     if (currentUserId) setUserId(currentUserId);
 
-    fetch("http://localhost:3000/api/booking/getBookings", {
+    fetch(`${GATEWAY_URL}/api/booking/getBookings`, {
       headers: { Authorization: `Bearer ${token}` },
     })
       .then((res) => res.json())

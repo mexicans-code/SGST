@@ -486,7 +486,6 @@ export default function ReporteFinanzas({ bookings }) {
     );
 }
 
-// ESTILOS
 const metricCardStyle = {
     backgroundColor: '#f8f9fa',
     padding: '20px',

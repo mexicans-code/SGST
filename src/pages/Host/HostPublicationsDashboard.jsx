@@ -20,6 +20,8 @@ import {
 import { useNavigate } from "react-router-dom";
 import EditProperty from "../../components/EditProperty";
 import Swal from "sweetalert2";
+import { GATEWAY_URL } from "../../const/Const";
+
 
 export default function HostProperties() {
   const [properties, setProperties] = useState([]);
@@ -56,7 +58,7 @@ export default function HostProperties() {
 
     if (token) {
       const decodedToken = parseJwt(token);
-      if (decodedToken?.id_usuario) {
+      if (decodedToken?.id_usuario) {   
         currentUserId = decodedToken.id_usuario;
         setUserId(currentUserId);
       }
@@ -65,9 +67,9 @@ export default function HostProperties() {
     const fetchProperties = async () => {
       try {
         const [experiencesRes, hotelsRes, bookingsRes] = await Promise.all([
-          fetch("http://localhost:3000/api/adminTouristExperiences/getTouristExperiences"),
-          fetch("http://localhost:3000/api/hospitality/getHotelData"),
-          fetch("http://localhost:3000/api/booking/getBookings"),
+          fetch(`${GATEWAY_URL}/api/adminTouristExperiences/getTouristExperiences`),
+          fetch(`${GATEWAY_URL}/api/hospitality/getHotelData`),
+          fetch(`${GATEWAY_URL}/api/booking/getBookings`),
         ]);
 
         const [experiencesResult, hotelsResult, bookingsResult] = await Promise.all([

@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import { Star, MessageCircle } from 'lucide-react';
 
+import { GATEWAY_URL } from '../const/Const';
+
 const Reviews = () => {
     const [showAll, setShowAll] = useState(false);
     const [resenas, setResenas] = useState([]);
@@ -33,7 +35,7 @@ const Reviews = () => {
 
             // Construir la URL según el tipo
             const queryParam = isExperiencia ? 'id_experiencia' : 'id_hosteleria';
-            const url = `http://localhost:3000/api/reviews/getReviews?${queryParam}=${propertyId}`;
+            const url = `${GATEWAY_URL}/api/reviews/getReviews?${queryParam}=${propertyId}`;
             
             console.log('URL de búsqueda:', url);
 

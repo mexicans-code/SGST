@@ -8,6 +8,8 @@ import jsPDF from "jspdf";
 import html2canvas from "html2canvas";
 import ReporteContenido from "./ReporteContenido";
 
+import { GATEWAY_URL } from "../../const/Const";
+
 export default function HostReport() {
     const [resumen, setResumen] = useState(null);
     const [loading, setLoading] = useState(true);
@@ -22,6 +24,8 @@ export default function HostReport() {
     const [touristExperiences, setTouristExperiences] = useState([]);
     const [tipoReporte, setTipoReporte] = useState(null);
     const navigate = useNavigate();
+
+    
 const generarPDF = async (nombreArchivo = "reporte") => {
     try {
         alert("⏳ Generando PDF, por favor espera...");
@@ -116,20 +120,19 @@ const generarPDF = async (nombreArchivo = "reporte") => {
         }
     }, []);
 
-    // ✅ OBTENER DATOS DEL DASHBOARD
     useEffect(() => {
         if (!idAnfitrion) return;
         (async () => {
             try {
-                const res = await fetch(`http://localhost:3000/api/dashboardAnfitrion/${idAnfitrion}`);
+                const res = await fetch(`${GATEWAY_URL}/api/dashboardAnfitrion/${idAnfitrion}`);
                 const data = await res.json();
                 if (data.success) setResumen(data);
 
-                const hotelRes = await fetch(`http://localhost:3000/api/dashboard/hotelData/${idAnfitrion}`);
+                const hotelRes = await fetch(`${GATEWAY_URL}/api/dashboard/hotelData/${idAnfitrion}`);
                 const hotelJson = await hotelRes.json();
                 if (hotelJson.success) setHotelData(hotelJson.data);
 
-                const expRes = await fetch(`http://localhost:3000/api/dashboard/touristExperiences/${idAnfitrion}`);
+                const expRes = await fetch(`${GATEWAY_URL}/api/dashboard/touristExperiences/${idAnfitrion}`);
                 const expJson = await expRes.json();
                 if (expJson.success) setTouristExperiences(expJson.data);
             } catch (e) {

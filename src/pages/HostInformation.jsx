@@ -4,6 +4,8 @@ import { useEffect, useState } from 'react';
 import axios from 'axios';
 import Swal from 'sweetalert2';
 
+import { GATEWAY_URL } from '../const/Const';
+
 const HostInformation = () => {
     const navigate = useNavigate();
 
@@ -61,7 +63,7 @@ const HostInformation = () => {
 
         if (result.isConfirmed) {
             try {
-                const response = await axios.post("http://localhost:3000/api/hospitality/convertirseEnAnfitrion", {
+                const response = await axios.post(`${GATEWAY_URL}/api/hospitality/convertirseEnAnfitrion`, {
                     id_usuario: user.id_usuario
                 });
 

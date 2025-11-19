@@ -1,6 +1,9 @@
 import React, { useState, useEffect } from "react";
 import { Upload, MapPin, Compass, DollarSign, Image, Plus, X, Calendar, Users } from "lucide-react";
 import Swal from "sweetalert2";
+import { GATEWAY_URL } from "../../const/Const";
+
+
 import { useNavigate } from "react-router-dom";
 
 export default function CreateTouristExperience() {

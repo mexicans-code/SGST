@@ -10,6 +10,7 @@ import ChatModal from "../../components/Chat";
 import { useNavigate } from "react-router-dom";
 import ReviewUsers from "../../components/ReviewUsers";
 import ReservationDetailsModal from "../../components/ReservationDetailsModal";
+import { GATEWAY_URL } from "../../const/Const";
 import Swal from "sweetalert2";
 
 const STATUS_BADGES = {
@@ -56,7 +57,7 @@ const fetchReservations = useCallback(async (currentUserId) => {
   try {
     const token = localStorage.getItem("token");
     const response = await fetch(
-      "http://localhost:3000/api/booking/getBookings",
+      `${GATEWAY_URL}/api/booking/getBookings`,
       {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -222,7 +223,7 @@ const handleCancelReservation = async (reservaId) => {
       const token = localStorage.getItem("token");
       
       const response = await fetch(
-        `http://localhost:3000/api/booking/cancelBooking/${reservaId}`, 
+        `${GATEWAY_URL}/api/booking/cancelBooking/${reservaId}`, 
         {
           method: 'PUT',
           headers: {

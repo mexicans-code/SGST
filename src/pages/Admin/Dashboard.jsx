@@ -7,6 +7,9 @@ import ReporteReservas from "../../components/ReporteReservas";
 import ReporteHoteles from "../../components/ReporteHoteles";
 import ReporteUsuario from "../../components/ReporteUsuario";
 import ReporteFinanzas from "../../components/ReporteFinanzas";
+import { GATEWAY_URL } from '../../const/Const';
+
+
 
 export default function Dashboard() {
     const [resumen, setResumen] = useState(null);
@@ -104,7 +107,7 @@ export default function Dashboard() {
         const fetchResumen = async () => {
             try {
                 const token = localStorage.getItem('token');
-                const response = await fetch('http://localhost:3000/api/dashboard/resumen', {
+                const response = await fetch(`${GATEWAY_URL}/api/dashboard/resumen`, {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
                 const data = await response.json();
@@ -120,7 +123,7 @@ export default function Dashboard() {
         const fetchHosteleria = async () => {
             try {
                 const token = localStorage.getItem('token');
-                const response = await fetch('http://localhost:3000/api/dashboard/ingresos-hosteleria', {
+                const response = await fetch(`${GATEWAY_URL}/api/dashboard/ingresos-hosteleria`, {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
                 const data = await response.json();
@@ -135,7 +138,7 @@ export default function Dashboard() {
     useEffect(() => {
         const fetchBookings = async () => {
             try {
-                const response = await fetch('http://localhost:3000/api/booking/getBookings');
+                const response = await fetch(`${GATEWAY_URL}/api/booking/getBookings`);
                 const data = await response.json();
 
                 console.log('Response from fetchBookings:', response);
@@ -157,7 +160,7 @@ export default function Dashboard() {
         const fetchAnfitrion = async () => {
             try {
                 const token = localStorage.getItem('token');
-                const response = await fetch('http://localhost:3000/api/dashboard/ingresos-anfitrion', {
+                const response = await fetch(`${GATEWAY_URL}/api/dashboard/ingresos-anfitrion`, {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
                 const data = await response.json();
@@ -181,7 +184,7 @@ export default function Dashboard() {
         const fetchResenas = async () => {
             try {
                 const token = localStorage.getItem('token');
-                const response = await fetch('http://localhost:3000/api/dashboard/resenas', {
+                const response = await fetch(`${GATEWAY_URL}/api/dashboard/resenas`, {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
                 const data = await response.json();
@@ -196,7 +199,7 @@ export default function Dashboard() {
     useEffect(() => {
         const fetchHotels = async () => {
             try {
-                const response = await fetch('http://localhost:3000/api/hospitality/getHotelData');
+                const response = await fetch(`${GATEWAY_URL}/api/hospitality/getHotelData`);
                 const data = await response.json();
                 if (data.success) {
                     setHotels(data.data);
@@ -211,7 +214,7 @@ export default function Dashboard() {
     useEffect(() => {
         const cargarUsuarios = async () => {
             try {
-                const response = await fetch('http://localhost:3000/api/adminUser/getUsers');
+                const response = await fetch(`${GATEWAY_URL}/api/adminUser/getUsers`);
                 const data = await response.json();
                 if (data.success) {
                     setUsers(data.data);

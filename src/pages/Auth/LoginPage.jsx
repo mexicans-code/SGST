@@ -3,7 +3,10 @@ import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import Swal from "sweetalert2";
 import { GoogleLogin } from '@react-oauth/google';
+
 import { jwtDecode } from 'jwt-decode';
+
+import { GATEWAY_URL } from '../../const/Const';
 
 export default function LoginPage() {
     const navigate = useNavigate();
@@ -28,7 +31,7 @@ export default function LoginPage() {
     const handleSubmit = async (e) => {
         e.preventDefault();
         try {
-            const response = await axios.post("http://localhost:3000/api/auth/login", formData);
+            const response = await axios.post(`${GATEWAY_URL}/api/auth/login`, formData);
             localStorage.setItem("token", response.data.token);
             localStorage.setItem("usuario", JSON.stringify(response.data.usuario));
             localStorage.setItem("rol", response.data.usuario.rol);
@@ -56,7 +59,7 @@ export default function LoginPage() {
     const handleGoogleSuccess = async (credentialResponse) => {
         try {
             const decoded = jwtDecode(credentialResponse.credential);
-            const response = await axios.post("http://localhost:3000/api/auth/google-login", {
+            const response = await axios.post(`${GATEWAY_URL}/api/auth/google-login`, {
                 credential: credentialResponse.credential,
             });
 

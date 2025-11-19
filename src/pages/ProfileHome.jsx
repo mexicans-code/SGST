@@ -1,5 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { GATEWAY_URL } from "../const/Const";
+
 
 export default function Profile() {
     const navigate = useNavigate();
@@ -27,7 +29,7 @@ export default function Profile() {
     const cargarDatosUsuario = async () => {
         try {
             const token = localStorage.getItem('token');
-            const response = await fetch('http://localhost:3000/api/adminProfile/getProfile', {
+            const response = await fetch(`${GATEWAY_URL}/api/adminProfile/getProfile`, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             const data = await response.json();
@@ -90,7 +92,7 @@ export default function Profile() {
                 updateData.password = formData.password;
             }
 
-            const response = await fetch('http://localhost:3000/api/adminProfile/updateProfile', {
+            const response = await fetch(`${GATEWAY_URL}/api/adminProfile/updateProfile`, {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',

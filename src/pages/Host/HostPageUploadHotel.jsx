@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Upload, MapPin, Home, DollarSign, Image, Plus, X } from "lucide-react";
+import { GATEWAY_URL } from '../../const/Const';
+
 
 import Swal from "sweetalert2";
 import { useNavigate } from "react-router-dom";
@@ -78,7 +80,7 @@ export default function HostUploadPage() {
             const formData = new FormData();
             formData.append('image', file);
 
-            const response = await fetch('http://localhost:3001/uploadImage', {
+            const response = await fetch(`${GATEWAY_URL}/uploadImage`, {
                 method: 'POST',
                 body: formData
             });
@@ -106,7 +108,7 @@ export default function HostUploadPage() {
 
         try {
             const publicId = encodeURIComponent(imageToRemove.publicId);
-            await fetch(`http://localhost:3001/deleteImage/${publicId}`, {
+            await fetch(`${GATEWAY_URL}/deleteImage/${publicId}`, {
                 method: 'DELETE'
             });
 
@@ -180,7 +182,7 @@ export default function HostUploadPage() {
         console.log('📤 Enviando payload:', payload);
     
         try {
-            const response = await fetch('http://localhost:3001/createHotel', {
+            const response = await fetch(`${GATEWAY_URL}/createHotel`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json' 

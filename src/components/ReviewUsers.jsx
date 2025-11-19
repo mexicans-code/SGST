@@ -1,6 +1,10 @@
     import React, { useState } from 'react';
     import { Star, Loader } from 'lucide-react';
 
+    
+
+    import { GATEWAY_URL } from '../const/Const';
+
     export default function ReviewUsers({ isOpen, onClose, data, propertyId }) {
         const [rating, setRating] = useState(0);
         const [hoverRating, setHoverRating] = useState(0);
@@ -15,6 +19,9 @@
                 console.log('=== MODAL DE RESEÑA ABIERTO ===');
                 console.log('propertyId:', propertyId);
                 console.log('Nombre:', data?.establecimiento?.nombre || data?.experiencia?.titulo);
+                console.log('Data recibida:', data);
+                console.log('Tipo de propiedad:', data?.establecimiento ? 'hosteleria' : 'experiencia');
+                console.log('ID propiedad:', data?.establecimiento?.id_hosteleria || data?.experiencia?.id_experiencia);
             }
         }, [isOpen, propertyId, data]);
 
@@ -32,12 +39,13 @@
                 const token = localStorage.getItem('token');
 
                 console.log('=== ENVIANDO RESEÑA ===');
+                console.log('ID propiedad:', data?.establecimiento?.id_hosteleria || data?.experiencia?.id_experiencia);
                 console.log('ID Reserva:', propertyId);
                 console.log('ID Usuario:', usuario.id_usuario);
                 console.log('Calificación:', rating);
                 console.log('Comentario:', comment);
 
-                const response = await fetch('http://localhost:3000/api/reviews/addReview', {
+                const response = await fetch(`${GATEWAY_URL}/api/reviews/addReview`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',

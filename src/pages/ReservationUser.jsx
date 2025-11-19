@@ -2,6 +2,8 @@ import React, { useState, useEffect } from "react";
 import { Calendar, MapPin, Clock, User, DollarSign, Home, Phone, Mail } from "lucide-react";
 import ChatModal from "../components/Chat";
 
+import { GATEWAY_URL } from "../const/Const";
+
 export default function ReservationUser() {
     const [reservations, setReservations] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -43,9 +45,9 @@ export default function ReservationUser() {
         const fetchReservations = async () => {
             try {
                 const token = localStorage.getItem("token");
-                const response = await fetch('http://localhost:3000/api/booking/getBookings', {
+                const response = await fetch(`${GATEWAY_URL}/api/booking/getBooking`, {
                     headers: {
-                        'Authorization': `Bearer ${token}`
+                        'Authorization': `Bearer ${token}`,
                     }
                 });
 

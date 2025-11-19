@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react';
 import { Heart, Star, MapPin, Users, Wifi, Car, Coffee, Tv, Wind, X, Calendar, CreditCard } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
+import { GATEWAY_URL } from '../const/Const';
+
 // Componente individual de card (mantiene tus estilos originales)
 function AirbnbCard({ hotel }) {
   const navigate = useNavigate();
@@ -24,6 +26,8 @@ function AirbnbCard({ hotel }) {
       bedrooms: bedrooms,
       bathrooms: bathrooms
     };
+
+
 
     // Guarda los datos en localStorage para pasarlos a la página de reserva
     localStorage.setItem('reservationData', JSON.stringify(reservationData));
@@ -166,7 +170,9 @@ export default function HotelListings() {
     const fetchHotels = async () => {
       try {
         setLoading(true);
-        const response = await fetch('http://localhost:3001/getHotelData');
+
+        const response = await fetch(`${GATEWAY_URL}/api/hospitality/getHotelData`);
+
 
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);

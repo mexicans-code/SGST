@@ -4,6 +4,8 @@ import { MapPin, Star, Users, Calendar, MessageSquare, Check, ArrowLeft, Shield,
 import { useNavigate } from "react-router-dom";
 import Reviews from '../components/Reviews';
 
+import { GATEWAY_URL } from '../const/Const';
+
 export default function TourismReservationInfo() {
     // Estado para los datos de la experiencia
     const [experienceData, setExperienceData] = useState(null);
@@ -32,7 +34,7 @@ export default function TourismReservationInfo() {
         const fetchExperience = async () => {
             try {
                 setLoading(true);
-                const response = await fetch(`http://localhost:3000/api/adminTouristExperiences/getTouristExperience/${experienceId}`);
+                const response = await fetch(`${GATEWAY_URL}/api/adminTouristExperiences/getTouristExperience/${experienceId}`);
                 if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
                 const result = await response.json();
 

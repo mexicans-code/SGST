@@ -4,6 +4,8 @@ import { useNavigate, Link } from "react-router-dom";
 import Swal from "sweetalert2";
 import { GoogleLogin } from '@react-oauth/google';
 
+import { GATEWAY_URL } from '../../const/Const';
+
 export default function RegisterPage() {
     const navigate = useNavigate();
     const [formData, setFormData] = useState({
@@ -91,7 +93,7 @@ export default function RegisterPage() {
         }
 
         try {
-            const response = await axios.post("http://localhost:3000/api/auth/register", formData);
+            const response = await axios.post(`${GATEWAY_URL}/api/auth/register`, formData);
             console.log(response.data);
 
             // Limpiar formulario
@@ -152,7 +154,7 @@ export default function RegisterPage() {
             console.log("=== GOOGLE REGISTER/LOGIN SUCCESS ===");
 
             // Enviar el token de Google al backend
-            const response = await axios.post("http://localhost:3000/api/auth/google-login", {
+            const response = await axios.post(`${GATEWAY_URL}/api/auth/google-login`, {
                 credential: credentialResponse.credential
             });
 

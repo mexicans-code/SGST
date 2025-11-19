@@ -31,6 +31,9 @@ import CreateTouristExperience from "./pages/Host/HostPageUploadTourism";
 import HostReport from "./pages/Host/HostReport";
 import PublicRoute from "./components/PublicRoute";
 
+import NotFoundPage from "./components/NotFoundPage";
+
+
 function PropertiesPage() {
   return (
     <div className="container py-5">
@@ -74,36 +77,40 @@ export default function App() {
   useEffect(() => {
     localStorage.setItem("darkMode", darkMode);
     if (darkMode) {
-      document.body.classList.add('bg-dark', 'text-light');
-      document.body.classList.remove('bg-light', 'text-dark');
+      document.body.classList.add("bg-dark", "text-light");
+      document.body.classList.remove("bg-light", "text-dark");
     } else {
-      document.body.classList.add('bg-light', 'text-dark');
-      document.body.classList.remove('bg-dark', 'text-light');
+      document.body.classList.add("bg-light", "text-dark");
+      document.body.classList.remove("bg-dark", "text-light");
     }
   }, [darkMode]);
 
   return (
     <div
-      className={darkMode ? 'bg-dark text-light' : 'bg-light text-dark'}
-      style={{ minHeight: '100vh' }}
+      className={darkMode ? "bg-dark text-light" : "bg-light text-dark"}
+      style={{ minHeight: "100vh" }}
     >
+
       <Routes>
+
+        {/* RUTAS PÚBLICAS DEL SITIO */}
         <Route
           path="/*"
           element={
             <>
               <Navbar darkMode={darkMode} setDarkMode={setDarkMode} />
-              <Routes>
-                {/* PÁGINA PRINCIPAL */}
-                <Route path="/" element={
-                  <>
-                    <HeroSection />
 
-                    {/* SECCIÓN DE ALOJAMIENTOS */}
-                    <div className={`shadow-sm border-bottom ${darkMode ? 'bg-dark' : 'bg-white'}`}>
-                      <div className="container py-5">
-                        <div className="text-center">
-                          <h2 className={`display-4 fw-bold mb-3 ${darkMode ? 'text-light' : 'text-dark'}`}>
+              <Routes>
+                <Route
+                  path="/"
+                  element={
+                    <>
+                      <HeroSection />
+
+                      {/* SECCIÓN ALOJAMIENTOS */}
+                      <div className={`shadow-sm border-bottom ${darkMode ? "bg-dark" : "bg-white"}`}>
+                        <div className="container py-5 text-center">
+                          <h2 className={`display-4 fw-bold mb-3 ${darkMode ? "text-light" : "text-dark"}`}>
                             Alojamientos En Arroyo Seco
                           </h2>
                           <p className="lead text-muted fs-5">
@@ -111,20 +118,20 @@ export default function App() {
                           </p>
                         </div>
                       </div>
-                    </div>
-                    <PropertiesPage />
 
-                    {/* SECCIÓN DE EXPERIENCIAS TURÍSTICAS */}
-                    <ExperiencesSection />
-                  </>
-                } />
+                      <PropertiesPage />
+                      <ExperiencesSection />
+                    </>
+                  }
+                />
 
-                <Route path="/experiencias" element={
-                  <>
-                    <div className={`shadow-sm border-bottom ${darkMode ? 'bg-dark' : 'bg-white'}`}>
-                      <div className="container py-5">
-                        <div className="text-center">
-                          <h2 className={`display-4 fw-bold mb-3 ${darkMode ? 'text-light' : 'text-dark'}`}>
+                <Route
+                  path="/experiencias"
+                  element={
+                    <>
+                      <div className={`shadow-sm border-bottom ${darkMode ? "bg-dark" : "bg-white"}`}>
+                        <div className="container py-5 text-center">
+                          <h2 className={`display-4 fw-bold mb-3 ${darkMode ? "text-light" : "text-dark"}`}>
                             Experiencias en Arroyo Seco
                           </h2>
                           <p className="lead text-muted fs-5">
@@ -132,11 +139,13 @@ export default function App() {
                           </p>
                         </div>
                       </div>
-                    </div>
-                    <ExperiencesSection />
-                  </>
-                } />
 
+                      <ExperiencesSection />
+                    </>
+                  }
+                />
+
+                {/* LOGIN Y REGISTRO */}
                 <Route
                   path="/login"
                   element={
@@ -155,11 +164,16 @@ export default function App() {
                   }
                 />
 
+                {/* RUTA 404 CORREGIDA */}
+                <Route path="/404" element={<NotFoundPage />} />
+
+                {/* OTRAS RUTAS */}
                 <Route path="/propiedades" element={<PropertiesPage />} />
                 <Route path="/reservation" element={<ReservationInfo />} />
                 <Route path="/reservation/tourism" element={<TourismReservationInfo />} />
                 <Route path="/payment" element={<PaymentSummary />} />
 
+                {/* RUTAS HOST */}
                 <Route
                   path="/host/upload"
                   element={
@@ -168,6 +182,7 @@ export default function App() {
                     </ProtectedRoute>
                   }
                 />
+
                 <Route
                   path="/host/publications"
                   element={
@@ -176,6 +191,7 @@ export default function App() {
                     </ProtectedRoute>
                   }
                 />
+
                 <Route
                   path="/host/report"
                   element={
@@ -184,6 +200,7 @@ export default function App() {
                     </ProtectedRoute>
                   }
                 />
+
                 <Route
                   path="/host/upload/tourism"
                   element={
@@ -192,6 +209,7 @@ export default function App() {
                     </ProtectedRoute>
                   }
                 />
+
                 <Route
                   path="/host/admin"
                   element={
@@ -200,12 +218,14 @@ export default function App() {
                     </ProtectedRoute>
                   }
                 />
+
                 <Route path="/host/information" element={<HostInformation />} />
-                <Route path="/host/publications" element={<HostPublications />} />
 
                 <Route path="/perfil" element={<Profile />} />
                 <Route path="/reservation/user" element={<ReservationUser />} />
                 <Route path="/user/reservations" element={<UserReservations />} />
+
+                <Route path="*" element={<NotFoundPage />} />
               </Routes>
             </>
           }
@@ -226,6 +246,7 @@ export default function App() {
           <Route path="reports" element={<ReportAdmin />} />
           <Route path="profile" element={<ProfileAdmin />} />
         </Route>
+
       </Routes>
     </div>
   );

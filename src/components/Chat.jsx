@@ -2,6 +2,8 @@ import React, { useState, useEffect, useRef } from "react";
 import { Send, X, User, Phone, Mail, Minimize2 } from "lucide-react";
 import { io } from "socket.io-client";
 
+import { GATEWAY_URL } from "../const/Const";
+
 export default function ChatModal({ isOpen, onClose, anfitrion, establecimiento }) {
     const [messages, setMessages] = useState([]);
     const [newMessage, setNewMessage] = useState("");
@@ -10,6 +12,7 @@ export default function ChatModal({ isOpen, onClose, anfitrion, establecimiento 
     const [connected, setConnected] = useState(false);
     const messagesEndRef = useRef(null);
     const socketRef = useRef(null);
+
 
     // Conectar a Socket.IO cuando se abre el chat
     useEffect(() => {
@@ -45,7 +48,7 @@ export default function ChatModal({ isOpen, onClose, anfitrion, establecimiento 
             });
 
             // Crear conexión con Socket.IO
-            socketRef.current = io("http://localhost:4000", {
+            socketRef.current = io(`${GATEWAY_URL}/chat`, {
                 auth: {
                     token: token
                 }

@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Star, MapPin, Clock, Compass } from 'lucide-react';
 
+import { GATEWAY_URL } from '../const/Const';
+
 function ExperienceCard({
   id,
   name = "Casa moderna en el centro",
@@ -105,7 +107,7 @@ export default function ExperiencesSection({ darkMode = false }) {
   const fetchExperiences = async () => {
     try {
       setLoading(true);
-      const response = await fetch('http://localhost:3000/api/adminTouristExperiences/getTouristExperiences');
+      const response = await fetch(`${GATEWAY_URL}/api/adminTouristExperiences/getTouristExperiences`);
       if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
       const result = await response.json();
 

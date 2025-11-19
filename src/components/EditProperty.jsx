@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from "react";
 import Swal from "sweetalert2";
 
+import { GATEWAY_URL } from "../const/Const";
+
 export default function EditProperty({ property, isOpen, onClose, onSave, isExperience = false }) {
   const [formData, setFormData] = useState({
     // Campos comunes
@@ -147,7 +149,7 @@ export default function EditProperty({ property, isOpen, onClose, onSave, isExpe
         };
 
         response = await fetch(
-          `http://localhost:3000/api/adminTouristExperiences/updateExperience/${id}`,
+          `${GATEWAY_URL}/api/adminTouristExperiences/updateExperience/${id}`,
           {
             method: "PUT",
             headers: {
@@ -172,7 +174,7 @@ export default function EditProperty({ property, isOpen, onClose, onSave, isExpe
         };
 
         response = await fetch(
-          `http://localhost:3000/api/hospitality/updateHotel/${id}`,
+          `${GATEWAY_URL}/api/hospitality/updateHotel/${id}`,
           {
             method: "PUT",
             headers: {
