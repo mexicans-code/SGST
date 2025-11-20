@@ -8,8 +8,7 @@
     "build": "vite build",
     "lint": "eslint .",
     "preview": "vite preview",
-    "start": "node server.js"
-  },
+"start": "npx serve -s dist -p $PORT"  },
   "dependencies": {
     "@mercadopago/sdk-react": "^1.0.6",
     "@popperjs/core": "^2.11.8",
