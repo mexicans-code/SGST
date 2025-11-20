@@ -8,11 +8,11 @@ const __dirname = path.dirname(__filename);
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Servir archivos estáticos
+// Servir archivos estáticos desde dist
 app.use(express.static(path.join(__dirname, 'dist')));
 
-// Manejar rutas de React Router
-app.get('*', (req, res) => {
+// Manejo de todas las rutas - enviar index.html
+app.use((req, res) => {
   res.sendFile(path.join(__dirname, 'dist', 'index.html'));
 });
 
