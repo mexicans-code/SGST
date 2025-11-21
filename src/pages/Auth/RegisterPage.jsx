@@ -58,16 +58,7 @@ export default function RegisterPage() {
             return;
         }
 
-        const numeroRegex = sanitizedData.telefono.replace(/\D/g, ''); // quitar todo lo que no sea número
-        if (telefonoSoloNumeros.length !== 10) {
-            Swal.fire({
-                icon: 'error',
-                title: 'Teléfono inválido',
-                text: 'El teléfono debe contener exactamente 10 números',
-                confirmButtonColor: '#CD5C5C'
-            });
-            return;
-        }
+
 
         // Validar que las contraseñas coincidan
         if (formData.password !== formData.confirmPassword) {
