@@ -47,10 +47,11 @@ export default function ChatModal({ isOpen, onClose, anfitrion, establecimiento 
                 tipo: establecimiento.tipo
             });
 
-            socketRef.current = io(`https://chat-production-f6677.up.railway.app/api/chat`, {
+            socketRef.current = io(`https://chat-production-f6677.up.railway.app/chat`, {
                 auth: {
                     token: token
-                }
+                },
+                transports: ['websocket']
             });
 
             // Eventos de Socket.IO
