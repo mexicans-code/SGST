@@ -91,27 +91,32 @@ export default function ReservationInfo() {
                             end: new Date(b.reserva.fecha_fin)
                         }));
 
-                    console.log('📅 Fechas bloqueadas para el hotel:', bookings);
+                    console.log('📅 Fechas bloqueadas:', bookings);
                     setBookedRanges(bookings);
 
                     const firstAvailableCheckIn = getFirstAvailableDate(bookings);
 
                     let checkOutDate = new Date(firstAvailableCheckIn);
                     checkOutDate.setDate(checkOutDate.getDate() + 1);
+
+                    while (
+                        bookings.some(r =>
+                            checkOutDate >= new Date(r.start) &&
+                            checkOutDate <= new Date(r.end)
+                        )
+                    ) {
+                        checkOutDate.setDate(checkOutDate.getDate() + 1);
+                    }
+
+                    setCheckIn(firstAvailableCheckIn);
+                    setCheckOut(checkOutDate);
                 }
-                while (bookings.some(r =>
-                    checkOutDate >= new Date(r.start) && checkOutDate <= new Date(r.end)
-                )) {
-                    checkOutDate.setDate(checkOutDate.getDate() + 1);
-                }
-                setCheckIn(firstAvailableCheckIn);
-                setCheckOut(checkOutDate);
+
             } catch (error) {
                 console.error('Error fetching booked dates:', error);
                 setBookedRanges([]);
             }
         }
-
         if (reservationData?.id) {
             fetchBookedDates();
         }
