@@ -103,21 +103,24 @@ export default function ExperiencesSection({ darkMode = false }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  useEffect(() => {
+ useEffect(() => {
   const fetchExperiences = async () => {
     try {
       setLoading(true);
-      const response = await fetch(`${GATEWAY_URL}/api/adminTouristExperiences/getTouristExperiences`);
+
+      const response = await fetch(
+        `${GATEWAY_URL}/api/adminTouristExperiences/getTouristExperiences`
+      );
+
       if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+
       const result = await response.json();
 
       if (result.success && result.data) {
-
         const hoy = new Date();
         hoy.setHours(0, 0, 0, 0);
 
         const validExperiences = result.data.filter(exp => {
-
           const capacidadValida = exp.capacidad > 0;
 
           const fechaExp = new Date(exp.fecha_experiencia);
@@ -133,23 +136,24 @@ export default function ExperiencesSection({ darkMode = false }) {
           name: exp.titulo,
           price: exp.precio,
           rating: exp.calificacion ?? 4.5,
-          location: exp.direcciones 
-            ? `${exp.direcciones.ciudad}, ${exp.direcciones.estado}` 
-            : 'Ubicación no disponible',
-          imageSrc: exp.image || 'https://images.unsplash.com/photo-1501594907352-04cda38ebc29?w=800',
+          location: exp.direcciones
+            ? `${exp.direcciones.ciudad}, ${exp.direcciones.estado}`
+            : "Ubicación no disponible",
+          imageSrc: exp.image || "https://images.unsplash.com/photo-1501594907352-04cda38ebc29?w=800",
           duration: exp.duracion,
           category: exp.tipo_experiencia,
           groupSize: exp.capacidad,
         }));
 
         setExperiences(mappedExperiences);
+        setError(null);
 
-      } else throw new Error('Formato de respuesta inválido');
-
-      setError(null);
+      } else {
+        throw new Error("Formato de respuesta inválido");
+      }
 
     } catch (err) {
-      console.error('Error fetching experiences:', err);
+      console.error("Error fetching experiences:", err);
       setError(err.message);
     } finally {
       setLoading(false);
@@ -161,6 +165,12 @@ export default function ExperiencesSection({ darkMode = false }) {
 
 
   const handleReserveExperience = (experienceId) => {
+    const isLoggedIn = !!localStorage.getItem("token"); // Cambia "token" si guardas otra cosa
+
+    if (!isLoggedIn) {
+      navigate('/login');
+      return;
+    }
     localStorage.setItem('experienceId', experienceId);
     navigate('/reservation/tourism');
   };

@@ -75,7 +75,27 @@ export default function Navbar({ darkMode, setDarkMode }) {
             <div className="container d-flex justify-content-between align-items-center">
                 <a
                     className={`navbar-brand fw-bold d-flex align-items-center ${darkMode ? 'text-white' : 'text-danger'}`}
-                    onClick={() => navigate("/")}
+                    onClick={() => {
+                        const token = localStorage.getItem("token");
+
+                        if (!token) {
+                            navigate("/login");
+                            return;
+                        }
+
+                        try {
+                            const payload = JSON.parse(atob(token.split('.')[1]));
+                            const rol = payload.rol;
+
+                            if (rol === "admin") navigate("/dashboard");
+                            else if (rol === "anfitrion") navigate("/host/publications");
+                            else navigate("/");
+
+                        } catch (error) {
+                            console.error("Error al decodificar token:", error);
+                            navigate("/login");
+                        }
+                    }}
                     style={{ cursor: 'pointer' }}
                 >
                     <img
@@ -120,9 +140,9 @@ export default function Navbar({ darkMode, setDarkMode }) {
 
                     <div className="d-flex align-items-center gap-2 mt-2 mt-lg-0">
                         {usuario && (
-                            <span 
+                            <span
                                 className="fw-semibold d-none d-md-inline me-2"
-                                style={{ 
+                                style={{
                                     color: darkMode ? '#E5E7EB' : '#374151',
                                     fontSize: '0.95rem'
                                 }}
@@ -168,8 +188,8 @@ export default function Navbar({ darkMode, setDarkMode }) {
                             {isUserMenuOpen && (
                                 <ul
                                     className="dropdown-menu dropdown-menu-end shadow border-0 rounded-3 mt-2 show"
-                                    style={{ 
-                                        backgroundColor: dropdownBg, 
+                                    style={{
+                                        backgroundColor: dropdownBg,
                                         color: dropdownColor,
                                         minWidth: '220px'
                                     }}
@@ -228,8 +248,8 @@ export default function Navbar({ darkMode, setDarkMode }) {
                                     )}
                                     <li><hr className="dropdown-divider" style={{ borderColor: darkMode ? '#374151' : '#dee2e6' }} /></li>
                                     <li>
-                                        <button 
-                                            className="dropdown-item d-flex align-items-center gap-2 py-2" 
+                                        <button
+                                            className="dropdown-item d-flex align-items-center gap-2 py-2"
                                             onClick={() => navigate("/host/information")}
                                             style={{ color: dropdownColor }}
                                         >
@@ -237,8 +257,8 @@ export default function Navbar({ darkMode, setDarkMode }) {
                                         </button>
                                     </li>
                                     <li>
-                                        <button 
-                                            className="dropdown-item d-flex align-items-center gap-2 py-2" 
+                                        <button
+                                            className="dropdown-item d-flex align-items-center gap-2 py-2"
                                             onClick={() => navigate("/help")}
                                             style={{ color: dropdownColor }}
                                         >
