@@ -18,7 +18,6 @@ export default function RegisterPage() {
         confirmPassword: ""
     });
 
-    // Función para redirigir según rol
     const redirigirPorRol = (rol) => {
         switch (rol) {
             case 'admin':
@@ -33,6 +32,7 @@ export default function RegisterPage() {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+        console.log("Formulario enviado");
 
         // Sanitizar los datos
         const sanitizedData = {
@@ -43,6 +43,7 @@ export default function RegisterPage() {
             email: formData.email.trim(),
             telefono: formData.telefono.trim()
         };
+
 
         // Validar nombres y apellidos (solo letras y espacios)
         const nombreRegex = /^[a-zA-ZÁÉÍÓÚáéíóúñÑ\s]+$/;
@@ -57,8 +58,8 @@ export default function RegisterPage() {
             });
             return;
         }
+        const telefonoSoloNumeros = formData.telefono.replace(/\D/g, '');
 
-        const numeroRegex = sanitizedData.telefono.replace(/\D/g, ''); // quitar todo lo que no sea número
         if (telefonoSoloNumeros.length !== 10) {
             Swal.fire({
                 icon: 'error',
@@ -342,9 +343,10 @@ export default function RegisterPage() {
                                                         name="telefono"
                                                         value={formData.telefono}
                                                         onChange={handleChange}
-                                                        onInput={(e) => {                                                            e.target.value = e.target.value.replace(/\D/g, '');
+                                                        onInput={(e) => {
+                                                            e.target.value = e.target.value.replace(/\D/g, '');
                                                         }}
-                                                        inputMode="numeric" 
+                                                        inputMode="numeric"
                                                         pattern="\d*"
                                                         className="form-control form-control-lg py-3 px-4 rounded-3"
                                                         placeholder="+52 123 456 7890"
