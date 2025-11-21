@@ -2,6 +2,8 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { GATEWAY_URL } from "../const/Const";
 
+import { jwtDecode } from "jwt-decode";
+
 
 export default function Profile() {
     const navigate = useNavigate();
@@ -29,9 +31,18 @@ export default function Profile() {
     const cargarDatosUsuario = async () => {
         try {
             const token = localStorage.getItem('token');
-            const response = await fetch(`${GATEWAY_URL}/api/adminProfile/getProfile`, {
+
+            if(token){
+                const decodedToken = jwtDecode(token);
+                console.log(decodedToken);
+            }
+            const response = await fetch(`https://adminprofile-production.up.railway.app/getProfile`, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
+
+            // const response = await fetch("http://localhost:3000/api/adminProfile/getProfile", {
+            //     headers: { 'Authorization': `Bearer ${token}` }
+            // });
             const data = await response.json();
 
             if (data.success) {

@@ -16,7 +16,7 @@ export default function HeroSection({ darkMode = false, onSearchResults }) {
 
   const fetchAllProperties = async () => {
     try {
-      const response = await fetch(`${GATEWAY_URL}/getHotelData`);
+      const response = await fetch(`https://hospitality-production-72f9.up.railway.app/getHotelData`);
       const data = await response.json();
       setAllProperties(data);
     } catch (error) {
@@ -155,7 +155,7 @@ export default function HeroSection({ darkMode = false, onSearchResults }) {
             </p>
           </div>
 
-          <div className="row justify-content-center fade-up" style={{ animationDelay: '0.3s' }}>
+          {/* <div className="row justify-content-center fade-up" style={{ animationDelay: '0.3s' }}>
             <div className="col-12 col-lg-11">
               <div className="search-card rounded-4 p-3">
                 <div className="row g-2 align-items-center">
@@ -265,7 +265,7 @@ export default function HeroSection({ darkMode = false, onSearchResults }) {
                 </div>
               </div>
             </div>
-          </div>
+          </div> */}
         </div>
 
         <div className="position-absolute bottom-4 start-50 translate-middle-x text-center"

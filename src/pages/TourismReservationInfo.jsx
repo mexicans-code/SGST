@@ -34,7 +34,7 @@ export default function TourismReservationInfo() {
         const fetchExperience = async () => {
             try {
                 setLoading(true);
-                const response = await fetch(`${GATEWAY_URL}/api/adminTouristExperiences/getTouristExperience/${experienceId}`);
+                const response = await fetch(`https://valiant-cooperation-production.up.railway.app/getTouristExperience/${experienceId}`);
                 if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
                 const result = await response.json();
 
@@ -397,8 +397,7 @@ export default function TourismReservationInfo() {
                                 </div>
                             </div>
                         </div>
-
-                        {/* Punto de encuentro */}
+{/* 
                         <div className="card border-0 shadow-sm rounded-4 mb-4">
                             <div className="card-body p-4">
                                 <h3 className="h4 fw-bold mb-3" style={{ color: '#2C3E50' }}>
@@ -430,10 +429,10 @@ export default function TourismReservationInfo() {
                                     />
                                 </div>
                             </div>
-                        </div>
+                        </div> */}
 
 
-                        <div className="col-8 card border-0 shadow-sm rounded-4">
+                        <div className="col-12 card border-0 shadow-sm rounded-4">
                             <Reviews />
                         </div>
 

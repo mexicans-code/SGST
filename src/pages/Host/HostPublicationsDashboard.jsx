@@ -58,7 +58,7 @@ export default function HostProperties() {
 
     if (token) {
       const decodedToken = parseJwt(token);
-      if (decodedToken?.id_usuario) {   
+      if (decodedToken?.id_usuario) {
         currentUserId = decodedToken.id_usuario;
         setUserId(currentUserId);
       }
@@ -159,8 +159,13 @@ export default function HostProperties() {
 
   const formatearDireccion = (direccion) => {
     if (!direccion) return "Sin ubicación";
-    const { ciudad, estado } = direccion;
-    return `${ciudad || ""}, ${estado || ""}`.replace(/^,\s*|,\s*$/g, "").trim();
+
+    const ciudad = direccion.ciudad || (direccion.direcciones && direccion.direcciones.ciudad) || "";
+    const estado = direccion.estado || (direccion.direcciones && direccion.direcciones.estado) || "";
+
+    if (!ciudad && !estado) return "Sin ubicación";
+
+    return `${ciudad}, ${estado}`.replace(/^,\s*|,\s*$/g, "").trim();
   };
 
   const handleToggleActive = async (id, currentStatus, isExperience = false) => {
@@ -181,83 +186,83 @@ export default function HostProperties() {
   };
 
   const handleDeleteProperty = async (propertyId, isExperience = false) => {
-  if (!isExperience) {
-    const property = properties.find((p) => p.id_hosteleria === propertyId);
-    
-    if (property?.tieneReservaActiva) {
-      Swal.fire({
-        icon: "warning",
-        title: "No se puede eliminar",
-        text: "Esta propiedad tiene reservas activas. No puedes eliminarla hasta que finalicen todas sus reservas.",
-        confirmButtonColor: "#CD5C5C",
-      });
-      return;
-    }
-  }
+    if (!isExperience) {
+      const property = properties.find((p) => p.id_hosteleria === propertyId);
 
-  const result = await Swal.fire({
-    title: "¿Estás seguro?",
-    text: "Esta acción no se puede deshacer. ¿Deseas eliminar?",
-    icon: "warning",
-    showCancelButton: true,
-    confirmButtonColor: "#CD5C5C",
-    cancelButtonColor: "#6c757d",
-    confirmButtonText: "Sí, eliminar",
-    cancelButtonText: "Cancelar",
-  });
-
-  if (result.isConfirmed) {
-    try {
-      const endpoint = isExperience
-        ? `http://localhost:3000/api/adminTouristExperiences/deleteTouristExperience/${propertyId}`
-        : `http://localhost:3000/api/hospitality/deleteHotel/${propertyId}`;
-
-      const response = await fetch(endpoint, {
-        method: "DELETE",
-      });
-      const data = await response.json();
-
-      if (data.success) {
+      if (property?.tieneReservaActiva) {
         Swal.fire({
-          icon: "success",
-          title: "Eliminado",
-          text: `${isExperience ? "Experiencia" : "Propiedad"} eliminada correctamente.`,
+          icon: "warning",
+          title: "No se puede eliminar",
+          text: "Esta propiedad tiene reservas activas. No puedes eliminarla hasta que finalicen todas sus reservas.",
           confirmButtonColor: "#CD5C5C",
         });
+        return;
+      }
+    }
 
-        if (isExperience) {
-          setExperiences(experiences.filter((e) => e.id_experiencia !== propertyId));
-        } else {
-          setProperties(properties.filter((p) => p.id_hosteleria !== propertyId));
-        }
-      } else {
-        // Verificar si es error de reservas asociadas
-        if (data.code === 'HAS_BOOKINGS') {
+    const result = await Swal.fire({
+      title: "¿Estás seguro?",
+      text: "Esta acción no se puede deshacer. ¿Deseas eliminar?",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#CD5C5C",
+      cancelButtonColor: "#6c757d",
+      confirmButtonText: "Sí, eliminar",
+      cancelButtonText: "Cancelar",
+    });
+
+    if (result.isConfirmed) {
+      try {
+        const endpoint = isExperience
+          ? `${GATEWAY_URL}/api/adminTouristExperiences/deleteTouristExperience/${propertyId}`
+          : `${GATEWAY_URL}/api/hospitality/deleteHotel/${propertyId}`;
+
+        const response = await fetch(endpoint, {
+          method: "DELETE",
+        });
+        const data = await response.json();
+
+        if (data.success) {
           Swal.fire({
-            icon: "warning",
-            title: "No se puede eliminar",
-            html: `
+            icon: "success",
+            title: "Eliminado",
+            text: `${isExperience ? "Experiencia" : "Propiedad"} eliminada correctamente.`,
+            confirmButtonColor: "#CD5C5C",
+          });
+
+          if (isExperience) {
+            setExperiences(experiences.filter((e) => e.id_experiencia !== propertyId));
+          } else {
+            setProperties(properties.filter((p) => p.id_hosteleria !== propertyId));
+          }
+        } else {
+          // Verificar si es error de reservas asociadas
+          if (data.code === 'HAS_BOOKINGS') {
+            Swal.fire({
+              icon: "warning",
+              title: "No se puede eliminar",
+              html: `
               <p><strong>Esta ${isExperience ? 'experiencia' : 'propiedad'} tiene reservas asociadas.</strong></p>
               <p class="text-muted mt-3">No puedes eliminarla hasta que todas las reservas hayan finalizado o sean canceladas.</p>
             `,
-            confirmButtonText: "Entendido",
-            confirmButtonColor: "#CD5C5C",
-          });
-        } else {
-          throw new Error(data.message || "Error al eliminar");
+              confirmButtonText: "Entendido",
+              confirmButtonColor: "#CD5C5C",
+            });
+          } else {
+            throw new Error(data.message || "Error al eliminar");
+          }
         }
+      } catch (error) {
+        console.error("Error al eliminar:", error);
+        Swal.fire({
+          icon: "error",
+          title: "Error",
+          text: error.message || "Hubo un error al eliminar.",
+          confirmButtonColor: "#CD5C5C",
+        });
       }
-    } catch (error) {
-      console.error("Error al eliminar:", error);
-      Swal.fire({
-        icon: "error",
-        title: "Error",
-        text: error.message || "Hubo un error al eliminar.",
-        confirmButtonColor: "#CD5C5C",
-      });
     }
-  }
-};
+  };
 
 
 
@@ -328,7 +333,7 @@ export default function HostProperties() {
               >
                 <Home size={18} className="me-2" />
                 Nueva Propiedad
-                </button>
+              </button>
 
               <button
                 className="btn rounded-2"
@@ -509,7 +514,7 @@ export default function HostProperties() {
                         <td className="px-4 py-4">
                           <div className="d-flex align-items-center gap-2">
                             <MapPin size={16} className="text-muted" />
-                            <span className="text-muted small">{formatearDireccion(direccion)}</span>
+<span className="text-muted small">{formatearDireccion(item.direccion ?? item.direcciones)}</span>
                           </div>
                         </td>
                         <td className="px-4 py-4">

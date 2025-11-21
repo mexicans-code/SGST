@@ -9,46 +9,43 @@ function AirbnbCard({ hotel }) {
   const navigate = useNavigate();
   const [imageLoaded, setImageLoaded] = useState(false);
 
+  
+
   const handleReserve = () => {
-  const token = localStorage.getItem('token'); // verifica si hay token activo
-
-<<<<<<< HEAD
+    const token = localStorage.getItem('token'); // verifica si hay token activo
 
 
-    // Guarda los datos en localStorage para pasarlos a la página de reserva
+
+    if (!token) {
+      // No hay sesión → redirigir a login
+      navigate('/login');
+      return;
+    }
+
+    // Sí hay token → continuar con la reserva
+    const reservationData = {
+      id: hotel.id_hosteleria,
+      name: hotel.nombre,
+      price: hotel.precio_por_noche,
+      location: hotel.direcciones
+        ? `${hotel.direcciones.ciudad}, ${hotel.direcciones.estado}`
+        : "Ubicación no disponible",
+      imageSrc: hotel.image === "255"
+        ? "https://images.unsplash.com/photo-1568605114967-8130f3a36994?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80"
+        : hotel.image,
+      guests: hotel.capacidad,
+      description: hotel.descripcion,
+      hostId: hotel.id_anfitrion,
+      rating: rating,
+      reviews: reviews,
+      bedrooms: bedrooms,
+      bathrooms: bathrooms
+    };
+
     localStorage.setItem('reservationData', JSON.stringify(reservationData));
-=======
-  if (!token) {
-    // No hay sesión → redirigir a login
-    navigate('/login');
-    return;
-  }
->>>>>>> 1367ccca23a9b0db8dd1d394210e8b5398e34794
 
-  // Sí hay token → continuar con la reserva
-  const reservationData = {
-    id: hotel.id_hosteleria,
-    name: hotel.nombre,
-    price: hotel.precio_por_noche,
-    location: hotel.direcciones
-      ? `${hotel.direcciones.ciudad}, ${hotel.direcciones.estado}`
-      : "Ubicación no disponible",
-    imageSrc: hotel.image === "255"
-      ? "https://images.unsplash.com/photo-1568605114967-8130f3a36994?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80"
-      : hotel.image,
-    guests: hotel.capacidad,
-    description: hotel.descripcion,
-    hostId: hotel.id_anfitrion,
-    rating: rating,
-    reviews: reviews,
-    bedrooms: bedrooms,
-    bathrooms: bathrooms
+    navigate('/reservation');
   };
-
-  localStorage.setItem('reservationData', JSON.stringify(reservationData));
-
-  navigate('/reservation');
-};
 
 
   // Función para obtener una calificación aleatoria realista
@@ -184,7 +181,7 @@ export default function HotelListings() {
       try {
         setLoading(true);
 
-        const response = await fetch(`${GATEWAY_URL}/api/hospitality/getHotelData`);
+        const response = await fetch(`https://hospitality-production-72f9.up.railway.app/getHotelData`);
 
 
         if (!response.ok) {

@@ -79,7 +79,7 @@ export default function CreateTouristExperience() {
             const formData = new FormData();
             formData.append('image', file);
 
-            const response = await fetch('http://localhost:3001/uploadImage', {
+            const response = await fetch(`https://hospitality-production-72f9.up.railway.app/uploadImage`, {
                 method: 'POST',
                 body: formData
             });
@@ -107,7 +107,7 @@ export default function CreateTouristExperience() {
 
         try {
             const publicId = encodeURIComponent(imageToRemove.publicId);
-            await fetch(`http://localhost:3001/deleteImage/${publicId}`, {
+            await fetch(`https://hospitality-production-72f9.up.railway.app/deleteImage/${publicId}`, {
                 method: 'DELETE'
             });
 
@@ -175,7 +175,7 @@ export default function CreateTouristExperience() {
         console.log('📤 Enviando payload:', payload);
 
         try {
-            const response = await fetch('http://localhost:3000/api/adminTouristExperiences/createTouristExperience', {
+            const response = await fetch(`${GATEWAY_URL}/api/adminTouristExperiences/createTouristExperience`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'

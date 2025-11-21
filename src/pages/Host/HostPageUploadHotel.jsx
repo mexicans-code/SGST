@@ -80,7 +80,7 @@ export default function HostUploadPage() {
             const formData = new FormData();
             formData.append('image', file);
 
-            const response = await fetch(`${GATEWAY_URL}/uploadImage`, {
+            const response = await fetch(`https://hospitality-production-72f9.up.railway.app/uploadImage`, {
                 method: 'POST',
                 body: formData
             });
@@ -108,7 +108,7 @@ export default function HostUploadPage() {
 
         try {
             const publicId = encodeURIComponent(imageToRemove.publicId);
-            await fetch(`${GATEWAY_URL}/deleteImage/${publicId}`, {
+            await fetch(`https://hospitality-production-72f9.up.railway.app/deleteImage/${publicId}`, {
                 method: 'DELETE'
             });
 
@@ -182,7 +182,7 @@ export default function HostUploadPage() {
         console.log('📤 Enviando payload:', payload);
     
         try {
-            const response = await fetch(`${GATEWAY_URL}/createHotel`, {
+            const response = await fetch(`${GATEWAY_URL}/api/hospitality/createHotel`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json' 
@@ -464,15 +464,6 @@ export default function HostUploadPage() {
                                                     style={{ backgroundColor: "#F4EFEA", border: "2px solid #e9ecef" }}
                                                 />
                                             </div>
-                                        </div>
-
-                                        <div
-                                            className="bg-light rounded-3 p-4 text-center"
-                                            style={{ backgroundColor: "#F4EFEA", border: "2px dashed #e9ecef", minHeight: "200px" }}
-                                        >
-                                            <MapPin size={32} color="#999" className="mb-2" />
-                                            <p className="text-muted mb-0">Vista previa del mapa</p>
-                                            <small className="text-muted">Tu ubicación exacta se mostrará después de la reservación</small>
                                         </div>
                                     </div>
                                 )}
