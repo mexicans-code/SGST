@@ -28,15 +28,15 @@ export default function ChatModal({ isOpen, onClose, anfitrion, establecimiento 
             const establecimientoId = establecimiento.tipo === 'experiencia'
                 ? establecimiento.id_experiencia
                 : (establecimiento.id_hosteleria || establecimiento.id_establecimiento);
-            
-            const anfitrionId = anfitrion.id_usuario; // ✅ CORREGIDO
+
+            const anfitrionId = anfitrion.id_usuario; 
 
             if (!establecimientoId || !anfitrionId) {
-                console.error("Faltan IDs:", { 
-                    establecimientoId, 
+                console.error("Faltan IDs:", {
+                    establecimientoId,
                     anfitrionId,
                     establecimiento,
-                    anfitrion 
+                    anfitrion
                 });
                 return;
             }
@@ -47,8 +47,7 @@ export default function ChatModal({ isOpen, onClose, anfitrion, establecimiento 
                 tipo: establecimiento.tipo
             });
 
-            // Crear conexión con Socket.IO
-            socketRef.current = io(`${GATEWAY_URL}/chat`, {
+            socketRef.current = io(`https://chat-production-f6677.up.railway.app/api/chat`, {
                 auth: {
                     token: token
                 }
@@ -126,7 +125,7 @@ export default function ChatModal({ isOpen, onClose, anfitrion, establecimiento 
         const establecimientoId = establecimiento?.tipo === 'experiencia'
             ? establecimiento?.id_experiencia
             : (establecimiento?.id_hosteleria || establecimiento?.id_establecimiento);
-        
+
         const anfitrionId = anfitrion?.id_usuario; // ✅ CORREGIDO
 
         if (!establecimientoId || !anfitrionId) {
