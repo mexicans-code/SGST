@@ -82,7 +82,8 @@ export default function RegisterPage() {
         }
 
         // Validar contraseña: al menos 8 caracteres, 1 mayúscula, 1 minúscula y 1 número
-        const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)[A-Za-z\d]{8,}$/;
+        const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/;
+
         if (!passwordRegex.test(formData.password)) {
             Swal.fire({
                 icon: 'error',
@@ -357,6 +358,7 @@ export default function RegisterPage() {
                                             </div>
 
                                             <div className="row">
+
                                                 <div className="col-md-6 mb-3">
                                                     <label htmlFor="password" className="form-label fw-semibold" style={{ color: "#000000" }}>
                                                         Contraseña

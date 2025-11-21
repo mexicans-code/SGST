@@ -419,8 +419,7 @@ export default function ReservationInfo() {
                             </div>
                         </div>
 
-                        {/* Ubicación */}
-                        <div className="card border-0 shadow-sm rounded-4">
+                        {/* <div className="card border-0 shadow-sm rounded-4">
                             <div className="card-body p-4">
                                 <h3 className="h4 fw-bold mb-3" style={{ color: '#2C3E50' }}>
                                     <MapPin size={24} style={{ color: '#87CEEB' }} className="me-2" />
@@ -444,7 +443,12 @@ export default function ReservationInfo() {
                                     />
                                 </div>
                             </div>
-                        </div>
+                        </div> */}
+
+                        
+                    <div className="col-12 card border-0 shadow-sm rounded-4">
+                        <Reviews />
+                    </div>
                     </div>
 
                     {/* Resumen de precio */}
@@ -547,10 +551,6 @@ export default function ReservationInfo() {
                                 </button>
                             </div>
                         </div>
-                    </div>
-
-                    <div className="col-8 card border-0 shadow-sm rounded-4">
-                        <Reviews />
                     </div>
                 </div>
             </div>
