@@ -2,12 +2,12 @@ import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { GATEWAY_URL } from '../../const/Const';
 
-
 export default function UserAdmin() {
     const [users, setUsers] = useState([]);
     const [showModal, setShowModal] = useState(false);
     const [editingUser, setEditingUser] = useState(null);
     const [searchTerm, setSearchTerm] = useState('');
+    const [isMobile, setIsMobile] = useState(false);
     const [formData, setFormData] = useState({
         nombre: '',
         apellido_p: '',
@@ -17,6 +17,14 @@ export default function UserAdmin() {
         rol: 'usuario',
         estado: 'activo'
     });
+
+    // Detectar móvil
+    useEffect(() => {
+        const checkMobile = () => setIsMobile(window.innerWidth < 768);
+        checkMobile();
+        window.addEventListener('resize', checkMobile);
+        return () => window.removeEventListener('resize', checkMobile);
+    }, []);
 
     const filteredUsers = users.filter(user =>
         `${user.nombre} ${user.apellido_p} ${user.apellido_m}`.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -40,7 +48,6 @@ export default function UserAdmin() {
     };
 
     const mostrarAlerta = (mensaje, tipo = 'success') => {
-        // Simulación de alerta - puedes integrar SweetAlert2 si lo tienes instalado
         alert(mensaje);
     };
 
@@ -233,93 +240,123 @@ export default function UserAdmin() {
                     border-color: #667eea;
                     box-shadow: 0 0 15px rgba(102, 126, 234, 0.15);
                 }
+                
+                /* User Card for Mobile */
+                .user-card {
+                    background: white;
+                    border-radius: 12px;
+                    padding: 1rem;
+                    margin-bottom: 0.75rem;
+                    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+                    transition: all 0.3s ease;
+                }
+                .user-card:hover {
+                    box-shadow: 0 4px 12px rgba(0,0,0,0.12);
+                    transform: translateY(-2px);
+                }
+                
+                /* Responsive Styles */
+                @media (max-width: 768px) {
+                    .main-container {
+                        border-radius: 12px;
+                        padding: 1rem !important;
+                    }
+                    .stats-card {
+                        margin-bottom: 0.75rem;
+                    }
+                    .stats-card .card-body {
+                        padding: 1rem;
+                    }
+                    .stats-card h3 {
+                        font-size: 1.5rem;
+                    }
+                    .avatar {
+                        width: 40px;
+                        height: 40px;
+                        font-size: 14px;
+                    }
+                    .btn-primary {
+                        padding: 10px 16px;
+                        font-size: 0.9rem;
+                    }
+                    .search-input {
+                        padding: 10px 16px;
+                        font-size: 0.9rem;
+                    }
+                }
+                
+                @media (max-width: 576px) {
+                    .stats-card h3 {
+                        font-size: 1.25rem;
+                    }
+                    .stats-card p {
+                        font-size: 0.85rem;
+                    }
+                }
             `}</style>
 
-            <div className="container-fluid p-4">
-                <div className="main-container p-4">
+            <div className="container-fluid p-2 p-md-4">
+                <div className="main-container p-3 p-md-4">
                     {/* Header */}
-                    <div className="d-flex justify-content-between align-items-center mb-4">
+                    <div className="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center mb-3 mb-md-4 gap-2">
                         <div>
-                            <h1 className="h2 fw-bold text-dark mb-1">
+                            <h1 className="fw-bold text-dark mb-1" style={{ fontSize: isMobile ? '1.5rem' : '2rem' }}>
                                 <i className="bi bi-people-fill text-primary me-2"></i>
-                                Gestión de Usuarios
+                                {isMobile ? 'Usuarios' : 'Gestión de Usuarios'}
                             </h1>
-                            <p className="text-muted mb-0">Administra y controla los usuarios del sistema</p>
+                            <p className="text-muted mb-0 small">
+                                {isMobile ? 'Administra usuarios' : 'Administra y controla los usuarios del sistema'}
+                            </p>
                         </div>
-                        <button onClick={() => openModal()} className="btn btn-primary">
-                            <i className="bi bi-plus-lg me-2"></i>Crear Usuario
+                        <button onClick={() => openModal()} className="btn btn-primary w-100 w-md-auto">
+                            <i className="bi bi-plus-lg me-2"></i>
+                            {isMobile ? 'Crear' : 'Crear Usuario'}
                         </button>
                     </div>
 
-                    <div className="row g-4 mb-4">
-                        <div className="col-lg-3 col-md-6">
-                            <div className="stats-card card text-center h-100">
-                                <div className="card-body">
-                                    <div className="d-flex align-items-center justify-content-center mb-3">
-                                        <div className="avatar">
-                                            <i className="bi bi-people"></i>
+                    {/* Stats Cards */}
+                    <div className="row g-2 g-md-4 mb-3 mb-md-4">
+                        {[
+                            { icon: 'bi-people', color: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', value: users.length, label: 'Total', fullLabel: 'Total de Usuarios', textColor: 'text-primary' },
+                            { icon: 'bi-check-circle-fill', color: 'linear-gradient(135deg, #28a745 0%, #20c997 100%)', value: users.filter(u => u.estado === 'activo').length, label: 'Activos', fullLabel: 'Usuarios Activos', textColor: 'text-success' },
+                            { icon: 'bi-pause-circle-fill', color: 'linear-gradient(135deg, #ffc107 0%, #fd7e14 100%)', value: users.filter(u => u.estado === 'inactivo').length, label: 'Inactivos', fullLabel: 'Usuarios Inactivos', textColor: 'text-warning' },
+                            { icon: 'bi-shield-fill-check', color: 'linear-gradient(135deg, #17a2b8 0%, #6f42c1 100%)', value: users.filter(u => u.rol === 'admin').length, label: 'Admins', fullLabel: 'Administradores', textColor: 'text-info' }
+                        ].map((stat, idx) => (
+                            <div className="col-6 col-md-3" key={idx}>
+                                <div className="stats-card card text-center h-100">
+                                    <div className="card-body">
+                                        <div className="d-flex align-items-center justify-content-center mb-2 mb-md-3">
+                                            <div className="avatar" style={{ background: stat.color }}>
+                                                <i className={`bi ${stat.icon}`}></i>
+                                            </div>
                                         </div>
+                                        <h3 className={`fw-bold ${stat.textColor}`}>{stat.value}</h3>
+                                        <p className="text-muted mb-0 small">
+                                            <span className="d-none d-md-inline">{stat.fullLabel}</span>
+                                            <span className="d-inline d-md-none">{stat.label}</span>
+                                        </p>
                                     </div>
-                                    <h3 className="fw-bold text-primary">{users.length}</h3>
-                                    <p className="text-muted mb-0">Total de Usuarios</p>
                                 </div>
                             </div>
-                        </div>
-                        <div className="col-lg-3 col-md-6">
-                            <div className="stats-card card text-center h-100">
-                                <div className="card-body">
-                                    <div className="d-flex align-items-center justify-content-center mb-3">
-                                        <div className="avatar" style={{ background: 'linear-gradient(135deg, #28a745 0%, #20c997 100%)' }}>
-                                            <i className="bi bi-check-circle-fill"></i>
-                                        </div>
-                                    </div>
-                                    <h3 className="fw-bold text-success">{users.filter(u => u.estado === 'activo').length}</h3>
-                                    <p className="text-muted mb-0">Usuarios Activos</p>
-                                </div>
-                            </div>
-                        </div>
-                        <div className="col-lg-3 col-md-6">
-                            <div className="stats-card card text-center h-100">
-                                <div className="card-body">
-                                    <div className="d-flex align-items-center justify-content-center mb-3">
-                                        <div className="avatar" style={{ background: 'linear-gradient(135deg, #ffc107 0%, #fd7e14 100%)' }}>
-                                            <i className="bi bi-pause-circle-fill"></i>
-                                        </div>
-                                    </div>
-                                    <h3 className="fw-bold text-warning">{users.filter(u => u.estado === 'inactivo').length}</h3>
-                                    <p className="text-muted mb-0">Usuarios Inactivos</p>
-                                </div>
-                            </div>
-                        </div>
-                        <div className="col-lg-3 col-md-6">
-                            <div className="stats-card card text-center h-100">
-                                <div className="card-body">
-                                    <div className="d-flex align-items-center justify-content-center mb-3">
-                                        <div className="avatar" style={{ background: 'linear-gradient(135deg, #17a2b8 0%, #6f42c1 100%)' }}>
-                                            <i className="bi bi-shield-fill-check"></i>
-                                        </div>
-                                    </div>
-                                    <h3 className="fw-bold text-info">{users.filter(u => u.rol === 'admin').length}</h3>
-                                    <p className="text-muted mb-0">Administradores</p>
-                                </div>
-                            </div>
-                        </div>
+                        ))}
                     </div>
 
-                    <div className="mb-4">
+                    {/* Search Bar */}
+                    <div className="mb-3 mb-md-4">
                         <div className="position-relative">
                             <i className="bi bi-search position-absolute top-50 start-0 translate-middle-y ms-3 text-muted"></i>
                             <input
                                 type="text"
                                 className="form-control search-input ps-5"
-                                placeholder="Buscar usuarios por nombre o email..."
+                                placeholder={isMobile ? "Buscar..." : "Buscar usuarios por nombre o email..."}
                                 value={searchTerm}
                                 onChange={(e) => setSearchTerm(e.target.value)}
                             />
                         </div>
                     </div>
 
-                    <div className="user-table">
+                    {/* Desktop Table View */}
+                    <div className="user-table d-none d-md-block">
                         <div className="table-responsive">
                             <table className="table table-hover mb-0">
                                 <thead>
@@ -393,16 +430,65 @@ export default function UserAdmin() {
                             </table>
                         </div>
                     </div>
+
+                    {/* Mobile Card View */}
+                    <div className="d-md-none">
+                        {filteredUsers.map((user) => (
+                            <div key={user.id_usuario} className="user-card">
+                                <div className="d-flex align-items-start gap-3 mb-3">
+                                    <div className="avatar flex-shrink-0">
+                                        {getInitials(user)}
+                                    </div>
+                                    <div className="flex-grow-1 min-width-0">
+                                        <h6 className="fw-bold mb-1 text-truncate">{getNombreCompleto(user)}</h6>
+                                        <p className="text-muted small mb-2 text-truncate">{user.email}</p>
+                                        <div className="d-flex gap-2 flex-wrap">
+                                            <span className={`badge ${user.rol === 'admin' ? 'bg-primary' : 'bg-secondary'} rounded-pill`}>
+                                                <i className={`bi ${user.rol === 'admin' ? 'bi-shield-fill' : 'bi-person-fill'} me-1`}></i>
+                                                {user.rol.charAt(0).toUpperCase() + user.rol.slice(1)}
+                                            </span>
+                                            <span className={`badge ${user.estado === 'activo' ? 'bg-success' : 'bg-warning'} rounded-pill`}>
+                                                {user.estado.charAt(0).toUpperCase() + user.estado.slice(1)}
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div className="d-flex gap-2">
+                                    <button
+                                        onClick={() => openModal(user)}
+                                        className="btn btn-outline-primary btn-sm flex-grow-1"
+                                    >
+                                        <i className="bi bi-pencil me-1"></i>Editar
+                                    </button>
+                                    <button
+                                        onClick={() => handleDelete(user.id_usuario)}
+                                        className="btn btn-outline-danger btn-sm"
+                                        style={{ minWidth: '44px' }}
+                                    >
+                                        <i className="bi bi-trash"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        ))}
+                        
+                        {filteredUsers.length === 0 && (
+                            <div className="text-center py-5">
+                                <i className="bi bi-inbox display-4 text-muted mb-3 d-block"></i>
+                                <h6 className="text-muted">No se encontraron usuarios</h6>
+                                <p className="text-muted small">Intenta con otros términos de búsqueda</p>
+                            </div>
+                        )}
+                    </div>
                 </div>
 
                 {/* Modal */}
                 <div className={`modal fade ${showModal ? 'show' : ''}`}
                     style={{ display: showModal ? 'block' : 'none' }}
                     tabIndex="-1">
-                    <div className="modal-dialog modal-dialog-centered">
+                    <div className="modal-dialog modal-dialog-centered modal-dialog-scrollable">
                         <div className="modal-content">
                             <div className="modal-header border-0 pb-0">
-                                <h5 className="modal-title fw-bold">
+                                <h5 className="modal-title fw-bold" style={{ fontSize: isMobile ? '1rem' : '1.25rem' }}>
                                     <i className={`bi ${editingUser ? 'bi-pencil-square' : 'bi-person-plus-fill'} text-primary me-2`}></i>
                                     {editingUser ? 'Editar Usuario' : 'Nuevo Usuario'}
                                 </h5>
@@ -411,7 +497,7 @@ export default function UserAdmin() {
                             <form onSubmit={handleSubmit}>
                                 <div className="modal-body">
                                     <div className="mb-3">
-                                        <label className="form-label fw-semibold">Nombre</label>
+                                        <label className="form-label fw-semibold small">Nombre</label>
                                         <input
                                             type="text"
                                             className="form-control"
@@ -425,7 +511,7 @@ export default function UserAdmin() {
 
                                     <div className="row">
                                         <div className="col-md-6 mb-3">
-                                            <label className="form-label fw-semibold">Apellido Paterno</label>
+                                            <label className="form-label fw-semibold small">Apellido Paterno</label>
                                             <input
                                                 type="text"
                                                 className="form-control"
@@ -438,7 +524,7 @@ export default function UserAdmin() {
                                         </div>
 
                                         <div className="col-md-6 mb-3">
-                                            <label className="form-label fw-semibold">Apellido Materno</label>
+                                            <label className="form-label fw-semibold small">Apellido Materno</label>
                                             <input
                                                 type="text"
                                                 className="form-control"
@@ -451,7 +537,7 @@ export default function UserAdmin() {
                                     </div>
 
                                     <div className="mb-3">
-                                        <label className="form-label fw-semibold">Correo electrónico</label>
+                                        <label className="form-label fw-semibold small">Correo electrónico</label>
                                         <input
                                             type="email"
                                             className="form-control"
@@ -464,7 +550,7 @@ export default function UserAdmin() {
                                     </div>
 
                                     <div className="mb-3">
-                                        <label className="form-label fw-semibold">
+                                        <label className="form-label fw-semibold small">
                                             Contraseña {editingUser && <small className="text-muted">(Dejar vacío para mantener la actual)</small>}
                                         </label>
                                         <input
@@ -480,7 +566,7 @@ export default function UserAdmin() {
 
                                     <div className="row">
                                         <div className="col-md-6 mb-3">
-                                            <label className="form-label fw-semibold">Rol</label>
+                                            <label className="form-label fw-semibold small">Rol</label>
                                             <select
                                                 className="form-select"
                                                 name="rol"
@@ -494,7 +580,7 @@ export default function UserAdmin() {
                                         </div>
 
                                         <div className="col-md-6 mb-3">
-                                            <label className="form-label fw-semibold">Estado</label>
+                                            <label className="form-label fw-semibold small">Estado</label>
                                             <select
                                                 className="form-select"
                                                 name="estado"

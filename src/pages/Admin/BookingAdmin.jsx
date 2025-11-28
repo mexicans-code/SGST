@@ -1,12 +1,14 @@
 import { useState, useEffect } from 'react';
 import Swal from 'sweetalert2';
-
 import { GATEWAY_URL } from '../../const/Const';
 
 export default function BookingAdmin() {
     const [bookings, setBookings] = useState([]);
     const [showModal, setShowModal] = useState(false);
     const [editingBooking, setEditingBooking] = useState(null);
+    const [isMobile, setIsMobile] = useState(false);
+    const [searchTerm, setSearchTerm] = useState('');
+    const [filterEstado, setFilterEstado] = useState('todas');
     const [formData, setFormData] = useState({
         id_usuario: '',
         id_hosteleria: '',
@@ -16,6 +18,14 @@ export default function BookingAdmin() {
         precio_total: '',
         estado: 'pendiente'
     });
+
+    // Detectar móvil
+    useEffect(() => {
+        const checkMobile = () => setIsMobile(window.innerWidth < 768);
+        checkMobile();
+        window.addEventListener('resize', checkMobile);
+        return () => window.removeEventListener('resize', checkMobile);
+    }, []);
 
     useEffect(() => {
         cargarReservas();
@@ -38,6 +48,17 @@ export default function BookingAdmin() {
             });
         }
     };
+
+    const filteredBookings = bookings.filter(booking => {
+        const matchesSearch = 
+            booking.usuario?.nombre?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            getNombreEstablecimiento(booking).toLowerCase().includes(searchTerm.toLowerCase()) ||
+            booking.reserva.id_reserva.toString().includes(searchTerm);
+        
+        const matchesEstado = filterEstado === 'todas' || booking.reserva?.estado === filterEstado;
+        
+        return matchesSearch && matchesEstado;
+    });
 
     const handleInputChange = (e) => {
         setFormData({
@@ -178,7 +199,7 @@ export default function BookingAdmin() {
             try {
                 const response = await fetch(
                     `${GATEWAY_URL}/api/booking/cancelBooking/${id}`,
-                    { method: 'PUT' } // Cambié de PATCH a PUT
+                    { method: 'PUT' }
                 );
                 
                 const data = await response.json();
@@ -255,7 +276,6 @@ export default function BookingAdmin() {
         }
     };
 
-    // Función auxiliar para obtener el nombre del establecimiento
     const getNombreEstablecimiento = (booking) => {
         if (booking.reserva.tipo_reserva === 'experiencia') {
             return booking.experiencia?.titulo || 'Experiencia N/A';
@@ -271,6 +291,12 @@ export default function BookingAdmin() {
             const dir = booking.establecimiento?.direccion;
             return dir ? `${dir.ciudad}, ${dir.estado}` : 'N/A';
         }
+    };
+
+    const formatFecha = (fecha) => {
+        if (!fecha) return 'N/A';
+        const date = new Date(fecha);
+        return date.toLocaleDateString('es-MX', { day: '2-digit', month: 'short', year: 'numeric' });
     };
 
     return (
@@ -309,13 +335,15 @@ export default function BookingAdmin() {
                     background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
                     border: none;
                     font-weight: 600;
-                    padding: 1rem;
+                    padding: 0.75rem;
+                    font-size: 0.85rem;
                 }
                 .table td {
                     border: none;
-                    padding: 1rem;
+                    padding: 0.75rem;
                     vertical-align: middle;
                     border-bottom: 1px solid #f8f9fa;
+                    font-size: 0.85rem;
                 }
                 .table tbody tr:hover {
                     background: rgba(102, 126, 234, 0.05);
@@ -331,6 +359,16 @@ export default function BookingAdmin() {
                 .btn-primary:hover {
                     transform: translateY(-2px);
                     box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+                }
+                .search-input {
+                    border: 2px solid #e9ecef;
+                    border-radius: 12px;
+                    padding: 12px 20px;
+                    transition: all 0.3s ease;
+                }
+                .search-input:focus {
+                    border-color: #667eea;
+                    box-shadow: 0 0 20px rgba(102, 126, 234, 0.2);
                 }
                 .modal-content {
                     border: none;
@@ -351,65 +389,144 @@ export default function BookingAdmin() {
                     background-color: #f8f9fa;
                     cursor: not-allowed;
                 }
+                
+                /* Booking Card for Mobile */
+                .booking-card {
+                    background: white;
+                    border-radius: 12px;
+                    padding: 1rem;
+                    margin-bottom: 1rem;
+                    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+                    transition: all 0.3s ease;
+                    border-left: 4px solid #667eea;
+                }
+                .booking-card:hover {
+                    box-shadow: 0 4px 12px rgba(0,0,0,0.12);
+                    transform: translateY(-2px);
+                }
+                .booking-card.confirmada {
+                    border-left-color: #28a745;
+                }
+                .booking-card.pendiente {
+                    border-left-color: #ffc107;
+                }
+                .booking-card.cancelada {
+                    border-left-color: #dc3545;
+                }
+                .booking-card.completada {
+                    border-left-color: #17a2b8;
+                }
+                .bg-purple {
+                    background-color: #8B4789 !important;
+                }
+                
+                /* Responsive */
+                @media (max-width: 768px) {
+                    .main-container {
+                        border-radius: 12px;
+                        padding: 1rem !important;
+                    }
+                    .stats-card {
+                        margin-bottom: 0.75rem;
+                    }
+                    .stats-card .card-body {
+                        padding: 1rem;
+                    }
+                    .stats-card h3 {
+                        font-size: 1.5rem;
+                    }
+                    .btn-primary {
+                        padding: 10px 16px;
+                        font-size: 0.9rem;
+                    }
+                    .search-input {
+                        padding: 10px 16px;
+                        font-size: 0.9rem;
+                    }
+                }
+                
+                @media (max-width: 576px) {
+                    .stats-card h3 {
+                        font-size: 1.25rem;
+                    }
+                    .stats-card p {
+                        font-size: 0.85rem;
+                    }
+                }
             `}</style>
 
-            <div className="container-fluid p-4">
-                <div className="main-container p-4">
-                    <div className="d-flex justify-content-between align-items-center mb-4">
+            <div className="container-fluid p-2 p-md-4">
+                <div className="main-container p-3 p-md-4">
+                    {/* Header */}
+                    <div className="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center mb-3 mb-md-4 gap-2">
                         <div>
-                            <h1 className="h2 fw-bold text-dark mb-1">
+                            <h1 className="fw-bold text-dark mb-1" style={{ fontSize: isMobile ? '1.5rem' : '2rem' }}>
                                 <i className="bi bi-calendar-check-fill text-primary me-2"></i>
-                                Gestión de Reservas
+                                {isMobile ? 'Reservas' : 'Gestión de Reservas'}
                             </h1>
-                            <p className="text-muted mb-0">Administra las reservas de hospedaje</p>
+                            <p className="text-muted mb-0 small">
+                                {isMobile ? 'Administra reservas' : 'Administra las reservas de hospedaje'}
+                            </p>
                         </div>
-                        <button onClick={() => openModal()} className="btn btn-primary">
-                            <i className="bi bi-plus-lg me-2"></i>Crear Reserva
+                        <button onClick={() => openModal()} className="btn btn-primary w-100 w-md-auto">
+                            <i className="bi bi-plus-lg me-2"></i>
+                            {isMobile ? 'Crear' : 'Crear Reserva'}
                         </button>
                     </div>
 
-                    <div className="row g-4 mb-4">
-                        <div className="col-lg-3 col-md-6">
-                            <div className="stats-card card text-center h-100">
-                                <div className="card-body">
-                                    <h3 className="fw-bold text-primary">{bookings.length}</h3>
-                                    <p className="text-muted mb-0">Total Reservas</p>
+                    {/* Stats Cards */}
+                    <div className="row g-2 g-md-4 mb-3 mb-md-4">
+                        {[
+                            { value: bookings.length, label: 'Total', fullLabel: 'Total Reservas', color: 'text-primary' },
+                            { value: bookings.filter(b => b.reserva?.estado === 'confirmada').length, label: 'Confirmadas', fullLabel: 'Confirmadas', color: 'text-success' },
+                            { value: bookings.filter(b => b.reserva?.estado === 'pendiente').length, label: 'Pendientes', fullLabel: 'Pendientes', color: 'text-warning' },
+                            { value: bookings.filter(b => b.reserva?.estado === 'cancelada').length, label: 'Canceladas', fullLabel: 'Canceladas', color: 'text-danger' }
+                        ].map((stat, idx) => (
+                            <div className="col-6 col-md-3" key={idx}>
+                                <div className="stats-card card text-center h-100">
+                                    <div className="card-body">
+                                        <h3 className={`fw-bold ${stat.color}`}>{stat.value}</h3>
+                                        <p className="text-muted mb-0 small">
+                                            <span className="d-none d-md-inline">{stat.fullLabel}</span>
+                                            <span className="d-inline d-md-none">{stat.label}</span>
+                                        </p>
+                                    </div>
                                 </div>
+                            </div>
+                        ))}
+                    </div>
+
+                    {/* Search and Filters */}
+                    <div className="row g-2 mb-3 mb-md-4">
+                        <div className="col-12 col-md-8">
+                            <div className="position-relative">
+                                <i className="bi bi-search position-absolute top-50 start-0 translate-middle-y ms-3 text-muted"></i>
+                                <input
+                                    type="text"
+                                    className="form-control search-input ps-5"
+                                    placeholder={isMobile ? "Buscar..." : "Buscar por ID, usuario o establecimiento..."}
+                                    value={searchTerm}
+                                    onChange={(e) => setSearchTerm(e.target.value)}
+                                />
                             </div>
                         </div>
-                        <div className="col-lg-3 col-md-6">
-                            <div className="stats-card card text-center h-100">
-                                <div className="card-body">
-                                    <h3 className="fw-bold text-success">
-                                        {bookings.filter(b => b.reserva?.estado === 'confirmada').length}
-                                    </h3>
-                                    <p className="text-muted mb-0">Confirmadas</p>
-                                </div>
-                            </div>
-                        </div>
-                        <div className="col-lg-3 col-md-6">
-                            <div className="stats-card card text-center h-100">
-                                <div className="card-body">
-                                    <h3 className="fw-bold text-warning">
-                                        {bookings.filter(b => b.reserva?.estado === 'pendiente').length}
-                                    </h3>
-                                    <p className="text-muted mb-0">Pendientes</p>
-                                </div>
-                            </div>
-                        </div>
-                        <div className="col-lg-3 col-md-6">
-                            <div className="stats-card card text-center h-100">
-                                <div className="card-body">
-                                    <h3 className="fw-bold text-danger">
-                                        {bookings.filter(b => b.reserva?.estado === 'cancelada').length}
-                                    </h3>
-                                    <p className="text-muted mb-0">Canceladas</p>
-                                </div>
-                            </div>
+                        <div className="col-12 col-md-4">
+                            <select
+                                className="form-select search-input"
+                                value={filterEstado}
+                                onChange={(e) => setFilterEstado(e.target.value)}
+                            >
+                                <option value="todas">Todos los estados</option>
+                                <option value="confirmada">Confirmadas</option>
+                                <option value="pendiente">Pendientes</option>
+                                <option value="cancelada">Canceladas</option>
+                                <option value="completada">Completadas</option>
+                            </select>
                         </div>
                     </div>
 
-                    <div className="user-table">
+                    {/* Desktop Table View */}
+                    <div className="user-table d-none d-lg-block">
                         <div className="table-responsive">
                             <table className="table table-hover mb-0">
                                 <thead>
@@ -425,18 +542,18 @@ export default function BookingAdmin() {
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {bookings.map((booking) => (
+                                    {filteredBookings.map((booking) => (
                                         <tr key={booking.reserva.id_reserva}>
                                             <td>
-                                                <span className="badge bg-secondary rounded-pill px-3 py-2">
+                                                <span className="badge bg-secondary rounded-pill px-2 py-1" style={{ fontSize: '0.75rem' }}>
                                                     #{booking.reserva.id_reserva}
                                                 </span>
                                             </td>
                                             <td>
                                                 <div className="d-flex align-items-center">
-                                                    <i className="bi bi-person-fill text-primary me-2"></i>
+                                                    <i className="bi bi-person-fill text-primary me-2" style={{ fontSize: '1rem' }}></i>
                                                     <div>
-                                                        <div className="fw-semibold text-truncate" style={{ maxWidth: '200px' }}>{booking.usuario?.nombre || 'N/A'}</div>
+                                                        <div className="fw-semibold">{booking.usuario?.nombre || 'N/A'}</div>
                                                         <small className="text-muted">{booking.usuario?.email || ''}</small>
                                                     </div>
                                                 </div>
@@ -445,26 +562,26 @@ export default function BookingAdmin() {
                                                 <div className="d-flex align-items-center">
                                                     <i className={`bi ${booking.reserva.tipo_reserva === 'experiencia' ? 'bi-compass-fill' : 'bi-building-fill'} text-info me-2`}></i>
                                                     <div>
-                                                        <div className="fw-semibold text-truncate">{getNombreEstablecimiento(booking)}</div>
+                                                        <div className="fw-semibold">{getNombreEstablecimiento(booking)}</div>
                                                         <small className="text-muted">{getUbicacion(booking)}</small>
                                                     </div>
                                                 </div>
                                             </td>
                                             <td>
-                                                <span className={`badge ${booking.reserva.tipo_reserva === 'experiencia' ? 'bg-purple' : 'bg-info'} rounded-pill px-3 py-2`}>
+                                                <span className={`badge ${booking.reserva.tipo_reserva === 'experiencia' ? 'bg-purple' : 'bg-info'} rounded-pill px-2 py-1`} style={{ fontSize: '0.75rem' }}>
                                                     {booking.reserva.tipo_reserva === 'experiencia' ? 'Experiencia' : 'Hospedaje'}
                                                 </span>
                                             </td>
                                             <td>
                                                 <small className="text-muted">
-                                                    <div>{booking.reserva.fecha_inicio}</div>
+                                                    <div>{formatFecha(booking.reserva.fecha_inicio)}</div>
                                                     {booking.reserva.fecha_fin && (
-                                                        <div>→ {booking.reserva.fecha_fin}</div>
+                                                        <div>→ {formatFecha(booking.reserva.fecha_fin)}</div>
                                                     )}
                                                 </small>
                                             </td>
                                             <td>
-                                                <span className="badge bg-dark rounded-pill px-3 py-2">
+                                                <span className="badge bg-dark rounded-pill px-2 py-1" style={{ fontSize: '0.75rem' }}>
                                                     <i className="bi bi-people-fill me-1"></i>
                                                     {booking.reserva.personas}
                                                 </span>
@@ -475,19 +592,19 @@ export default function BookingAdmin() {
                                                     booking.reserva.estado === 'pendiente' ? 'bg-warning' :
                                                     booking.reserva.estado === 'completada' ? 'bg-info' :
                                                     'bg-danger'
-                                                } rounded-pill px-3 py-2`}>
+                                                } rounded-pill px-2 py-1`} style={{ fontSize: '0.75rem' }}>
                                                     {booking.reserva.estado}
                                                 </span>
                                             </td>
                                             <td>
-                                                <div className="d-flex gap-2 justify-content-center">
-                                                    <button
+                                                <div className="d-flex gap-1 justify-content-center">
+                                                    {/* <button
                                                         onClick={() => openModal(booking)}
                                                         className="btn btn-outline-primary btn-sm"
                                                         title="Editar"
                                                     >
                                                         <i className="bi bi-pencil"></i>
-                                                    </button>
+                                                    </button> */}
                                                     <button
                                                         onClick={() => handleCancel(booking.reserva.id_reserva, booking.reserva.estado)}
                                                         className="btn btn-outline-warning btn-sm"
@@ -496,31 +613,121 @@ export default function BookingAdmin() {
                                                     >
                                                         <i className="bi bi-x-circle"></i>
                                                     </button>
-                                                    <button
+                                                    {/* <button
                                                         onClick={() => handleDelete(booking.reserva.id_reserva, booking.reserva.estado)}
                                                         className="btn btn-outline-danger btn-sm"
                                                         title="Eliminar"
                                                     >
                                                         <i className="bi bi-trash"></i>
-                                                    </button>
+                                                    </button> */}
                                                 </div>
                                             </td>
                                         </tr>
                                     ))}
+                                    {filteredBookings.length === 0 && (
+                                        <tr>
+                                            <td colSpan="8" className="text-center py-5">
+                                                <i className="bi bi-inbox display-4 text-muted mb-3 d-block"></i>
+                                                <h6 className="text-muted">No se encontraron reservas</h6>
+                                            </td>
+                                        </tr>
+                                    )}
                                 </tbody>
                             </table>
                         </div>
                     </div>
+
+                    {/* Mobile Card View */}
+                    <div className="d-lg-none">
+                        {filteredBookings.map((booking) => (
+                            <div key={booking.reserva.id_reserva} className={`booking-card ${booking.reserva.estado}`}>
+                                <div className="d-flex justify-content-between align-items-start mb-2">
+                                    <div>
+                                        <span className="badge bg-secondary mb-1">#{booking.reserva.id_reserva}</span>
+                                        <h6 className="fw-bold mb-1">{getNombreEstablecimiento(booking)}</h6>
+                                        <p className="text-muted small mb-0">
+                                            <i className="bi bi-person me-1"></i>
+                                            {booking.usuario?.nombre || 'N/A'}
+                                        </p>
+                                    </div>
+                                    <span className={`badge ${
+                                        booking.reserva.estado === 'confirmada' ? 'bg-success' :
+                                        booking.reserva.estado === 'pendiente' ? 'bg-warning' :
+                                        booking.reserva.estado === 'completada' ? 'bg-info' :
+                                        'bg-danger'
+                                    }`}>
+                                        {booking.reserva.estado}
+                                    </span>
+                                </div>
+
+                                <div className="row g-2 mb-3">
+                                    <div className="col-6">
+                                        <small className="text-muted d-block">Fecha inicio</small>
+                                        <span className="fw-semibold small">{formatFecha(booking.reserva.fecha_inicio)}</span>
+                                    </div>
+                                    <div className="col-6">
+                                        <small className="text-muted d-block">Fecha fin</small>
+                                        <span className="fw-semibold small">{formatFecha(booking.reserva.fecha_fin)}</span>
+                                    </div>
+                                    <div className="col-6">
+                                        <small className="text-muted d-block">Personas</small>
+                                        <span className="fw-semibold small">
+                                            <i className="bi bi-people-fill me-1"></i>
+                                            {booking.reserva.personas}
+                                        </span>
+                                    </div>
+                                    <div className="col-6">
+                                        <small className="text-muted d-block">Tipo</small>
+                                        <span className={`badge ${booking.reserva.tipo_reserva === 'experiencia' ? 'bg-purple' : 'bg-info'}`}>
+                                            {booking.reserva.tipo_reserva === 'experiencia' ? 'Experiencia' : 'Hospedaje'}
+                                        </span>
+                                    </div>
+                                </div>
+
+                                <div className="d-flex gap-2">
+                                    <button
+                                        onClick={() => openModal(booking)}
+                                        className="btn btn-outline-primary btn-sm flex-grow-1"
+                                    >
+                                        <i className="bi bi-pencil me-1"></i>Editar
+                                    </button>
+                                    <button
+                                        onClick={() => handleCancel(booking.reserva.id_reserva, booking.reserva.estado)}
+                                        className="btn btn-outline-warning btn-sm"
+                                        style={{ minWidth: '44px' }}
+                                        disabled={booking.reserva.estado === 'cancelada'}
+                                    >
+                                        <i className="bi bi-x-circle"></i>
+                                    </button>
+                                    <button
+                                        onClick={() => handleDelete(booking.reserva.id_reserva, booking.reserva.estado)}
+                                        className="btn btn-outline-danger btn-sm"
+                                        style={{ minWidth: '44px' }}
+                                    >
+                                        <i className="bi bi-trash"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        ))}
+                        
+                        {filteredBookings.length === 0 && (
+                            <div className="text-center py-5">
+                                <i className="bi bi-inbox display-4 text-muted mb-3 d-block"></i>
+                                <h6 className="text-muted">No se encontraron reservas</h6>
+                                <p className="text-muted small">Intenta ajustar los filtros de búsqueda</p>
+                            </div>
+                        )}
+                    </div>
                 </div>
 
-                {/* MODAL - Igual que antes pero con las rutas corregidas */}
+                {/* MODAL */}
                 <div className={`modal fade ${showModal ? 'show' : ''}`}
                     style={{ display: showModal ? 'block' : 'none' }}
                     tabIndex="-1">
-                    <div className="modal-dialog modal-dialog-centered">
+                    <div className="modal-dialog modal-dialog-centered modal-dialog-scrollable">
                         <div className="modal-content">
                             <div className="modal-header border-0 pb-0">
-                                <h5 className="modal-title fw-bold">
+                                <h5 className="modal-title fw-bold" style={{ fontSize: isMobile ? '1rem' : '1.25rem' }}>
                                     <i className={`bi ${editingBooking ? 'bi-pencil-square' : 'bi-calendar-plus'} text-primary me-2`}></i>
                                     {editingBooking ? 'Editar Reserva' : 'Nueva Reserva'}
                                 </h5>
@@ -528,13 +735,13 @@ export default function BookingAdmin() {
                             </div>
                             <div className="modal-body">
                                 {!editingBooking && (
-                                    <div className="alert alert-info">
+                                    <div className="alert alert-info small">
                                         <i className="bi bi-info-circle me-2"></i>
                                         Todos los campos son obligatorios para crear una reserva
                                     </div>
                                 )}
                                 {editingBooking && (
-                                    <div className="alert alert-warning">
+                                    <div className="alert alert-warning small">
                                         <i className="bi bi-exclamation-triangle me-2"></i>
                                         Solo puedes editar: fechas, personas y estado
                                     </div>
@@ -542,7 +749,7 @@ export default function BookingAdmin() {
                                 
                                 <div className="row">
                                     <div className="col-md-6 mb-3">
-                                        <label className="form-label fw-semibold">ID Usuario</label>
+                                        <label className="form-label fw-semibold small">ID Usuario</label>
                                         <input
                                             type="number"
                                             className="form-control"
@@ -554,7 +761,7 @@ export default function BookingAdmin() {
                                         />
                                     </div>
                                     <div className="col-md-6 mb-3">
-                                        <label className="form-label fw-semibold">ID Hostelería</label>
+                                        <label className="form-label fw-semibold small">ID Hostelería</label>
                                         <input
                                             type="number"
                                             className="form-control"
@@ -569,7 +776,7 @@ export default function BookingAdmin() {
 
                                 <div className="row">
                                     <div className="col-md-6 mb-3">
-                                        <label className="form-label fw-semibold">Fecha Inicio</label>
+                                        <label className="form-label fw-semibold small">Fecha Inicio</label>
                                         <input
                                             type="date"
                                             className="form-control"
@@ -580,7 +787,7 @@ export default function BookingAdmin() {
                                         />
                                     </div>
                                     <div className="col-md-6 mb-3">
-                                        <label className="form-label fw-semibold">Fecha Fin</label>
+                                        <label className="form-label fw-semibold small">Fecha Fin</label>
                                         <input
                                             type="date"
                                             className="form-control"
@@ -594,7 +801,7 @@ export default function BookingAdmin() {
 
                                 <div className="row">
                                     <div className="col-md-6 mb-3">
-                                        <label className="form-label fw-semibold">Personas</label>
+                                        <label className="form-label fw-semibold small">Personas</label>
                                         <input
                                             type="number"
                                             className="form-control"
@@ -607,7 +814,7 @@ export default function BookingAdmin() {
                                     </div>
                                     {!editingBooking && (
                                         <div className="col-md-6 mb-3">
-                                            <label className="form-label fw-semibold">Precio Total</label>
+                                            <label className="form-label fw-semibold small">Precio Total</label>
                                             <input
                                                 type="number"
                                                 className="form-control"
@@ -620,7 +827,7 @@ export default function BookingAdmin() {
                                         </div>
                                     )}
                                     <div className={editingBooking ? "col-md-6" : "col-12"}>
-                                        <label className="form-label fw-semibold">Estado</label>
+                                        <label className="form-label fw-semibold small">Estado</label>
                                         <select
                                             className="form-select"
                                             name="estado"
@@ -636,10 +843,10 @@ export default function BookingAdmin() {
                                 </div>
                             </div>
                             <div className="modal-footer border-0 pt-0">
-                                <button type="button" className="btn btn-light" onClick={closeModal}>
+                                <button type="button" className="btn btn-light btn-sm" onClick={closeModal}>
                                     Cancelar
                                 </button>
-                                <button type="button" className="btn btn-primary" onClick={handleSubmit}>
+                                <button type="button" className="btn btn-primary btn-sm" onClick={handleSubmit}>
                                     <i className={`bi ${editingBooking ? 'bi-check-lg' : 'bi-plus-lg'} me-2`}></i>
                                     {editingBooking ? 'Actualizar' : 'Crear'}
                                 </button>

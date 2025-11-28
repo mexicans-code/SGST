@@ -16,19 +16,19 @@ import {
   Compass,
   Calendar,
   Clock,
+  MoreVertical,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import EditProperty from "../../components/EditProperty";
 import Swal from "sweetalert2";
 import { GATEWAY_URL } from "../../const/Const";
 
-
 export default function HostProperties() {
   const [properties, setProperties] = useState([]);
   const [experiences, setExperiences] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("todas");
-  const [typeTab, setTypeTab] = useState("hoteles"); // "hoteles" o "experiencias"
+  const [typeTab, setTypeTab] = useState("hoteles");
   const [userId, setUserId] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [sortConfig, setSortConfig] = useState({ key: "nombre", direction: "asc" });
@@ -78,7 +78,6 @@ export default function HostProperties() {
           bookingsRes.json(),
         ]);
 
-        // Procesar experiencias turísticas
         if (experiencesResult.success && experiencesResult.data) {
           const userExperiences = experiencesResult.data.filter(
             (exp) => exp.id_anfitrion === currentUserId
@@ -86,7 +85,6 @@ export default function HostProperties() {
           setExperiences(userExperiences);
         }
 
-        // Procesar hoteles
         let hotelsList = [];
         if (hotelsResult.success && hotelsResult.data) {
           const userHotels = hotelsResult.data.filter(
@@ -95,7 +93,6 @@ export default function HostProperties() {
           hotelsList = userHotels;
         }
 
-        // Validar reservas activas para hoteles
         if (bookingsResult.success && bookingsResult.data) {
           const reservas = bookingsResult.data;
           hotelsList = hotelsList.map((prop) => {
@@ -159,12 +156,9 @@ export default function HostProperties() {
 
   const formatearDireccion = (direccion) => {
     if (!direccion) return "Sin ubicación";
-
     const ciudad = direccion.ciudad || (direccion.direcciones && direccion.direcciones.ciudad) || "";
     const estado = direccion.estado || (direccion.direcciones && direccion.direcciones.estado) || "";
-
     if (!ciudad && !estado) return "Sin ubicación";
-
     return `${ciudad}, ${estado}`.replace(/^,\s*|,\s*$/g, "").trim();
   };
 
@@ -236,7 +230,6 @@ export default function HostProperties() {
             setProperties(properties.filter((p) => p.id_hosteleria !== propertyId));
           }
         } else {
-          // Verificar si es error de reservas asociadas
           if (data.code === 'HAS_BOOKINGS') {
             Swal.fire({
               icon: "warning",
@@ -263,8 +256,6 @@ export default function HostProperties() {
       }
     }
   };
-
-
 
   const handleEditProperty = (property) => {
     setSelectedProperty(property);
@@ -306,120 +297,143 @@ export default function HostProperties() {
   };
 
   return (
-    <div style={{ backgroundColor: "#f8f9fa", minHeight: "100vh", paddingTop: "10rem", paddingBottom: "3rem" }}>
-      <div className="container-fluid px-4">
-        {/* Header */}
-        <div className="mb-5">
-          <div className="d-flex justify-content-between align-items-center mb-4">
-            <div>
-              <h1 className="fw-bold mb-1" style={{ fontSize: "2rem", color: "#1a1a1a" }}>
-                Mis Propiedades y Experiencias
-              </h1>
-              <button
-                onClick={() => navigate("/host/admin")}
-                className="btn rounded-2 mb-4 mt-2 ms-2 me-2"
-                style={{ backgroundColor: "#CD5C5C", color: "white", padding: "0.5rem 1.5rem" }}
-              >
-                <Plus size={18} className="me-2" />
-                Ver Reservas
-              </button>
-              <p className="text-muted mb-0">Gestiona y monitorea todas tus propiedades y experiencias</p>
-            </div>
-            <div className="d-flex gap-2">
-              <button
-                className="btn rounded-2"
-                onClick={() => navigate("/host/upload")}
-                style={{ backgroundColor: "#CD5C5C", color: "white", padding: "0.75rem 1.5rem" }}
-              >
-                <Home size={18} className="me-2" />
-                Nueva Propiedad
-              </button>
+    <div className="bg-light min-vh-100 py-3 py-md-4">
+      <div className="container-fluid px-3 px-md-4">
+        {/* Header Section */}
+        <div className="mb-3 mb-md-4">
+          <div className="mb-3">
+            <h1 className="fw-bold mb-2" style={{ fontSize: "clamp(1.5rem, 5vw, 2rem)", color: "#1a1a1a" }}>
+              Mis Propiedades y Experiencias
+            </h1>
+            <p className="text-muted mb-3 small">Gestiona y monitorea todas tus propiedades y experiencias</p>
 
-              <button
-                className="btn rounded-2"
-                onClick={() => navigate("/host/report")}
-                style={{ backgroundColor: "#8B4789", color: "white", padding: "0.75rem 1.5rem" }}
-              >
-                <Compass size={18} className="me-2" />
-                Reportes
-              </button>
-
-
-
-              <button
-                className="btn rounded-2"
-                onClick={() => navigate("/host/upload/tourism")}
-                style={{ backgroundColor: "#8B4789", color: "white", padding: "0.75rem 1.5rem" }}
-              >
-                <Compass size={18} className="me-2" />
-                Nueva Experiencia
-              </button>
+            <div className="row g-2">
+              <div className="col-6 col-md-3 col-lg-auto">
+                <button
+                  onClick={() => navigate("/host/admin")}
+                  className="btn w-100 w-lg-auto btn-sm btn-danger d-flex align-items-center justify-content-center gap-1 px-lg-3"
+                  style={{ minHeight: "44px", whiteSpace: "nowrap" }}
+                >
+                  <Plus size={16} />
+                  <span className="d-none d-sm-inline">Ver Reservas</span>
+                  <span className="d-inline d-sm-none">Reservas</span>
+                </button>
+              </div>
+              <div className="col-6 col-md-3 col-lg-auto">
+                <button
+                  onClick={() => navigate("/host/upload")}
+                  className="btn w-100 w-lg-auto btn-sm btn-danger d-flex align-items-center justify-content-center gap-1 px-lg-3"
+                  style={{ minHeight: "44px", whiteSpace: "nowrap" }}
+                >
+                  <Home size={16} />
+                  <span className="d-none d-sm-inline">Nueva Propiedad</span>
+                  <span className="d-inline d-sm-none">Propiedad</span>
+                </button>
+              </div>
+              <div className="col-6 col-md-3 col-lg-auto">
+                <button
+                  onClick={() => navigate("/host/report")}
+                  className="btn w-100 w-lg-auto btn-sm d-flex align-items-center justify-content-center gap-1 px-lg-3"
+                  style={{ backgroundColor: "#8B4789", color: "white", minHeight: "44px", whiteSpace: "nowrap" }}
+                >
+                  <Compass size={16} />
+                  <span className="d-none d-sm-inline">Reportes</span>
+                  <span className="d-inline d-sm-none">Reportes</span>
+                </button>
+              </div>
+              <div className="col-6 col-md-3 col-lg-auto">
+                <button
+                  onClick={() => navigate("/host/upload/tourism")}
+                  className="btn w-100 w-lg-auto btn-sm d-flex align-items-center justify-content-center gap-1 px-lg-3"
+                  style={{ backgroundColor: "#8B4789", color: "white", minHeight: "44px", whiteSpace: "nowrap" }}
+                >
+                  <Compass size={16} />
+                  <span className="d-none d-sm-inline">Nueva Experiencia</span>
+                  <span className="d-inline d-sm-none">Experiencia</span>
+                </button>
+              </div>
             </div>
           </div>
         </div>
 
-        <div className="mb-4">
-          <ul className="nav nav-tabs">
-            <li className="nav-item">
-              <button
-                className={`nav-link ${typeTab === "hoteles" ? "active" : ""}`}
-                style={{
-                  color: typeTab === "hoteles" ? "#CD5C5C" : "#6c757d",
-                  borderBottom: typeTab === "hoteles" ? "3px solid #CD5C5C" : "none",
-                  fontWeight: typeTab === "hoteles" ? "600" : "normal"
-                }}
-                onClick={() => setTypeTab("hoteles")}
-              >
-                <Home size={18} className="me-2" />
-                Alojamientos ({properties.length})
-              </button>
-            </li>
-            <li className="nav-item">
-              <button
-                className={`nav-link ${typeTab === "experiencias" ? "active" : ""}`}
-                style={{
-                  color: typeTab === "experiencias" ? "#8B4789" : "#6c757d",
-                  borderBottom: typeTab === "experiencias" ? "3px solid #8B4789" : "none",
-                  fontWeight: typeTab === "experiencias" ? "600" : "normal"
-                }}
-                onClick={() => setTypeTab("experiencias")}
-              >
-                <Compass size={18} className="me-2" />
-                Experiencias ({experiences.length})
-              </button>
-            </li>
-          </ul>
-        </div>
+        {/* Tabs */}
+        <ul className="nav nav-tabs mb-3 border-0" style={{ flexWrap: "nowrap", overflowX: "auto" }}>
+          <li className="nav-item">
+            <button
+              className={`nav-link ${typeTab === "hoteles" ? "active" : ""}`}
+              onClick={() => setTypeTab("hoteles")}
+              style={{
+                whiteSpace: "nowrap",
+                borderBottom: typeTab === "hoteles" ? "3px solid #CD5C5C" : "none",
+                color: typeTab === "hoteles" ? "#CD5C5C" : "#6c757d"
+              }}
+            >
+              <Home size={16} className="me-1" />
+              <span className="d-none d-sm-inline">Alojamientos</span>
+              <span className="d-inline d-sm-none">Hoteles</span> ({properties.length})
+            </button>
+          </li>
+          <li className="nav-item">
+            <button
+              className={`nav-link ${typeTab === "experiencias" ? "active" : ""}`}
+              onClick={() => setTypeTab("experiencias")}
+              style={{
+                whiteSpace: "nowrap",
+                borderBottom: typeTab === "experiencias" ? "3px solid #8B4789" : "none",
+                color: typeTab === "experiencias" ? "#8B4789" : "#6c757d"
+              }}
+            >
+              <Compass size={16} className="me-1" />
+              Experiencias ({experiences.length})
+            </button>
+          </li>
+        </ul>
 
-        {/* Filtros y búsqueda */}
-        <div className="card border-0 rounded-3 p-4 mb-4" style={{ backgroundColor: "white", boxShadow: "0 1px 3px rgba(0,0,0,0.1)" }}>
-          <div className="row g-3 align-items-center">
-            <div className="col-md-6">
+        {/* Filters and Search */}
+        <div className="card border-0 rounded-3 p-3 mb-3 shadow-sm">
+          <div className="row g-2 align-items-center">
+            {/* Search Bar */}
+            <div className="col-12 col-md-7 col-lg-8">
               <div className="input-group">
-                <span className="input-group-text border-0" style={{ backgroundColor: "#f8f9fa" }}>
-                  <Search size={18} className="text-muted" />
+                <span className="input-group-text bg-light border-0">
+                  <Search size={16} className="text-muted" />
                 </span>
                 <input
                   type="text"
-                  className="form-control border-0"
-                  placeholder="Buscar por nombre o ubicación..."
+                  className="form-control border-0 bg-light"
+                  placeholder="Buscar..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  style={{ backgroundColor: "#f8f9fa" }}
+                  style={{ fontSize: "0.9rem" }}
                 />
               </div>
             </div>
-            <div className="col-md-6">
-              <div className="d-flex gap-2 justify-content-end">
+
+            {/* Filter Buttons */}
+            <div className="col-12 col-md-5 col-lg-4">
+              <div className="d-flex gap-1 justify-content-start justify-content-md-end flex-wrap">
                 {["todas", "activas", "inactivas"].map((tab) => (
                   <button
                     key={tab}
-                    className={`btn btn-sm rounded-2 px-3 ${activeTab === tab ? "text-white" : "btn-outline-secondary"}`}
-                    style={activeTab === tab ? { backgroundColor: typeTab === "hoteles" ? "#CD5C5C" : "#8B4789", border: "none" } : {}}
+                    className={`btn btn-sm px-2 px-md-3 ${activeTab === tab ? "text-white" : "btn-outline-secondary"
+                      }`}
+                    style={{
+                      backgroundColor: activeTab === tab
+                        ? (typeTab === "hoteles" ? "#CD5C5C" : "#8B4789")
+                        : "transparent",
+                      border: activeTab === tab ? "none" : "1px solid #dee2e6",
+                      fontSize: "0.85rem",
+                      minHeight: "38px"
+                    }}
                     onClick={() => setActiveTab(tab)}
                   >
-                    {tab.charAt(0).toUpperCase() + tab.slice(1)} (
-                    {tab === "todas" ? stats.todas : tab === "activas" ? stats.activas : stats.inactivas})
+                    <span className="d-none d-sm-inline">
+                      {tab.charAt(0).toUpperCase() + tab.slice(1)}
+                    </span>
+                    <span className="d-inline d-sm-none">
+                      {tab === "todas" ? "Todas" : tab === "activas" ? "Act" : "Inac"}
+                    </span>
+                    {" "}({tab === "todas" ? stats.todas : tab === "activas" ? stats.activas : stats.inactivas})
                   </button>
                 ))}
               </div>
@@ -427,209 +441,275 @@ export default function HostProperties() {
           </div>
         </div>
 
-        {/* Tabla */}
-        <div className="card border-0 rounded-3" style={{ backgroundColor: "white", boxShadow: "0 1px 3px rgba(0,0,0,0.1)" }}>
+        {/* Table/Cards Container */}
+        <div className="card border-0 rounded-3 shadow-sm overflow-hidden">
           {filteredItems.length === 0 ? (
-            <div className="p-5 text-center">
-              {typeTab === "hoteles" ? <Home size={48} className="text-muted mb-3" /> : <Compass size={48} className="text-muted mb-3" />}
+            <div className="p-4 text-center">
+              {typeTab === "hoteles" ? (
+                <Home size={48} className="text-muted mb-3" />
+              ) : (
+                <Compass size={48} className="text-muted mb-3" />
+              )}
               <h5 className="text-muted">No hay {typeTab === "hoteles" ? "propiedades" : "experiencias"} para mostrar</h5>
-              <p className="text-muted small">Intenta ajustar los filtros o crea una nueva {typeTab === "hoteles" ? "propiedad" : "experiencia"}</p>
+              <p className="text-muted small mb-0">Intenta ajustar los filtros o crea una nueva {typeTab === "hoteles" ? "propiedad" : "experiencia"}</p>
             </div>
           ) : (
-            <div className="table-responsive">
-              <table className="table table-hover mb-0">
-                <thead style={{ backgroundColor: "#f8f9fa", borderBottom: "2px solid #e9ecef" }}>
-                  <tr>
-                    <th className="px-4 py-3 fw-600 text-muted" style={{ color: "#495057" }}>
-                      {typeTab === "hoteles" ? "Propiedad" : "Experiencia"}
-                    </th>
-                    <th className="px-4 py-3 fw-600 text-muted" style={{ color: "#495057" }}>
-                      Ubicación
-                    </th>
-                    <th className="px-4 py-3 fw-600 text-muted" style={{ color: "#495057" }}>
-                      Capacidad
-                    </th>
-                    {typeTab === "hoteles" ? (
-                      <>
-                        <th className="px-4 py-3 fw-600 text-muted" style={{ color: "#495057" }}>
-                          Habitaciones
-                        </th>
-                        <th className="px-4 py-3 fw-600 text-muted" style={{ color: "#495057" }}>
-                          Baños
-                        </th>
-                        <th className="px-4 py-3 fw-600 text-muted" style={{ color: "#495057" }}>
-                          Precio/Noche
-                        </th>
-                      </>
-                    ) : (
-                      <>
-                        <th className="px-4 py-3 fw-600 text-muted" style={{ color: "#495057" }}>
-                          Fecha
-                        </th>
-                        <th className="px-4 py-3 fw-600 text-muted" style={{ color: "#495057" }}>
-                          Duración
-                        </th>
-                        <th className="px-4 py-3 fw-600 text-muted" style={{ color: "#495057" }}>
-                          Precio
-                        </th>
-                      </>
-                    )}
-                    <th className="px-4 py-3 fw-600 text-muted" style={{ color: "#495057" }}>
-                      Estado
-                    </th>
-                    <th className="px-4 py-3 fw-600 text-muted" style={{ color: "#495057" }}>
-                      Acciones
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {sortedItems.map((item) => {
-                    const isExperience = typeTab === "experiencias";
-                    const id = isExperience ? item.id_experiencia : item.id_hosteleria;
-                    const name = isExperience ? item.titulo : item.nombre;
-                    const direccion = isExperience ? item.direcciones : item.direccion;
+            <>
+              {/* Desktop Table View - Hidden on Mobile */}
+              <div className="d-none d-lg-block table-responsive">
+                <table className="table table-hover mb-0">
+                  <thead className="bg-light">
+                    <tr>
+                      <th style={{ minWidth: "200px" }}>Propiedad / Experiencia</th>
+                      <th style={{ minWidth: "150px" }}>Ubicación</th>
+                      <th>Capacidad</th>
+                      {typeTab === "hoteles" ? (
+                        <>
+                          <th>Habitaciones</th>
+                          <th>Baños</th>
+                          <th>Precio/Noche</th>
+                        </>
+                      ) : (
+                        <>
+                          <th>Fecha</th>
+                          <th>Duración</th>
+                          <th>Precio</th>
+                        </>
+                      )}
+                      <th>Estado</th>
+                      <th style={{ width: "120px" }}>Acciones</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {sortedItems.map((item) => {
+                      const isExperience = typeTab === "experiencias";
+                      const id = isExperience ? item.id_experiencia : item.id_hosteleria;
+                      const name = isExperience ? item.titulo : item.nombre;
 
-                    return (
-                      <tr key={id} style={{ borderBottom: "1px solid #e9ecef" }}>
-                        <td className="px-4 py-4">
-                          <div className="d-flex align-items-center gap-3">
-                            <img
-                              src={item.image || "https://images.unsplash.com/photo-1566073771259-6a8506099945?w=100"}
-                              alt={name}
-                              style={{
-                                width: "50px",
-                                height: "50px",
-                                borderRadius: "8px",
-                                objectFit: "cover",
-                              }}
-                            />
-                            <div>
-                              <p className="fw-600 mb-0" style={{ color: "#1a1a1a" }}>
-                                {name}
-                              </p>
-                              <small className="text-muted">ID: {id}</small>
+                      return (
+                        <tr key={id}>
+                          <td className="align-middle">
+                            <div className="d-flex align-items-center gap-2">
+                              <img
+                                src={item.image || "https://images.unsplash.com/photo-1566073771259-6a8506099945?w=100"}
+                                alt={name}
+                                className="rounded"
+                                style={{ width: "50px", height: "50px", objectFit: "cover" }}
+                              />
+                              <div>
+                                <p className="mb-0 fw-semibold text-truncate" style={{ maxWidth: "180px" }}>
+                                  {name}
+                                </p>
+                                <small className="text-muted">ID: {id}</small>
+                              </div>
                             </div>
-                          </div>
-                        </td>
-                        <td className="px-4 py-4">
-                          <div className="d-flex align-items-center gap-2">
-                            <MapPin size={16} className="text-muted" />
-<span className="text-muted small">{formatearDireccion(item.direccion ?? item.direcciones)}</span>
-                          </div>
-                        </td>
-                        <td className="px-4 py-4">
-                          <div className="d-flex align-items-center gap-2">
-                            <Users size={16} style={{ color: isExperience ? "#8B4789" : "#CD5C5C" }} />
-                            <span className="fw-500">{item.capacidad}</span>
-                          </div>
-                        </td>
-                        {!isExperience ? (
-                          <>
-                            <td className="px-4 py-4">
-                              <div className="d-flex align-items-center gap-2">
-                                <Bed size={16} style={{ color: "#CD5C5C" }} />
-                                <span className="fw-500">{item.habitaciones || "N/A"}</span>
-                              </div>
-                            </td>
-                            <td className="px-4 py-4">
-                              <div className="d-flex align-items-center gap-2">
-                                <Bath size={16} style={{ color: "#CD5C5C" }} />
-                                <span className="fw-500">{item.banos || "N/A"}</span>
-                              </div>
-                            </td>
-                            <td className="px-4 py-4">
-                              <span className="fw-bold" style={{ color: "#CD5C5C", fontSize: "1.1rem" }}>
-                                ${item.precio_por_noche?.toLocaleString("es-MX")}
-                              </span>
-                            </td>
-                          </>
-                        ) : (
-                          <>
-                            <td className="px-4 py-4">
-                              <div className="d-flex align-items-center gap-2">
-                                <Calendar size={16} style={{ color: "#8B4789" }} />
-                                <span className="fw-500">
-                                  {new Date(item.fecha_experiencia).toLocaleDateString("es-MX")}
-                                </span>
-                              </div>
-                            </td>
-                            <td className="px-4 py-4">
-                              <div className="d-flex align-items-center gap-2">
-                                <Clock size={16} style={{ color: "#8B4789" }} />
-                                <span className="fw-500">{item.duracion || "N/A"} hrs</span>
-                              </div>
-                            </td>
-                            <td className="px-4 py-4">
-                              <span className="fw-bold" style={{ color: "#8B4789", fontSize: "1.1rem" }}>
-                                ${item.precio?.toLocaleString("es-MX")}
-                              </span>
-                            </td>
-                          </>
-                        )}
-                        <td className="px-4 py-4">
+                          </td>
+                          <td className="align-middle">
+                            <div className="d-flex align-items-center gap-1">
+                              <MapPin size={14} className="text-muted flex-shrink-0" />
+                              <span className="text-muted small">{formatearDireccion(item.direccion ?? item.direcciones)}</span>
+                            </div>
+                          </td>
+                          <td className="align-middle">{item.capacidad}</td>
+                          {!isExperience ? (
+                            <>
+                              <td className="align-middle">{item.habitaciones || "N/A"}</td>
+                              <td className="align-middle">{item.banos || "N/A"}</td>
+                              <td className="align-middle">${item.precio_por_noche?.toLocaleString("es-MX")}</td>
+                            </>
+                          ) : (
+                            <>
+                              <td className="align-middle">
+                                {new Date(item.fecha_experiencia).toLocaleDateString("es-MX")}
+                              </td>
+                              <td className="align-middle">{item.duracion || "N/A"} hrs</td>
+                              <td className="align-middle">${item.precio?.toLocaleString("es-MX")}</td>
+                            </>
+                          )}
+                          <td className="align-middle">
+                            <span
+                              className={`badge rounded-pill px-2 py-1 ${item.estado === "activo"
+                                  ? "bg-success-subtle text-success"
+                                  : "bg-secondary-subtle text-secondary"
+                                }`}
+                            >
+                              {item.estado === "activo" ? "Activa" : "Inactiva"}
+                            </span>
+                          </td>
+                          <td className="align-middle">
+                            <div className="d-flex gap-1">
+                              <button
+                                className="btn btn-sm btn-outline-secondary p-1"
+                                onClick={() => handleToggleActive(id, item.estado === "activo", isExperience)}
+                                title={item.estado === "activo" ? "Desactivar" : "Activar"}
+                              >
+                                {item.estado === "activo" ? <EyeOff size={14} /> : <Eye size={14} />}
+                              </button>
+                              <button
+                                className="btn btn-sm btn-outline-primary p-1"
+                                onClick={() => handleEditProperty(item)}
+                                title="Editar"
+                              >
+                                <Edit size={14} />
+                              </button>
+                              <button
+                                className="btn btn-sm btn-outline-danger p-1"
+                                onClick={() => handleDeleteProperty(id, isExperience)}
+                                title="Eliminar"
+                              >
+                                <Trash2 size={14} />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Mobile Card View - Hidden on Desktop */}
+              <div className="d-lg-none">
+                {sortedItems.map((item) => {
+                  const isExperience = typeTab === "experiencias";
+                  const id = isExperience ? item.id_experiencia : item.id_hosteleria;
+                  const name = isExperience ? item.titulo : item.nombre;
+
+                  return (
+                    <div key={id} className="border-bottom p-3">
+                      {/* Card Header with Image and Name */}
+                      <div className="d-flex gap-2 mb-3">
+                        <img
+                          src={item.image || "https://images.unsplash.com/photo-1566073771259-6a8506099945?w=100"}
+                          alt={name}
+                          className="rounded"
+                          style={{ width: "80px", height: "80px", objectFit: "cover", flexShrink: 0 }}
+                        />
+                        <div className="flex-grow-1 min-width-0">
+                          <h6 className="fw-bold mb-1 text-truncate">{name}</h6>
+                          <p className="text-muted small mb-1">
+                            <MapPin size={12} className="me-1" />
+                            {formatearDireccion(item.direccion ?? item.direcciones)}
+                          </p>
                           <span
-                            className={`badge rounded-pill px-3 py-2 ${item.estado === "activo"
-                              ? "bg-success-subtle text-success"
-                              : "bg-secondary-subtle text-secondary"
+                            className={`badge rounded-pill px-2 py-1 ${item.estado === "activo"
+                                ? "bg-success-subtle text-success"
+                                : "bg-secondary-subtle text-secondary"
                               }`}
+                            style={{ fontSize: "0.75rem" }}
                           >
                             {item.estado === "activo" ? "Activa" : "Inactiva"}
                           </span>
-                        </td>
-                        <td className="px-4 py-4">
-                          <div className="d-flex gap-2">
-                            <button
-                              className="btn btn-sm btn-outline-secondary rounded-2 p-2"
-                              onClick={() =>
-                                handleToggleActive(id, item.estado === "activo", isExperience)
-                              }
-                              title={item.estado === "activo" ? "Desactivar" : "Activar"}
-                              style={{
-                                width: "36px",
-                                height: "36px",
-                                display: "flex",
-                                alignItems: "center",
-                                justifyContent: "center",
-                              }}
-                            >
-                              {item.estado === "activo" ? <EyeOff size={16} /> : <Eye size={16} />}
-                            </button>
-                            <button
-                              className="btn btn-sm btn-outline-primary rounded-2 p-2"
-                              title="Editar"
-                              style={{
-                                width: "36px",
-                                height: "36px",
-                                display: "flex",
-                                alignItems: "center",
-                                justifyContent: "center",
-                              }}
-                              onClick={() => handleEditProperty(item)}
-                            >
-                              <Edit size={16} />
-                            </button>
-                            <button
-                              className="btn btn-sm btn-outline-danger rounded-2 p-2"
-                              onClick={() => handleDeleteProperty(id, isExperience)}
-                              title="Eliminar"
-                              style={{
-                                width: "36px",
-                                height: "36px",
-                                display: "flex",
-                                alignItems: "center",
-                                justifyContent: "center",
-                              }}
-                            >
-                              <Trash2 size={16} />
-                            </button>
+                        </div>
+                      </div>
+
+                      {/* Card Details */}
+                      <div className="row g-2 mb-3">
+                        <div className="col-6">
+                          <div className="d-flex align-items-center gap-1">
+                            <Users size={14} className="text-muted" />
+                            <small className="text-muted">Capacidad:</small>
                           </div>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
+                          <div className="fw-semibold">{item.capacidad}</div>
+                        </div>
+
+                        {!isExperience ? (
+                          <>
+                            <div className="col-6">
+                              <div className="d-flex align-items-center gap-1">
+                                <Bed size={14} className="text-muted" />
+                                <small className="text-muted">Habitaciones:</small>
+                              </div>
+                              <div className="fw-semibold">{item.habitaciones || "N/A"}</div>
+                            </div>
+                            <div className="col-6">
+                              <div className="d-flex align-items-center gap-1">
+                                <Bath size={14} className="text-muted" />
+                                <small className="text-muted">Baños:</small>
+                              </div>
+                              <div className="fw-semibold">{item.banos || "N/A"}</div>
+                            </div>
+                            <div className="col-6">
+                              <div className="d-flex align-items-center gap-1">
+                                <DollarSign size={14} className="text-muted" />
+                                <small className="text-muted">Precio/Noche:</small>
+                              </div>
+                              <div className="fw-semibold text-success">
+                                ${item.precio_por_noche?.toLocaleString("es-MX")}
+                              </div>
+                            </div>
+                          </>
+                        ) : (
+                          <>
+                            <div className="col-6">
+                              <div className="d-flex align-items-center gap-1">
+                                <Calendar size={14} className="text-muted" />
+                                <small className="text-muted">Fecha:</small>
+                              </div>
+                              <div className="fw-semibold small">
+                                {new Date(item.fecha_experiencia).toLocaleDateString("es-MX")}
+                              </div>
+                            </div>
+                            <div className="col-6">
+                              <div className="d-flex align-items-center gap-1">
+                                <Clock size={14} className="text-muted" />
+                                <small className="text-muted">Duración:</small>
+                              </div>
+                              <div className="fw-semibold">{item.duracion || "N/A"} hrs</div>
+                            </div>
+                            <div className="col-6">
+                              <div className="d-flex align-items-center gap-1">
+                                <DollarSign size={14} className="text-muted" />
+                                <small className="text-muted">Precio:</small>
+                              </div>
+                              <div className="fw-semibold text-success">
+                                ${item.precio?.toLocaleString("es-MX")}
+                              </div>
+                            </div>
+                          </>
+                        )}
+                      </div>
+
+                      {/* Action Buttons */}
+                      <div className="d-flex gap-2">
+                        <button
+                          className="btn btn-sm btn-outline-secondary flex-grow-1 d-flex align-items-center justify-content-center gap-1"
+                          onClick={() => handleToggleActive(id, item.estado === "activo", isExperience)}
+                          style={{ minHeight: "44px" }}
+                        >
+                          {item.estado === "activo" ? (
+                            <>
+                              <EyeOff size={16} />
+                              <span>Desactivar</span>
+                            </>
+                          ) : (
+                            <>
+                              <Eye size={16} />
+                              <span>Activar</span>
+                            </>
+                          )}
+                        </button>
+                        <button
+                          className="btn btn-sm btn-outline-primary flex-grow-1 d-flex align-items-center justify-content-center gap-1"
+                          onClick={() => handleEditProperty(item)}
+                          style={{ minHeight: "44px" }}
+                        >
+                          <Edit size={16} />
+                          <span>Editar</span>
+                        </button>
+                        <button
+                          className="btn btn-sm btn-outline-danger d-flex align-items-center justify-content-center"
+                          onClick={() => handleDeleteProperty(id, isExperience)}
+                          style={{ minHeight: "44px", minWidth: "44px" }}
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </>
           )}
         </div>
       </div>
@@ -643,6 +723,43 @@ export default function HostProperties() {
           isExperience={typeTab === "experiencias"}
         />
       )}
+
+      <style jsx>{`
+        .btn-danger {
+          background-color: #CD5C5C;
+          border-color: #CD5C5C;
+          color: white;
+        }
+        .btn-danger:hover {
+          background-color: #B84C4C;
+          border-color: #B84C4C;
+        }
+        .btn-purple {
+          background-color: #8B4789;
+          border-color: #8B4789;
+          color: white;
+        }
+        .btn-purple:hover {
+          background-color: #7A3F78;
+          border-color: #7A3F78;
+        }
+        .nav-tabs {
+          -ms-overflow-style: none;
+          scrollbar-width: none;
+        }
+        .nav-tabs::-webkit-scrollbar {
+          display: none;
+        }
+        @media (max-width: 991.98px) {
+          .table-responsive {
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+          }
+        }
+        .min-width-0 {
+          min-width: 0;
+        }
+      `}</style>
     </div>
   );
 }

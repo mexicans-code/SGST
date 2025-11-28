@@ -23,67 +23,71 @@ export default function HostReport() {
     const [hotelData, setHotelData] = useState([]);
     const [touristExperiences, setTouristExperiences] = useState([]);
     const [tipoReporte, setTipoReporte] = useState(null);
+    const [isMobile, setIsMobile] = useState(false);
     const navigate = useNavigate();
 
-    
-const generarPDF = async (nombreArchivo = "reporte") => {
-    try {
-        alert("⏳ Generando PDF, por favor espera...");
-        
-        const elemento = document.getElementById("reporte");
-        if (!elemento) {
-            alert("❌ No se encontró el contenido del reporte.");
-            return;
-        }
+    // Detectar si es móvil
+    useEffect(() => {
+        const checkMobile = () => setIsMobile(window.innerWidth < 768);
+        checkMobile();
+        window.addEventListener('resize', checkMobile);
+        return () => window.removeEventListener('resize', checkMobile);
+    }, []);
 
-        elemento.style.position = "static";
-        elemento.style.left = "0";
-        elemento.style.width = "210mm";  // ← Ancho A4 exacto
+    const generarPDF = async (nombreArchivo = "reporte") => {
+        try {
+            alert("⏳ Generando PDF, por favor espera...");
+            
+            const elemento = document.getElementById("reporte");
+            if (!elemento) {
+                alert("❌ No se encontró el contenido del reporte.");
+                return;
+            }
 
-        const canvas = await html2canvas(elemento, {
-            scale: 2,
-            useCORS: true,
-            backgroundColor: "#ffffff",
-            scrollY: -window.scrollY,
-            windowWidth: elemento.scrollWidth,
-        });
+            elemento.style.position = "static";
+            elemento.style.left = "0";
+            elemento.style.width = "210mm";
 
-        const imgData = canvas.toDataURL("image/png");
-        const pdf = new jsPDF("p", "mm", "a4");
+            const canvas = await html2canvas(elemento, {
+                scale: 2,
+                useCORS: true,
+                backgroundColor: "#ffffff",
+                scrollY: -window.scrollY,
+                windowWidth: elemento.scrollWidth,
+            });
 
-        const pageWidth = 210;  // A4 width in mm
-        const pageHeight = 297; // A4 height in mm
-        const imgWidth = pageWidth;
-        const imgHeight = (canvas.height * imgWidth) / canvas.width;
+            const imgData = canvas.toDataURL("image/png");
+            const pdf = new jsPDF("p", "mm", "a4");
 
-        let heightLeft = imgHeight;
-        let position = 0;
+            const pageWidth = 210;
+            const pageHeight = 297;
+            const imgWidth = pageWidth;
+            const imgHeight = (canvas.height * imgWidth) / canvas.width;
 
-        // Primera página
-        pdf.addImage(imgData, "PNG", 0, position, imgWidth, imgHeight);
-        heightLeft -= pageHeight;
+            let heightLeft = imgHeight;
+            let position = 0;
 
-        // Páginas adicionales
-        while (heightLeft > 0) {
-            position = heightLeft - imgHeight;
-            pdf.addPage();
             pdf.addImage(imgData, "PNG", 0, position, imgWidth, imgHeight);
             heightLeft -= pageHeight;
+
+            while (heightLeft > 0) {
+                position = heightLeft - imgHeight;
+                pdf.addPage();
+                pdf.addImage(imgData, "PNG", 0, position, imgWidth, imgHeight);
+                heightLeft -= pageHeight;
+            }
+
+            pdf.save(`${nombreArchivo}.pdf`);
+
+            elemento.style.position = "absolute";
+            elemento.style.left = "-9999px";
+            
+            alert("✅ PDF generado exitosamente");
+        } catch (error) {
+            console.error("❌ Error al generar el PDF:", error);
+            alert("❌ Error al generar el PDF");
         }
-
-        pdf.save(`${nombreArchivo}.pdf`);
-
-        elemento.style.position = "absolute";
-        elemento.style.left = "-9999px";
-        
-        alert("✅ PDF generado exitosamente");
-    } catch (error) {
-        console.error("❌ Error al generar el PDF:", error);
-        alert("❌ Error al generar el PDF");
-    }
-};
-
-
+    };
 
     function parseJwt(token) {
         try {
@@ -227,35 +231,101 @@ const generarPDF = async (nombreArchivo = "reporte") => {
 
         setShowModal(false);
         alert("⏳ Generando PDF, por favor espera unos segundos...");
-
-        // Espera para renderizar correctamente antes de capturar
         setTimeout(() => generarPDF(nombreReporte), 900);
     };
 
-
     return (
         <>
-            {/* 🔗 Bootstrap & Icons */}
             <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet" />
             <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.10.0/font/bootstrap-icons.min.css" rel="stylesheet" />
 
-            {/* Estilos */}
             <style>{`
-                .main-container { background: rgba(255,255,255,0.95); backdrop-filter: blur(20px); border-radius: 20px; box-shadow: 0 20px 40px rgba(0,0,0,0.1); border: 1px solid rgba(255,255,255,0.2); }
-                .stats-card { background: linear-gradient(135deg,#fff,#f8f9fa); border: none; border-radius: 16px; transition: .3s; box-shadow: 0 4px 15px rgba(0,0,0,0.08); }
-                .stats-card:hover { transform: translateY(-5px); box-shadow: 0 8px 25px rgba(0,0,0,0.15); }
-                .chart-container { background: white; border-radius: 16px; padding: 2rem; box-shadow: 0 4px 20px rgba(0,0,0,0.08); margin-bottom: 2rem; }
-                .quick-actions { background: linear-gradient(135deg,#667eea,#764ba2); border-radius: 16px; padding: 2rem; color: white; margin-bottom: 2rem; }
-                .btn-light:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(102,126,234,0.4); background: linear-gradient(135deg,#5a6fd8,#6a4190); color: white; }
+                .main-container { 
+                    background: rgba(255,255,255,0.95); 
+                    backdrop-filter: blur(20px); 
+                    border-radius: 20px; 
+                    box-shadow: 0 20px 40px rgba(0,0,0,0.1); 
+                    border: 1px solid rgba(255,255,255,0.2); 
+                }
+                .stats-card { 
+                    background: linear-gradient(135deg,#fff,#f8f9fa); 
+                    border: none; 
+                    border-radius: 16px; 
+                    transition: .3s; 
+                    box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+                    min-height: 140px;
+                }
+                .stats-card:hover { 
+                    transform: translateY(-5px); 
+                    box-shadow: 0 8px 25px rgba(0,0,0,0.15); 
+                }
+                .chart-container { 
+                    background: white; 
+                    border-radius: 16px; 
+                    padding: 1.5rem; 
+                    box-shadow: 0 4px 20px rgba(0,0,0,0.08); 
+                    margin-bottom: 1.5rem; 
+                }
+                .quick-actions { 
+                    background: linear-gradient(135deg,#667eea,#764ba2); 
+                    border-radius: 16px; 
+                    padding: 1.5rem; 
+                    color: white; 
+                    margin-bottom: 1.5rem; 
+                }
+                .btn-light:hover { 
+                    transform: translateY(-2px); 
+                    box-shadow: 0 6px 20px rgba(102,126,234,0.4); 
+                    background: linear-gradient(135deg,#5a6fd8,#6a4190); 
+                    color: white; 
+                }
+                
+                /* Responsive adjustments */
+                @media (max-width: 768px) {
+                    .main-container {
+                        border-radius: 12px;
+                        padding: 1rem !important;
+                    }
+                    .chart-container {
+                        padding: 1rem;
+                        border-radius: 12px;
+                    }
+                    .quick-actions {
+                        padding: 1rem;
+                    }
+                    .stats-card {
+                        min-height: 120px;
+                        margin-bottom: 0.75rem;
+                    }
+                    .stats-card i {
+                        font-size: 1.75rem !important;
+                    }
+                    .stats-card h5 {
+                        font-size: 1.1rem;
+                    }
+                    .btn-action-responsive {
+                        font-size: 0.85rem;
+                        padding: 0.5rem 0.75rem;
+                    }
+                }
+                
+                @media (max-width: 576px) {
+                    .quick-actions h4 {
+                        font-size: 1rem;
+                    }
+                    .chart-container h5 {
+                        font-size: 0.95rem;
+                    }
+                }
             `}</style>
 
             {/* MODAL */}
             {showModal && (
                 <div className="modal fade show d-block" style={{ backgroundColor: "rgba(0,0,0,0.5)" }}>
-                    <div className="modal-dialog modal-dialog-centered">
+                    <div className="modal-dialog modal-dialog-centered modal-dialog-scrollable">
                         <div className="modal-content border-0 shadow-lg rounded-4">
                             <div className="modal-header bg-primary text-white rounded-top-4">
-                                <h5 className="modal-title fw-bold">
+                                <h5 className="modal-title fw-bold" style={{ fontSize: isMobile ? "1rem" : "1.25rem" }}>
                                     {tipoReporte === "Personalizado" ? "Crear Reporte Personalizado" : `Crear Reporte de ${tipoReporte}`}
                                 </h5>
                                 <button className="btn-close btn-close-white" onClick={() => { setShowModal(false); setTipoReporte(null); }}></button>
@@ -294,120 +364,160 @@ const generarPDF = async (nombreArchivo = "reporte") => {
                             </div>
 
                             <div className="modal-footer">
-                                <button className="btn btn-secondary" onClick={() => { setShowModal(false); setTipoReporte(null); }}>Cancelar</button>
-                                <button className="btn btn-primary" disabled={!nombreReporte.trim()} onClick={handleGenerarPersonalizado}>Generar</button>
+                                <button className="btn btn-secondary btn-sm" onClick={() => { setShowModal(false); setTipoReporte(null); }}>Cancelar</button>
+                                <button className="btn btn-primary btn-sm" disabled={!nombreReporte.trim()} onClick={handleGenerarPersonalizado}>Generar</button>
                             </div>
                         </div>
                     </div>
                 </div>
             )}
 
-            {/* 🏠 CONTENIDO PRINCIPAL */}
-            <div className="container-fluid p-4" style={{ marginTop: "90px" }}>
-                <div className="main-container p-4">
+            {/* CONTENIDO PRINCIPAL */}
+            <div className="container-fluid p-2 p-md-4" style={{ marginTop: isMobile ? "70px" : "90px" }}>
+                <div className="main-container p-3 p-md-4">
                     {/* HEADER */}
-                    <div className="d-flex align-items-center mb-5">
-                        <button className="btn btn-outline-secondary shadow-sm me-3" onClick={() => navigate(-1)}
-                            style={{ width: 45, height: 45, borderRadius: "50%" }} title="Volver">
-                            <i className="bi bi-arrow-left fs-5"></i>
+                    <div className="d-flex flex-column flex-md-row align-items-start align-items-md-center mb-4 gap-2">
+                        <button 
+                            className="btn btn-outline-secondary shadow-sm me-0 me-md-3 mb-2 mb-md-0" 
+                            onClick={() => navigate(-1)}
+                            style={{ 
+                                width: isMobile ? 40 : 45, 
+                                height: isMobile ? 40 : 45, 
+                                borderRadius: "50%",
+                                padding: 0
+                            }} 
+                            title="Volver"
+                        >
+                            <i className="bi bi-arrow-left" style={{ fontSize: isMobile ? "1rem" : "1.25rem" }}></i>
                         </button>
                         <div>
-                            <h1 className="h2 fw-bold text-dark mb-1"><i className="bi bi-house-heart text-primary me-2"></i>Panel del Anfitrión</h1>
-                            <p className="text-muted mb-0">Visualiza tus ingresos, reservas y desempeño general.</p>
+                            <h1 className="fw-bold text-dark mb-1" style={{ fontSize: isMobile ? "1.5rem" : "2rem" }}>
+                                <i className="bi bi-house-heart text-primary me-2"></i>
+                                {isMobile ? "Panel" : "Panel del Anfitrión"}
+                            </h1>
+                            <p className="text-muted mb-0 small">
+                                {isMobile ? "Visualiza tu desempeño" : "Visualiza tus ingresos, reservas y desempeño general."}
+                            </p>
                         </div>
                     </div>
 
-                    {/* ⚡ QUICK ACTIONS */}
-                    <div className="quick-actions mb-4">
-                        <h4 className="mb-3"><i className="bi bi-lightning-charge me-2"></i>Generar Reportes Rápidos</h4>
-                        <div className="row text-center">
+                    {/* QUICK ACTIONS */}
+                    <div className="quick-actions mb-3 mb-md-4">
+                        <h4 className="mb-3" style={{ fontSize: isMobile ? "1rem" : "1.25rem" }}>
+                            <i className="bi bi-lightning-charge me-2"></i>Generar Reportes
+                        </h4>
+                        <div className="row g-2">
                             {[
-                                { tipo: "Reservas", icon: "bi-calendar-check" },
-                                { tipo: "Financiero", icon: "bi-currency-dollar" },
-                                { tipo: "Mis Publicaciones", icon: "bi-building" },
-                                { tipo: "Calidad", icon: "bi-star" },
-                                { tipo: "Personalizado", icon: "bi-sliders" },
-                            ].map(({ tipo, icon }) => (
-                                <div className="col-md-2 mb-2" key={tipo}>
+                                { tipo: "Reservas", icon: "bi-calendar-check", short: "Reservas" },
+                                { tipo: "Financiero", icon: "bi-currency-dollar", short: "Financiero" },
+                                { tipo: "Mis Publicaciones", icon: "bi-building", short: "Publicaciones" },
+                                { tipo: "Calidad", icon: "bi-star", short: "Calidad" },
+                                { tipo: "Personalizado", icon: "bi-sliders", short: "Personalizado" },
+                            ].map(({ tipo, icon, short }) => (
+                                <div className="col-6 col-md-4 col-lg" key={tipo}>
                                     <button
-                                        className="btn btn-light w-100 fw-semibold d-flex align-items-center justify-content-center gap-2"
+                                        className="btn btn-light w-100 fw-semibold d-flex align-items-center justify-content-center gap-1 gap-md-2 btn-action-responsive"
                                         onClick={() => { setTipoReporte(tipo); setShowModal(true); }}
+                                        style={{ minHeight: "44px", whiteSpace: "nowrap" }}
                                     >
-                                        <i className={`bi ${icon}`}></i>{tipo}
+                                        <i className={`bi ${icon}`}></i>
+                                        <span className="d-none d-sm-inline">{tipo}</span>
+                                        <span className="d-inline d-sm-none">{short}</span>
                                     </button>
                                 </div>
                             ))}
                         </div>
                     </div>
 
-                    {/* 🔸 TARJETAS PRINCIPALES */}
-                    <div className="row g-4 mb-4 text-center">
+                    {/* TARJETAS PRINCIPALES */}
+                    <div className="row g-2 g-md-4 mb-3 mb-md-4 text-center">
                         {[
-                            { icon: "bi-calendar-check text-primary", value: resumenReservas.totalReservas, label: "Reservas Totales" },
-                            { icon: "bi-graph-up-arrow text-success", value: `$${totalIngresoAnual.toLocaleString()}`, label: "Ingresos Anuales" },
-                            { icon: "bi-wallet2 text-info", value: resumenPagos.totalPagos, label: "Pagos Registrados" },
-                            { icon: "bi-star-fill text-warning", value: promedioGeneral || "0.00", label: "Promedio General" },
-                        ].map(({ icon, value, label }, i) => (
-                            <div className="col-md-3" key={i}>
-                                <div className="stats-card card p-3">
+                            { icon: "bi-calendar-check text-primary", value: resumenReservas.totalReservas, label: "Reservas", fullLabel: "Reservas Totales" },
+                            { icon: "bi-graph-up-arrow text-success", value: `$${totalIngresoAnual.toLocaleString()}`, label: "Ingresos", fullLabel: "Ingresos Anuales" },
+                            { icon: "bi-wallet2 text-info", value: resumenPagos.totalPagos, label: "Pagos", fullLabel: "Pagos Registrados" },
+                            { icon: "bi-star-fill text-warning", value: promedioGeneral || "0.00", label: "Promedio", fullLabel: "Promedio General" },
+                        ].map(({ icon, value, label, fullLabel }, i) => (
+                            <div className="col-6 col-md-3" key={i}>
+                                <div className="stats-card card p-2 p-md-3">
                                     <i className={`bi fs-2 ${icon}`}></i>
-                                    <h5 className="mt-2">{value}</h5>
-                                    <p className="text-muted mb-0">{label}</p>
+                                    <h5 className="mt-2 mb-1">{value}</h5>
+                                    <p className="text-muted mb-0 small">
+                                        <span className="d-none d-md-inline">{fullLabel}</span>
+                                        <span className="d-inline d-md-none">{label}</span>
+                                    </p>
                                 </div>
                             </div>
                         ))}
                     </div>
 
-                    {/* 📊 GRÁFICAS */}
+                    {/* GRÁFICAS */}
                     {[
                         {
-                            id: "line", title: "Reservas e Ingresos por Mes", icon: "bi-bar-chart-line", chart:
+                            id: "line", 
+                            title: isMobile ? "Reservas e Ingresos" : "Reservas e Ingresos por Mes", 
+                            icon: "bi-bar-chart-line", 
+                            chart:
                                 <LineChart data={lineData}>
                                     <CartesianGrid strokeDasharray="3 3" />
-                                    <XAxis dataKey="mes" /><YAxis /><Tooltip /><Legend />
+                                    <XAxis dataKey="mes" tick={{ fontSize: isMobile ? 10 : 12 }} />
+                                    <YAxis tick={{ fontSize: isMobile ? 10 : 12 }} />
+                                    <Tooltip />
+                                    {!isMobile && <Legend />}
                                     <Bar dataKey="reservas" fill="#667eea" name="Reservas" />
                                     <Line type="monotone" dataKey="ingresos" stroke="#28a745" strokeWidth={3} name="Ingresos ($)" />
                                 </LineChart>
-
                         },
                         {
-                            id: "bar", title: "Ingresos y Reservas por Año", icon: "bi-graph-up", chart:
+                            id: "bar", 
+                            title: isMobile ? "Ingresos y Reservas Anuales" : "Ingresos y Reservas por Año", 
+                            icon: "bi-graph-up", 
+                            chart:
                                 <BarChart data={yearData}>
                                     <CartesianGrid strokeDasharray="3 3" />
-                                    <XAxis dataKey="año" /><YAxis /><Tooltip /><Legend />
+                                    <XAxis dataKey="año" tick={{ fontSize: isMobile ? 10 : 12 }} />
+                                    <YAxis tick={{ fontSize: isMobile ? 10 : 12 }} />
+                                    <Tooltip />
+                                    {!isMobile && <Legend />}
                                     <Bar dataKey="ingresos" fill="#198754" name="Ingresos ($)" />
                                     <Bar dataKey="reservas" fill="#0d6efd" name="Reservas" />
                                 </BarChart>
                         },
                     ].map(({ id, title, icon, chart }) => (
-                        <div key={id} className="chart-container mb-4">
-                            <h5 className="mb-4"><i className={`bi ${icon} me-2`}></i>{title}</h5>
-                            <ResponsiveContainer width="100%" height={300}>{chart}</ResponsiveContainer>
+                        <div key={id} className="chart-container mb-3 mb-md-4">
+                            <h5 className="mb-3 mb-md-4" style={{ fontSize: isMobile ? "0.95rem" : "1.1rem" }}>
+                                <i className={`bi ${icon} me-2`}></i>{title}
+                            </h5>
+                            <ResponsiveContainer width="100%" height={isMobile ? 250 : 300}>
+                                {chart}
+                            </ResponsiveContainer>
                         </div>
                     ))}
 
-                    {/* 🥧 PIE CHARTS */}
-                    <div className="row mb-4">
+                    {/* PIE CHARTS */}
+                    <div className="row mb-3 mb-md-4">
                         {[
                             { title: "Pagos por Estado", icon: "bi-wallet2", data: pagosPie },
                             { title: "Reservas por Estado", icon: "bi-pie-chart", data: reservasPie },
                         ].map(({ title, icon, data }, i) => (
-                            <div className="col-md-6" key={i}>
+                            <div className="col-12 col-md-6 mb-3 mb-md-0" key={i}>
                                 <div className="chart-container">
-                                    <h5 className="mb-4"><i className={`bi ${icon} me-2`}></i>{title}</h5>
-                                    <ResponsiveContainer width="100%" height={300}>
+                                    <h5 className="mb-3 mb-md-4" style={{ fontSize: isMobile ? "0.95rem" : "1.1rem" }}>
+                                        <i className={`bi ${icon} me-2`}></i>{title}
+                                    </h5>
+                                    <ResponsiveContainer width="100%" height={isMobile ? 250 : 300}>
                                         <PieChart>
                                             <Pie
                                                 data={data}
                                                 cx="50%"
                                                 cy="50%"
-                                                outerRadius={80}
+                                                outerRadius={isMobile ? 60 : 80}
                                                 dataKey="value"
-                                                label={({ name, porcentaje }) => `${name} (${porcentaje})`}
+                                                label={!isMobile ? ({ name, porcentaje }) => `${name} (${porcentaje})` : false}
                                             >
                                                 {data.map((entry, i) => <Cell key={i} fill={entry.color} />)}
                                             </Pie>
                                             <Tooltip />
+                                            {isMobile && <Legend />}
                                         </PieChart>
                                     </ResponsiveContainer>
                                 </div>
@@ -415,19 +525,30 @@ const generarPDF = async (nombreArchivo = "reporte") => {
                         ))}
                     </div>
 
-                    {/* 🏨 HOSTELERÍAS */}
-                    <div className="chart-container mb-4">
-                        <h5 className="mb-4"><i className="bi bi-building me-2"></i>Tus Hostelerías y Calificación Promedio</h5>
+                    {/* HOSTELERÍAS */}
+                    <div className="chart-container mb-3 mb-md-4">
+                        <h5 className="mb-3 mb-md-4" style={{ fontSize: isMobile ? "0.95rem" : "1.1rem" }}>
+                            <i className="bi bi-building me-2"></i>
+                            {isMobile ? "Calificación Promedio" : "Tus Hostelerías y Calificación Promedio"}
+                        </h5>
                         {!hostelerias?.length ? (
                             <p className="text-center text-muted">No tienes hostelerías registradas.</p>
                         ) : (
-                            <ResponsiveContainer width="100%" height={300}>
+                            <ResponsiveContainer width="100%" height={isMobile ? 250 : 300}>
                                 <BarChart data={hostelerias.map((h) => ({
-                                    nombre: h.nombre,
+                                    nombre: isMobile ? h.nombre.substring(0, 15) + "..." : h.nombre,
                                     calificacion: parseFloat(h.promedio_calificacion || 0).toFixed(2),
                                 }))}>
                                     <CartesianGrid strokeDasharray="3 3" />
-                                    <XAxis dataKey="nombre" /><YAxis /><Tooltip />
+                                    <XAxis 
+                                        dataKey="nombre" 
+                                        tick={{ fontSize: isMobile ? 9 : 12 }} 
+                                        angle={isMobile ? -45 : 0}
+                                        textAnchor={isMobile ? "end" : "middle"}
+                                        height={isMobile ? 80 : 60}
+                                    />
+                                    <YAxis tick={{ fontSize: isMobile ? 10 : 12 }} />
+                                    <Tooltip />
                                     <Bar dataKey="calificacion" fill="#ffc107" name="Calificación Promedio" />
                                 </BarChart>
                             </ResponsiveContainer>
@@ -436,7 +557,7 @@ const generarPDF = async (nombreArchivo = "reporte") => {
                 </div>
             </div>
 
-            {/* 🧩 CONTENIDO PARA EL PDF */}
+            {/* CONTENIDO PARA EL PDF */}
             <ReporteContenido
                 contenidoReporte={contenidoReporte}
                 resumenReservas={resumenReservas}
