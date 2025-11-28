@@ -598,13 +598,13 @@ export default function BookingAdmin() {
                                             </td>
                                             <td>
                                                 <div className="d-flex gap-1 justify-content-center">
-                                                    {/* <button
+                                                    <button
                                                         onClick={() => openModal(booking)}
                                                         className="btn btn-outline-primary btn-sm"
                                                         title="Editar"
                                                     >
                                                         <i className="bi bi-pencil"></i>
-                                                    </button> */}
+                                                    </button>
                                                     <button
                                                         onClick={() => handleCancel(booking.reserva.id_reserva, booking.reserva.estado)}
                                                         className="btn btn-outline-warning btn-sm"
@@ -699,13 +699,13 @@ export default function BookingAdmin() {
                                     >
                                         <i className="bi bi-x-circle"></i>
                                     </button>
-                                    <button
+                                    {/* <button
                                         onClick={() => handleDelete(booking.reserva.id_reserva, booking.reserva.estado)}
                                         className="btn btn-outline-danger btn-sm"
                                         style={{ minWidth: '44px' }}
                                     >
                                         <i className="bi bi-trash"></i>
-                                    </button>
+                                    </button> */}
                                 </div>
                             </div>
                         ))}
