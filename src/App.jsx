@@ -93,7 +93,6 @@ export default function App() {
 
       <Routes>
 
-        {/* RUTAS PÚBLICAS DEL SITIO */}
         <Route
           path="/*"
           element={
@@ -145,7 +144,6 @@ export default function App() {
                   }
                 />
 
-                {/* LOGIN Y REGISTRO */}
                 <Route
                   path="/login"
                   element={

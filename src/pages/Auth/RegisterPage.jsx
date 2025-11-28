@@ -72,7 +72,7 @@ export default function RegisterPage() {
         }
 
         // Validar contraseña: al menos 8 caracteres, 1 mayúscula, 1 minúscula y 1 número
-        const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)[A-Za-z\d]{8,}$/;
+        const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)[A-Za-z\d]{8,}$/;     
         if (!passwordRegex.test(formData.password)) {
             Swal.fire({
                 icon: 'error',
@@ -87,7 +87,6 @@ export default function RegisterPage() {
             const response = await axios.post(`${GATEWAY_URL}/api/auth/register`, formData);
             console.log(response.data);
 
-            // Limpiar formulario
             setFormData({
                 nombre: "",
                 apellido_p: "",
@@ -98,11 +97,9 @@ export default function RegisterPage() {
                 confirmPassword: ""
             });
 
-            // Guardar token y usuario
             localStorage.setItem("token", response.data.token);
             localStorage.setItem("usuario", JSON.stringify(response.data.usuario));
 
-            // Disparar evento para actualizar el Navbar
             window.dispatchEvent(new Event('usuarioActualizado'));
 
             Swal.fire({
@@ -139,12 +136,10 @@ export default function RegisterPage() {
         }
     };
 
-    // Manejador para registro/login con Google
     const handleGoogleSuccess = async (credentialResponse) => {
         try {
             console.log("=== GOOGLE REGISTER/LOGIN SUCCESS ===");
 
-            // Enviar el token de Google al backend
             const response = await axios.post(`${GATEWAY_URL}/api/auth/google-login`, {
                 credential: credentialResponse.credential
             });
@@ -152,14 +147,10 @@ export default function RegisterPage() {
             console.log("=== RESPUESTA DEL SERVIDOR (Google) ===");
             console.log(response.data);
 
-            // Guardar token y usuario
             localStorage.setItem("token", response.data.token);
             localStorage.setItem("usuario", JSON.stringify(response.data.usuario));
 
-            // Disparar evento para actualizar el Navbar
             window.dispatchEvent(new Event('usuarioActualizado'));
-
-            // Mostrar mensaje de bienvenida
             await Swal.fire({
                 icon: 'success',
                 title: '¡Bienvenido!',
