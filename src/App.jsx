@@ -1,6 +1,6 @@
 // App.jsx
 import { useState, useEffect } from "react";
-import { Routes, Route } from "react-router-dom";
+import { Routes, Route, useLocation } from "react-router-dom";
 import Navbar from "./components/NavBar";
 import ReservationInfo from "./pages/ReservationInfo";
 import PaymentSummary from "./pages/PaymentSummary";
@@ -32,6 +32,7 @@ import HostReport from "./pages/Host/HostReport";
 import PublicRoute from "./components/PublicRoute";
 
 import NotFoundPage from "./components/NotFoundPage";
+import Portfolio from "./pages/Portfolio";
 
 
 function PropertiesPage() {
@@ -68,6 +69,150 @@ function PropertiesPage() {
   );
 }
 
+function PublicApp({ stripPrefix = false, darkMode, setDarkMode }) {
+  const location = useLocation();
+  const pathname =
+    stripPrefix && location.pathname.startsWith("/app")
+      ? location.pathname.slice(4) || "/"
+      : location.pathname;
+  const appLocation = { ...location, pathname };
+
+  return (
+    <>
+      <Navbar darkMode={darkMode} setDarkMode={setDarkMode} />
+
+      <Routes location={appLocation}>
+        {/* RUTAS PÚBLICAS DEL SITIO */}
+        <Route
+          path="/"
+          element={
+            <>
+              <HeroSection />
+
+              {/* SECCIÓN ALOJAMIENTOS */}
+              <div className={`shadow-sm border-bottom ${darkMode ? "bg-dark" : "bg-white"}`}>
+                <div className="container py-5 text-center">
+                  <h2 className={`display-4 fw-bold mb-3 ${darkMode ? "text-light" : "text-dark"}`}>
+                    Alojamientos En Arroyo Seco
+                  </h2>
+                  <p className="lead text-muted fs-5">
+                    Descubre lugares únicos para tu estadía
+                  </p>
+                </div>
+              </div>
+
+              <PropertiesPage />
+              <ExperiencesSection />
+            </>
+          }
+        />
+
+        <Route
+          path="/experiencias"
+          element={
+            <>
+              <div className={`shadow-sm border-bottom ${darkMode ? "bg-dark" : "bg-white"}`}>
+                <div className="container py-5 text-center">
+                  <h2 className={`display-4 fw-bold mb-3 ${darkMode ? "text-light" : "text-dark"}`}>
+                    Experiencias en Arroyo Seco
+                  </h2>
+                  <p className="lead text-muted fs-5">
+                    Descubre actividades únicas e inolvidables
+                  </p>
+                </div>
+              </div>
+
+              <ExperiencesSection />
+            </>
+          }
+        />
+
+        {/* LOGIN Y REGISTRO */}
+        <Route
+          path="/login"
+          element={
+            <PublicRoute>
+              <LoginPage />
+            </PublicRoute>
+          }
+        />
+
+        <Route
+          path="/register"
+          element={
+            <PublicRoute>
+              <RegisterPage />
+            </PublicRoute>
+          }
+        />
+
+        {/* RUTA 404 CORREGIDA */}
+        <Route path="/404" element={<NotFoundPage />} />
+
+        {/* OTRAS RUTAS */}
+        <Route path="/propiedades" element={<PropertiesPage />} />
+        <Route path="/reservation" element={<ReservationInfo />} />
+        <Route path="/reservation/tourism" element={<TourismReservationInfo />} />
+        <Route path="/payment" element={<PaymentSummary />} />
+
+        {/* RUTAS HOST */}
+        <Route
+          path="/host/upload"
+          element={
+            <ProtectedRoute allowedRoles={["anfitrion"]}>
+              <HostUploadPage />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/host/publications"
+          element={
+            <ProtectedRoute allowedRoles={["anfitrion"]}>
+              <HostPublications />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/host/report"
+          element={
+            <ProtectedRoute allowedRoles={["anfitrion"]}>
+              <HostReport />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/host/upload/tourism"
+          element={
+            <ProtectedRoute allowedRoles={["anfitrion"]}>
+              <CreateTouristExperience />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/host/admin"
+          element={
+            <ProtectedRoute allowedRoles={["anfitrion"]}>
+              <HostAdmin />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route path="/host/information" element={<HostInformation />} />
+
+        <Route path="/perfil" element={<Profile />} />
+        <Route path="/reservation/user" element={<ReservationUser />} />
+        <Route path="/user/reservations" element={<UserReservations />} />
+
+        <Route path="*" element={<NotFoundPage />} />
+      </Routes>
+    </>
+  );
+}
+
 export default function App() {
   const [darkMode, setDarkMode] = useState(() => {
     const saved = localStorage.getItem("darkMode");
@@ -92,145 +237,25 @@ export default function App() {
     >
 
       <Routes>
+        {/* PORTFOLIO — PÁGINA PRINCIPAL */}
+        <Route path="/" element={<Portfolio />} />
 
-        {/* RUTAS PÚBLICAS DEL SITIO */}
+        {/* APP SGST — ACCESIBLE EN /app Y EN SUS RUTAS ORIGINALES */}
         <Route
-          path="/*"
+          path="/app/*"
           element={
-            <>
-              <Navbar darkMode={darkMode} setDarkMode={setDarkMode} />
-
-              <Routes>
-                <Route
-                  path="/"
-                  element={
-                    <>
-                      <HeroSection />
-
-                      {/* SECCIÓN ALOJAMIENTOS */}
-                      <div className={`shadow-sm border-bottom ${darkMode ? "bg-dark" : "bg-white"}`}>
-                        <div className="container py-5 text-center">
-                          <h2 className={`display-4 fw-bold mb-3 ${darkMode ? "text-light" : "text-dark"}`}>
-                            Alojamientos En Arroyo Seco
-                          </h2>
-                          <p className="lead text-muted fs-5">
-                            Descubre lugares únicos para tu estadía
-                          </p>
-                        </div>
-                      </div>
-
-                      <PropertiesPage />
-                      <ExperiencesSection />
-                    </>
-                  }
-                />
-
-                <Route
-                  path="/experiencias"
-                  element={
-                    <>
-                      <div className={`shadow-sm border-bottom ${darkMode ? "bg-dark" : "bg-white"}`}>
-                        <div className="container py-5 text-center">
-                          <h2 className={`display-4 fw-bold mb-3 ${darkMode ? "text-light" : "text-dark"}`}>
-                            Experiencias en Arroyo Seco
-                          </h2>
-                          <p className="lead text-muted fs-5">
-                            Descubre actividades únicas e inolvidables
-                          </p>
-                        </div>
-                      </div>
-
-                      <ExperiencesSection />
-                    </>
-                  }
-                />
-
-                {/* LOGIN Y REGISTRO */}
-                <Route
-                  path="/login"
-                  element={
-                    <PublicRoute>
-                      <LoginPage />
-                    </PublicRoute>
-                  }
-                />
-
-                <Route
-                  path="/register"
-                  element={
-                    <PublicRoute>
-                      <RegisterPage />
-                    </PublicRoute>
-                  }
-                />
-
-                {/* RUTA 404 CORREGIDA */}
-                <Route path="/404" element={<NotFoundPage />} />
-
-                {/* OTRAS RUTAS */}
-                <Route path="/propiedades" element={<PropertiesPage />} />
-                <Route path="/reservation" element={<ReservationInfo />} />
-                <Route path="/reservation/tourism" element={<TourismReservationInfo />} />
-                <Route path="/payment" element={<PaymentSummary />} />
-
-                {/* RUTAS HOST */}
-                <Route
-                  path="/host/upload"
-                  element={
-                    <ProtectedRoute allowedRoles={["anfitrion"]}>
-                      <HostUploadPage />
-                    </ProtectedRoute>
-                  }
-                />
-
-                <Route
-                  path="/host/publications"
-                  element={
-                    <ProtectedRoute allowedRoles={["anfitrion"]}>
-                      <HostPublications />
-                    </ProtectedRoute>
-                  }
-                />
-
-                <Route
-                  path="/host/report"
-                  element={
-                    <ProtectedRoute allowedRoles={["anfitrion"]}>
-                      <HostReport />
-                    </ProtectedRoute>
-                  }
-                />
-
-                <Route
-                  path="/host/upload/tourism"
-                  element={
-                    <ProtectedRoute allowedRoles={["anfitrion"]}>
-                      <CreateTouristExperience />
-                    </ProtectedRoute>
-                  }
-                />
-
-                <Route
-                  path="/host/admin"
-                  element={
-                    <ProtectedRoute allowedRoles={["anfitrion"]}>
-                      <HostAdmin />
-                    </ProtectedRoute>
-                  }
-                />
-
-                <Route path="/host/information" element={<HostInformation />} />
-
-                <Route path="/perfil" element={<Profile />} />
-                <Route path="/reservation/user" element={<ReservationUser />} />
-                <Route path="/user/reservations" element={<UserReservations />} />
-
-                <Route path="*" element={<NotFoundPage />} />
-              </Routes>
-            </>
+            <PublicApp stripPrefix darkMode={darkMode} setDarkMode={setDarkMode} />
           }
         />
 
+        <Route
+          path="/*"
+          element={
+            <PublicApp darkMode={darkMode} setDarkMode={setDarkMode} />
+          }
+        />
+
+        {/* DASHBOARD ADMIN */}
         <Route
           path="/dashboard/*"
           element={
