@@ -846,7 +846,7 @@ export default function PaymentSummary({
                                             disabled={purchaseCompleted || isLoading}
                                         />
                                         <label className="form-check-label" htmlFor="terms">
-                                            Acepto los <a href="#" style={{ color: '#87CEEB' }}>términos y condiciones</a>
+                                            Acepto los <a href="#" onClick={(e) => e.preventDefault()} style={{ color: '#87CEEB' }}>términos y condiciones</a>
                                         </label>
                                     </div>
                                 </div>

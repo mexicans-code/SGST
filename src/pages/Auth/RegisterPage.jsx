@@ -392,11 +392,11 @@ export default function RegisterPage() {
                                                     />
                                                     <label className="form-check-label text-muted small" htmlFor="terminos">
                                                         Acepto los{" "}
-                                                        <a href="#!" className="text-decoration-none fw-semibold" style={{ color: "#CD5C5C" }}>
+                                                        <a href="#!" onClick={(e) => e.preventDefault()} className="text-decoration-none fw-semibold" style={{ color: "#CD5C5C" }}>
                                                             términos y condiciones
                                                         </a>
                                                         {" "}y la{" "}
-                                                        <a href="#!" className="text-decoration-none fw-semibold" style={{ color: "#CD5C5C" }}>
+                                                        <a href="#!" onClick={(e) => e.preventDefault()} className="text-decoration-none fw-semibold" style={{ color: "#CD5C5C" }}>
                                                             política de privacidad
                                                         </a>
                                                     </label>

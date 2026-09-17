@@ -178,7 +178,7 @@ export default function LoginPage() {
                                             </div>
 
                                             <div className="d-flex justify-content-between align-items-center mb-4">
-                                                <a className="text-decoration-none fw-semibold" href="#!" style={{ color: "#87CEEB" }}>
+                                                <a className="text-decoration-none fw-semibold" href="#!" onClick={(e) => e.preventDefault()} style={{ color: "#87CEEB" }}>
                                                     ¿Olvidaste tu contraseña?
                                                 </a>
                                             </div>

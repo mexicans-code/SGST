@@ -6,10 +6,11 @@
   <title>SGST</title>
   <script>
     (function () {
-      var parts = window.location.pathname.split('/').filter(Boolean);
-      var base = parts.length ? '/' + parts[0] : '';
-      sessionStorage.setItem(':sgstRedirect', window.location.pathname + window.location.search);
-      window.location.replace((base ? base + '/' : '/') + 'index.html');
+      var parts = decodeURIComponent(window.location.pathname).split('/').filter(Boolean);
+      var repo = parts[0] || '';
+      var rest = parts.slice(1).join('/');
+      var base = repo ? '/' + repo : '';
+      window.location.replace(base + '/index.html' + (rest ? '#/' + rest : ''));
     })();
   </script>
 </head>

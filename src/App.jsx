@@ -1,6 +1,6 @@
 // App.jsx
 import { useState, useEffect } from "react";
-import { Routes, Route } from "react-router-dom";
+import { Routes, Route, useNavigate } from "react-router-dom";
 import Navbar from "./components/NavBar";
 import ReservationInfo from "./pages/ReservationInfo";
 import PaymentSummary from "./pages/PaymentSummary";
@@ -43,26 +43,67 @@ function PropertiesPage() {
         <nav aria-label="Page navigation">
           <ul className="pagination">
             <li className="page-item disabled bg-secondary">
-              <a className="page-link" href="#" aria-label="Previous">
+              <a className="page-link" href="#" onClick={(e) => e.preventDefault()} aria-label="Previous">
                 <span aria-hidden="true">«</span>
               </a>
             </li>
             <li className="page-item active bg-secondary">
-              <a className="page-link" href="#">1</a>
+              <a className="page-link" href="#" onClick={(e) => e.preventDefault()}>1</a>
             </li>
             <li className="page-item">
-              <a className="page-link" href="#">2</a>
+              <a className="page-link" href="#" onClick={(e) => e.preventDefault()}>2</a>
             </li>
             <li className="page-item">
-              <a className="page-link" href="#">3</a>
+              <a className="page-link" href="#" onClick={(e) => e.preventDefault()}>3</a>
             </li>
             <li className="page-item">
-              <a className="page-link" href="#" aria-label="Next">
+              <a className="page-link" href="#" onClick={(e) => e.preventDefault()} aria-label="Next">
                 <span aria-hidden="true">»</span>
               </a>
             </li>
           </ul>
         </nav>
+      </div>
+    </div>
+  );
+}
+
+function HelpPage() {
+  const navigate = useNavigate();
+  return (
+    <div className="container py-5" style={{ minHeight: "60vh" }}>
+      <div className="text-center mb-4">
+        <h1 className="display-5 fw-bold">Centro de ayuda</h1>
+        <p className="lead text-muted">Resolvemos tus dudas sobre reservas, pagos y experiencias</p>
+      </div>
+      <div className="row g-4">
+        <div className="col-md-4">
+          <div className="card h-100 shadow-sm border-0">
+            <div className="card-body text-center">
+              <h5 className="card-title">Reservaciones</h5>
+              <p className="card-text text-muted">Consulta cómo reservar tu alojamiento o experiencia, modificar fechas y cancelar.</p>
+            </div>
+          </div>
+        </div>
+        <div className="col-md-4">
+          <div className="card h-100 shadow-sm border-0">
+            <div className="card-body text-center">
+              <h5 className="card-title">Pagos</h5>
+              <p className="card-text text-muted">Información sobre métodos de pago disponibles y el estado de tus pagos.</p>
+            </div>
+          </div>
+        </div>
+        <div className="col-md-4">
+          <div className="card h-100 shadow-sm border-0">
+            <div className="card-body text-center">
+              <h5 className="card-title">Anfitriones</h5>
+              <p className="card-text text-muted">Cómo publicar tu espacio, gestionar reservas y recibir tus ingresos.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div className="text-center mt-4">
+        <button className="btn btn-primary" onClick={() => navigate('/')}>Volver al inicio</button>
       </div>
     </div>
   );
@@ -166,6 +207,8 @@ export default function App() {
 
                 {/* RUTA 404 CORREGIDA */}
                 <Route path="/404" element={<NotFoundPage />} />
+
+                <Route path="/help" element={<HelpPage />} />
 
                 {/* OTRAS RUTAS */}
                 <Route path="/propiedades" element={<PropertiesPage />} />
