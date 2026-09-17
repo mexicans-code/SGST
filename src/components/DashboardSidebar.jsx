@@ -25,11 +25,6 @@ export default function DashboardSidebar() {
     const cargarDatosUsuario = async () => {
         try {
             const token = localStorage.getItem('token');
-            if (!token) {
-                navigate('/login');
-                return;
-            }
-
             const response = await fetch(`${GATEWAY_URL}/api/adminProfile/getProfile`, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });

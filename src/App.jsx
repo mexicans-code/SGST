@@ -21,7 +21,6 @@ import ExperiencesSection from "./pages/TourismSection";
 import Profile from "./pages/ProfileHome";
 import ReservationUser from "./pages/ReservationUser";
 import HostPublications from "./pages/Host/HostPublicationsDashboard";
-import ProtectedRoute from "./components/ProtectedRoute";
 import HeroSection from "./pages/HeroSection";
 import TourismReservationInfo from "./pages/TourismReservationInfo";
 import UserReservations from "./pages/user/UserReservations";
@@ -29,7 +28,6 @@ import ReviewUsers from "./components/ReviewUsers";
 import Reviews from "./components/Reviews";
 import CreateTouristExperience from "./pages/Host/HostPageUploadTourism";
 import HostReport from "./pages/Host/HostReport";
-import PublicRoute from "./components/PublicRoute";
 
 import NotFoundPage from "./components/NotFoundPage";
 
@@ -189,20 +187,12 @@ export default function App() {
                 {/* LOGIN Y REGISTRO */}
                 <Route
                   path="/login"
-                  element={
-                    <PublicRoute>
-                      <LoginPage />
-                    </PublicRoute>
-                  }
+                  element={<LoginPage />}
                 />
 
                 <Route
                   path="/register"
-                  element={
-                    <PublicRoute>
-                      <RegisterPage />
-                    </PublicRoute>
-                  }
+                  element={<RegisterPage />}
                 />
 
                 {/* RUTA 404 CORREGIDA */}
@@ -219,47 +209,27 @@ export default function App() {
                 {/* RUTAS HOST */}
                 <Route
                   path="/host/upload"
-                  element={
-                    <ProtectedRoute allowedRoles={["anfitrion"]}>
-                      <HostUploadPage />
-                    </ProtectedRoute>
-                  }
+                  element={<HostUploadPage />}
                 />
 
                 <Route
                   path="/host/publications"
-                  element={
-                    <ProtectedRoute allowedRoles={["anfitrion"]}>
-                      <HostPublications />
-                    </ProtectedRoute>
-                  }
+                  element={<HostPublications />}
                 />
 
                 <Route
                   path="/host/report"
-                  element={
-                    <ProtectedRoute allowedRoles={["anfitrion"]}>
-                      <HostReport />
-                    </ProtectedRoute>
-                  }
+                  element={<HostReport />}
                 />
 
                 <Route
                   path="/host/upload/tourism"
-                  element={
-                    <ProtectedRoute allowedRoles={["anfitrion"]}>
-                      <CreateTouristExperience />
-                    </ProtectedRoute>
-                  }
+                  element={<CreateTouristExperience />}
                 />
 
                 <Route
                   path="/host/admin"
-                  element={
-                    <ProtectedRoute allowedRoles={["anfitrion"]}>
-                      <HostAdmin />
-                    </ProtectedRoute>
-                  }
+                  element={<HostAdmin />}
                 />
 
                 <Route path="/host/information" element={<HostInformation />} />
@@ -276,11 +246,7 @@ export default function App() {
 
         <Route
           path="/dashboard/*"
-          element={
-            <ProtectedRoute allowedRoles={["admin"]}>
-              <DashboardLayout />
-            </ProtectedRoute>
-          }
+          element={<DashboardLayout />}
         >
           <Route index element={<Dashboard />} />
           <Route path="users" element={<UserAdmin />} />
