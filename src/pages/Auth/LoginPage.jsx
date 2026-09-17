@@ -217,7 +217,7 @@ export default function LoginPage() {
                                             <div className="text-center pt-3 pb-2">
                                                 <p className="mb-0 text-muted">
                                                     ¿No tienes una cuenta?{" "}
-                                                    <a href="/register" className="fw-bold text-decoration-none" style={{ color: "#2C3E50" }}>
+                                                    <a href="#!" onClick={() => navigate('/register')} className="fw-bold text-decoration-none" style={{ color: "#2C3E50" }}>
                                                         Crear cuenta nueva
                                                     </a>
                                                 </p>

@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SGST</title>
+  <script>
+    (function () {
+      var parts = window.location.pathname.split('/').filter(Boolean);
+      var base = parts.length ? '/' + parts[0] : '';
+      sessionStorage.setItem(':sgstRedirect', window.location.pathname + window.location.search);
+      window.location.replace((base ? base + '/' : '/') + 'index.html');
+    })();
+  </script>
+</head>
+<body></body>
+</html>
