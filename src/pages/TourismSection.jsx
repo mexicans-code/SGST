@@ -2,8 +2,9 @@ import { useState } from 'react';
 import { Star, MapPin, Clock, Compass } from 'lucide-react';
 
 import { EXPERIENCES } from '../const/data';
+import ReservationModal from '../components/ReservationModal';
 
-function ExperienceCard({ experience, darkMode = false }) {
+function ExperienceCard({ experience, onReserve, darkMode = false }) {
   const { name, price, rating, location, imageSrc, duration, category, groupSize } = experience;
   const [imageLoaded, setImageLoaded] = useState(false);
 
@@ -65,7 +66,7 @@ function ExperienceCard({ experience, darkMode = false }) {
             <span className="text-muted ms-1" style={{ fontSize: '0.8rem' }}>/ persona</span>
           </div>
           <button
-            onClick={() => alert('Proyecto demostrativo: aquí se gestionaría la reserva.')}
+            onClick={() => onReserve(experience)}
             className="btn btn-danger btn-sm rounded-3 px-3 py-2 fw-semibold shadow-sm"
             style={{ background: 'rgb(85, 107, 47)', border: 'none', fontSize: '0.8rem' }}
           >
@@ -78,6 +79,11 @@ function ExperienceCard({ experience, darkMode = false }) {
 }
 
 export default function ExperiencesSection({ darkMode = false }) {
+  const [selected, setSelected] = useState(null);
+  const [showAll, setShowAll] = useState(false);
+
+  const visibleExperiences = showAll ? EXPERIENCES : EXPERIENCES.slice(0, 4);
+
   return (
     <div className={darkMode ? 'bg-dark' : 'bg-light'}>
       <div className="container py-5">
@@ -85,23 +91,26 @@ export default function ExperiencesSection({ darkMode = false }) {
           <div className="col-12">
             <h2 className={`fw-bold mb-3 ${darkMode ? 'text-light' : 'text-dark'}`}>Experiencias Destacadas</h2>
             <p className={darkMode ? 'text-light' : 'text-muted'}>
-              {EXPERIENCES.length} experiencias disponibles en la Sierra Gorda
+              {visibleExperiences.length} de {EXPERIENCES.length} experiencias disponibles en la Sierra Gorda
             </p>
           </div>
         </div>
 
         <div className="row g-4 justify-content-center">
-          {EXPERIENCES.map((experience) => (
+          {visibleExperiences.map((experience) => (
             <div key={experience.id} className="col-auto">
-              <ExperienceCard experience={experience} darkMode={darkMode} />
+              <ExperienceCard experience={experience} darkMode={darkMode} onReserve={setSelected} />
             </div>
           ))}
         </div>
 
         <div className="row mt-5">
           <div className="col-12 text-center">
-            <button className="btn btn-outline-success btn-lg px-5 py-3 fw-bold">
-              Ver Más Experiencias
+            <button
+              className="btn btn-outline-success btn-lg px-5 py-3 fw-bold"
+              onClick={() => setShowAll((v) => !v)}
+            >
+              {showAll ? 'Ver Menos Experiencias' : 'Ver Más Experiencias'}
             </button>
           </div>
         </div>
@@ -128,6 +137,10 @@ export default function ExperiencesSection({ darkMode = false }) {
           </button>
         </div>
       </div>
+
+      {selected && (
+        <ReservationModal item={selected} type="experience" onClose={() => setSelected(null)} />
+      )}
     </div>
   );
 }
