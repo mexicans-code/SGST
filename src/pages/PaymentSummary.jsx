@@ -29,6 +29,29 @@ import { GATEWAY_URL } from '../const/Const';
 
 initMercadoPago(MERCADOPAGO_PUBLIC_KEY);
 
+const demoToday = new Date();
+const demoCheckIn = demoToday.toISOString().slice(0, 10);
+const demoCheckOut = new Date(demoToday.getTime() + 2 * 86400000).toISOString().slice(0, 10);
+
+const DEMO_RESERVATION = {
+    id_hosteleria: 1,
+    id: 1,
+    name: 'Cabaña Río Azul',
+    description: 'Alojamiento de ejemplo para la demo.',
+    price: 1500,
+    images: ['https://images.unsplash.com/photo-1566073771259-6a8506099945?w=800'],
+    amenities: ['Wifi', 'Estacionamiento', 'Desayuno'],
+    location: 'Jalpan de Serra, Querétaro',
+    rating: 4.8,
+    reviews: 24,
+    guests: 2,
+    bedrooms: 2,
+    bathrooms: 1,
+    checkIn: demoCheckIn,
+    checkOut: demoCheckOut,
+    reservationType: 'hosteleria'
+};
+
 
 export default function PaymentSummary({
     reservationData = null,
@@ -134,6 +157,9 @@ export default function PaymentSummary({
                 taxes: savedData.taxes || 0,
                 total: savedData.total || 0
             });
+        } else if (!savedData && !reservationData) {
+            setCheckIn(DEMO_RESERVATION.checkIn);
+            setCheckOut(DEMO_RESERVATION.checkOut);
         }
     }, []);
 
@@ -201,7 +227,7 @@ export default function PaymentSummary({
             console.error('Error cargando datos:', error);
         }
 
-        return null;
+        return DEMO_RESERVATION;
     };
     const defaultSupportInfo = {
         phone: "+52 55 1234 5678",
