@@ -13,14 +13,11 @@ import {GoogleOAuthProvider} from "@react-oauth/google";
 
 const GOOGLE_CLIENT_ID = "1022920288128-tmak14ctk73nkt4ksmp2t1o822tnvehj.apps.googleusercontent.com";
 
-// En GitHub Pages la app se sirve bajo /SGST/; en local/custom domain va en la raíz
-const BASENAME = window.location.hostname.includes("github.io") ? "/SGST" : "";
-
 
 const root = createRoot(document.getElementById('root'))
 root.render(
   
-  <BrowserRouter basename={BASENAME}>
+  <BrowserRouter>
     <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID}>
     <App />
     </GoogleOAuthProvider>
