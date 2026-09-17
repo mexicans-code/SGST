@@ -37,9 +37,18 @@ const HostInformation = () => {
             console.log("ID Usuario:", decodedToken?.id_usuario);
             console.log("Tipo de usuario:", decodedToken?.rol);
 
-            setUser(decodedToken);
+            let currentUser = decodedToken;
+            if (!currentUser) {
+                try {
+                    currentUser = JSON.parse(localStorage.getItem("usuario") || "null");
+                } catch (e) {
+                    currentUser = null;
+                }
+            }
 
-            if (decodedToken?.rol === 'anfitrion') {
+            setUser(currentUser);
+
+            if (currentUser?.rol === 'anfitrion') {
                 navigate('/host/upload');
             } else {
                 setLoading(false);

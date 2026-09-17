@@ -13,6 +13,27 @@ import { GATEWAY_URL } from '../const/Const';
 
 import "../index.css";
 
+const DEMO_RESERVATION_INFO = {
+    id: 1,
+    name: "Cabaña Río Azul",
+    description: "Alojamiento de ejemplo para la demo: cabaña junto al río con vistas a la sierra.",
+    price: 1500,
+    location: "Jalpan de Serra, Querétaro",
+    rating: 4.8,
+    reviews: 24,
+    bedrooms: 2,
+    bathrooms: 1,
+    guests: 2,
+    hostId: 2,
+    images: [
+        "https://images.unsplash.com/photo-1568605114967-8130f3a36994?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
+        "https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
+        "https://images.unsplash.com/photo-1560185007-cde436f6a4d0?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80"
+    ],
+    amenities: ["WiFi gratuito", "Estacionamiento", "Cocina equipada", "TV con cable", "Aire acondicionado"],
+    address: "Jalpan de Serra, Querétaro, México"
+};
+
 export default function ReservationInfo() {
     const navigate = useNavigate();
 
@@ -65,11 +86,13 @@ export default function ReservationInfo() {
                 setReservationData(completeData);
                 setGuests(completeData.guests);
             } else {
-                navigate('/');
+                setReservationData(DEMO_RESERVATION_INFO);
+                setGuests(DEMO_RESERVATION_INFO.guests);
             }
         } catch (error) {
             console.error('Error loading reservation data:', error);
-            navigate('/');
+            setReservationData(DEMO_RESERVATION_INFO);
+            setGuests(DEMO_RESERVATION_INFO.guests);
         } finally {
             setLoading(false);
         }

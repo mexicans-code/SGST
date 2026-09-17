@@ -18,7 +18,7 @@ export default function HeroSection({ darkMode = false, onSearchResults }) {
     try {
       const response = await fetch(`https://hospitality-production-72f9.up.railway.app/getHotelData`);
       const data = await response.json();
-      setAllProperties(data);
+      setAllProperties(Array.isArray(data) ? data : (data?.data || []));
     } catch (error) {
       console.error('Error al cargar propiedades:', error);
     }

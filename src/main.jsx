@@ -6,24 +6,40 @@ import { installMock } from './mock/server'
 
 installMock()
 
-if (!localStorage.getItem("usuario")) {
-  localStorage.setItem("usuario", JSON.stringify({
-    id_usuario: 3,
-    nombre: "Luis",
-    apellido_p: "Pérez",
-    apellido_m: "García",
-    email: "usuario@sierragorda.mx",
-    telefono: "4429876543",
-    rol: "usuario",
-    foto: "",
-    direccion: "Calle Hidalgo 45, Jalpan de Serra"
-  }));
-}
-if (!localStorage.getItem("rol")) {
-  localStorage.setItem("rol", "usuario");
-}
-if (!localStorage.getItem("token")) {
-  localStorage.setItem("token", "demo.sesion-abierta.sin-seguridad");
+const demoB64 = (obj) =>
+  btoa(unescape(encodeURIComponent(JSON.stringify(obj))))
+    .replace(/\+/g, "-")
+    .replace(/\//g, "_")
+    .replace(/=+$/, "");
+
+const demoUser = {
+  id_usuario: 2,
+  nombre: "Carmen",
+  apellido_p: "Hernández",
+  apellido_m: "Ríos",
+  email: "anfitrion@sierragorda.mx",
+  telefono: "4418765432",
+  rol: "anfitrion",
+  foto: "",
+  direccion: "Carretera a Concá Km 3, Arroyo Seco"
+};
+
+const existingToken = localStorage.getItem("token");
+const hasRealSession = existingToken && !existingToken.startsWith("demo.");
+
+if (!hasRealSession) {
+  localStorage.setItem("usuario", JSON.stringify(demoUser));
+  localStorage.setItem("rol", demoUser.rol);
+  localStorage.setItem(
+    "token",
+    `demo.${demoB64({
+      id_usuario: demoUser.id_usuario,
+      nombre: demoUser.nombre,
+      email: demoUser.email,
+      rol: demoUser.rol,
+      iat: Date.now()
+    })}.demo`
+  );
 }
 
 import 'bootstrap/dist/css/bootstrap.min.css';

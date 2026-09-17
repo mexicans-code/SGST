@@ -1,4 +1,4 @@
-const STORAGE_KEY = 'sgst_mock_db_v1';
+const STORAGE_KEY = 'sgst_mock_db_v2';
 
 const IMG = {
   casa: 'https://images.unsplash.com/photo-1568605114967-8130f3a36994?w=800&auto=format&fit=crop&q=60',
@@ -207,7 +207,7 @@ const seed = () => ({
     {
       reserva: {
         id_reserva: 1,
-        id_usuario: 3,
+        id_usuario: 2,
         id_hosteleria: 1,
         id_experiencia: null,
         id_anfitrion: 2,
@@ -221,9 +221,9 @@ const seed = () => ({
         tipo_reserva: 'hosteleria',
       },
       usuario: {
-        id_usuario: 3,
-        nombre: 'Luis',
-        email: 'usuario@sierragorda.mx',
+        id_usuario: 2,
+        nombre: 'Carmen',
+        email: 'anfitrion@sierragorda.mx',
       },
       establecimiento: {
         id_hosteleria: 1,
@@ -243,7 +243,7 @@ const seed = () => ({
     {
       reserva: {
         id_reserva: 2,
-        id_usuario: 3,
+        id_usuario: 2,
         id_hosteleria: 2,
         id_experiencia: null,
         id_anfitrion: 2,
@@ -257,9 +257,9 @@ const seed = () => ({
         tipo_reserva: 'hosteleria',
       },
       usuario: {
-        id_usuario: 3,
-        nombre: 'Luis',
-        email: 'usuario@sierragorda.mx',
+        id_usuario: 2,
+        nombre: 'Carmen',
+        email: 'anfitrion@sierragorda.mx',
       },
       establecimiento: {
         id_hosteleria: 2,
@@ -279,7 +279,7 @@ const seed = () => ({
     {
       reserva: {
         id_reserva: 3,
-        id_usuario: 3,
+        id_usuario: 2,
         id_hosteleria: null,
         id_experiencia: 2,
         id_anfitrion: 2,
@@ -293,9 +293,9 @@ const seed = () => ({
         tipo_reserva: 'experiencia',
       },
       usuario: {
-        id_usuario: 3,
-        nombre: 'Luis',
-        email: 'usuario@sierragorda.mx',
+        id_usuario: 2,
+        nombre: 'Carmen',
+        email: 'anfitrion@sierragorda.mx',
       },
       establecimiento: null,
       anfitrion: null,
@@ -316,7 +316,7 @@ const seed = () => ({
     {
       reserva: {
         id_reserva: 4,
-        id_usuario: 3,
+        id_usuario: 2,
         id_hosteleria: 3,
         id_experiencia: null,
         id_anfitrion: 2,
@@ -330,9 +330,9 @@ const seed = () => ({
         tipo_reserva: 'hosteleria',
       },
       usuario: {
-        id_usuario: 3,
-        nombre: 'Luis',
-        email: 'usuario@sierragorda.mx',
+        id_usuario: 2,
+        nombre: 'Carmen',
+        email: 'anfitrion@sierragorda.mx',
       },
       establecimiento: {
         id_hosteleria: 3,
@@ -416,8 +416,8 @@ const seed = () => ({
     },
     {
       id_pago: 3,
-      id_reserva: 3,
-      id_usuario: 3,
+        id_reserva: 3,
+        id_usuario: 2,
       monto: 2200,
       metodo: 'transfer',
       estado: 'completado',

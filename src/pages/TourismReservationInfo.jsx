@@ -22,14 +22,7 @@ export default function TourismReservationInfo() {
 
     // Cargar datos desde localStorage al montar
     useEffect(() => {
-        const experienceId = localStorage.getItem('experienceId');
-
-        if (!experienceId) {
-            console.warn("No se encontró el ID de la experiencia en localStorage");
-            setExperienceData(null);
-            setLoading(false);
-            return;
-        }
+        const experienceId = localStorage.getItem('experienceId') || '1';
 
         const fetchExperience = async () => {
             try {

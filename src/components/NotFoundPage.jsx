@@ -1,4 +1,7 @@
+import { useNavigate } from "react-router-dom";
+
 export default function PageNotFound() {
+    const navigate = useNavigate();
     return (
         <div className="min-h-screen flex items-center justify-center bg-gray-100 px-6 mt-5" >
             <div className="text-center bg-white shadow-xl rounded-2xl p-10 max-w-lg w-full border">
@@ -15,7 +18,7 @@ export default function PageNotFound() {
 
                 <div className="mt-6">
                     <button
-                        onClick={() => window.location.href = "/"}
+                        onClick={() => navigate("/")}
                         className="
                             px-6 py-3 bg-primary text-white font-semibold rounded-xl 
                             shadow-lg hover:bg-primary-dark transition-all duration-300
