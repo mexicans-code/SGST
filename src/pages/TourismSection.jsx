@@ -1,12 +1,31 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Star, MapPin, Clock, Compass } from 'lucide-react';
 
-import { EXPERIENCES } from '../const/data';
-import ReservationModal from '../components/ReservationModal';
+import { GATEWAY_URL } from '../const/Const';
 
-function ExperienceCard({ experience, onReserve, darkMode = false }) {
-  const { name, price, rating, location, imageSrc, duration, category, groupSize } = experience;
+function ExperienceCard({
+  id,
+  name = "Casa moderna en el centro",
+  price = 120,
+  rating = 4.8,
+  location = "Ciudad de México",
+  imageSrc = "https://a0.muscache.com/im/pictures/hosting/Hosting-U3RheVN1cHBseUxpc3Rpbmc6OTgzNjEwMjg4MDc1MTM0Mjg5/original/6530be09-e469-42eb-ad40-c24de66631e9.jpeg",
+  duration = "",
+  category = "",
+  groupSize = "",
+  darkMode = false,
+  onReserve
+}) {
   const [imageLoaded, setImageLoaded] = useState(false);
+
+  const handleReserve = () => {
+    if (onReserve) {
+      onReserve(id);
+    } else {
+      console.log("Reservando experiencia con ID:", id);
+    }
+  };
 
   return (
     <div
@@ -42,7 +61,7 @@ function ExperienceCard({ experience, onReserve, darkMode = false }) {
           </div>
           <div className="d-flex align-items-center ms-2 flex-shrink-0">
             <Star size={14} className="text-warning me-1" fill="currentColor" />
-            <span className="fw-bold" style={{ fontSize: '0.8rem' }}>{rating}</span>
+            <span className={`fw-bold ${darkMode ? 'text-light' : 'text-dark'}`} style={{ fontSize: '0.8rem' }}>{rating}</span>
           </div>
         </div>
 
@@ -56,17 +75,17 @@ function ExperienceCard({ experience, onReserve, darkMode = false }) {
         <div className={`d-flex align-items-center mb-3 ${darkMode ? 'text-light' : 'text-muted'}`} style={{ fontSize: '0.8rem' }}>
           <Clock size={14} className="me-2" />
           <span className="fw-medium me-2">{duration}h</span>
-          <span className="me-2">• disponibilidad {groupSize}</span>
-          <span>• {category}</span>
+          {groupSize && <span className="me-2">• disponibilidad {groupSize}</span>}
+          {category && <span>• {category}</span>}
         </div>
 
         <div className="d-flex justify-content-between align-items-center">
           <div>
-            <span className="fw-bold" style={{ fontSize: '1.1rem' }}>${price}</span>
+            <span className={`fw-bold ${darkMode ? 'text-light' : 'text-dark'}`} style={{ fontSize: '1.1rem' }}>${price}</span>
             <span className="text-muted ms-1" style={{ fontSize: '0.8rem' }}>/ persona</span>
           </div>
           <button
-            onClick={() => onReserve(experience)}
+            onClick={handleReserve}
             className="btn btn-danger btn-sm rounded-3 px-3 py-2 fw-semibold shadow-sm"
             style={{ background: 'rgb(85, 107, 47)', border: 'none', fontSize: '0.8rem' }}
           >
@@ -79,10 +98,104 @@ function ExperienceCard({ experience, onReserve, darkMode = false }) {
 }
 
 export default function ExperiencesSection({ darkMode = false }) {
-  const [selected, setSelected] = useState(null);
-  const [showAll, setShowAll] = useState(false);
+  const navigate = useNavigate();
+  const [experiences, setExperiences] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  const visibleExperiences = showAll ? EXPERIENCES : EXPERIENCES.slice(0, 4);
+ useEffect(() => {
+  const fetchExperiences = async () => {
+    try {
+      setLoading(true);
+
+      const response = await fetch(
+        `${GATEWAY_URL}/api/adminTouristExperiences/getTouristExperiences`
+      );
+
+      if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+
+      const result = await response.json();
+
+      if (result.success && result.data) {
+        const hoy = new Date();
+        hoy.setHours(0, 0, 0, 0);
+
+        const validExperiences = result.data.filter(exp => {
+          const capacidadValida = exp.capacidad > 0;
+
+          const fechaExp = new Date(exp.fecha_experiencia);
+          fechaExp.setHours(0, 0, 0, 0);
+
+          const fechaValida = fechaExp >= hoy;
+
+          return capacidadValida && fechaValida;
+        });
+
+        const mappedExperiences = validExperiences.map(exp => ({
+          id: exp.id_experiencia,
+          name: exp.titulo,
+          price: exp.precio,
+          rating: exp.calificacion ?? 4.5,
+          location: exp.direcciones
+            ? `${exp.direcciones.ciudad}, ${exp.direcciones.estado}`
+            : "Ubicación no disponible",
+          imageSrc: exp.image || "https://images.unsplash.com/photo-1501594907352-04cda38ebc29?w=800",
+          duration: exp.duracion,
+          category: exp.tipo_experiencia,
+          groupSize: exp.capacidad,
+        }));
+
+        setExperiences(mappedExperiences);
+        setError(null);
+
+      } else {
+        throw new Error("Formato de respuesta inválido");
+      }
+
+    } catch (err) {
+      console.error("Error fetching experiences:", err);
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  fetchExperiences();
+}, []);
+
+
+  const handleReserveExperience = (experienceId) => {
+    const isLoggedIn = !!localStorage.getItem("token"); // Cambia "token" si guardas otra cosa
+
+    if (!isLoggedIn) {
+      navigate('/login');
+      return;
+    }
+    localStorage.setItem('experienceId', experienceId);
+    navigate('/reservation/tourism');
+  };
+
+  if (loading) return (
+    <div className={darkMode ? 'bg-dark' : 'bg-light'}>
+      <div className="container py-5 text-center">
+        <div className="spinner-border text-success" role="status">
+          <span className="visually-hidden">Cargando...</span>
+        </div>
+        <p className={`mt-3 ${darkMode ? 'text-light' : 'text-muted'}`}>Cargando experiencias...</p>
+      </div>
+    </div>
+  );
+
+  if (error) return (
+    <div className={darkMode ? 'bg-dark' : 'bg-light'}>
+      <div className="container py-5">
+        <div className="alert alert-danger" role="alert">
+          <h4 className="alert-heading">Error al cargar experiencias</h4>
+          <p>{error}</p>
+        </div>
+      </div>
+    </div>
+  );
 
   return (
     <div className={darkMode ? 'bg-dark' : 'bg-light'}>
@@ -91,26 +204,34 @@ export default function ExperiencesSection({ darkMode = false }) {
           <div className="col-12">
             <h2 className={`fw-bold mb-3 ${darkMode ? 'text-light' : 'text-dark'}`}>Experiencias Destacadas</h2>
             <p className={darkMode ? 'text-light' : 'text-muted'}>
-              {visibleExperiences.length} de {EXPERIENCES.length} experiencias disponibles en la Sierra Gorda
+              {experiences.length} {experiences.length === 1 ? 'experiencia disponible' : 'experiencias disponibles'}
             </p>
           </div>
         </div>
 
-        <div className="row g-4 justify-content-center">
-          {visibleExperiences.map((experience) => (
-            <div key={experience.id} className="col-auto">
-              <ExperienceCard experience={experience} darkMode={darkMode} onReserve={setSelected} />
-            </div>
-          ))}
-        </div>
+        {experiences.length === 0 ? (
+          <div className="text-center py-5">
+            <Compass size={48} className="text-muted mb-3" />
+            <p className="text-muted">No hay experiencias disponibles en este momento</p>
+          </div>
+        ) : (
+          <div className="row g-4 justify-content-center">
+            {experiences.map((experience) => (
+              <div key={experience.id} className="col-auto">
+                <ExperienceCard
+                  {...experience}
+                  darkMode={darkMode}
+                  onReserve={handleReserveExperience}
+                />
+              </div>
+            ))}
+          </div>
+        )}
 
         <div className="row mt-5">
           <div className="col-12 text-center">
-            <button
-              className="btn btn-outline-success btn-lg px-5 py-3 fw-bold"
-              onClick={() => setShowAll((v) => !v)}
-            >
-              {showAll ? 'Ver Menos Experiencias' : 'Ver Más Experiencias'}
+            <button className="btn btn-outline-success btn-lg px-5 py-3 fw-bold">
+              Ver Más Experiencias
             </button>
           </div>
         </div>
@@ -137,10 +258,6 @@ export default function ExperiencesSection({ darkMode = false }) {
           </button>
         </div>
       </div>
-
-      {selected && (
-        <ReservationModal item={selected} type="experience" onClose={() => setSelected(null)} />
-      )}
     </div>
   );
 }
